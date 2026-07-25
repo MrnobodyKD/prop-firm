@@ -888,7 +888,7 @@ class EmailCampaignAnalytics(db.Model):
 
 
 # ========================================================================
-# [ALL REMAINING MODELS UNCHANGED - KEEP EXACTLY AS ORIGINAL]
+# ALL REMAINING MODELS
 # ========================================================================
 
 class ProgressionRequest(db.Model):
@@ -1662,6 +1662,7 @@ class FollowUp(db.Model):
     def to_dict(self):
         return {'id': self.id, 'user_id': self.user_id, 'admin_id': self.admin_id, 'followup_date': self.followup_date.isoformat() if self.followup_date else None, 'followup_type': self.followup_type, 'notes': self.notes, 'is_completed': self.is_completed, 'completed_at': self.completed_at.isoformat() if self.completed_at else None, 'created_at': self.created_at.isoformat() if self.created_at else None, 'admin_name': self.admin.get_full_name() if self.admin else 'Unknown'}
     def __repr__(self): return f'<FollowUp {self.id} - User {self.user_id} - {self.followup_type}>'
+
 class SiteSettings(db.Model):
     """Global site settings - SINGLE ROW (singleton pattern)"""
     __tablename__ = 'site_settings'
@@ -1681,11 +1682,7 @@ class SiteSettings(db.Model):
             settings = cls()
             db.session.add(settings)
             db.session.flush()
-<<<<<<< HEAD
-        return settings    
-
-
-
+        return settings
 
 # ========================================================================
 # MODERATOR MANAGEMENT SYSTEM - SECURE RBAC IMPLEMENTATION
@@ -1730,6 +1727,18 @@ RESTRICTED_PERMISSIONS = [
     'can_access_manage_challenges',
 ]
 
+# ========================================================================
+# SINGLE SOURCE OF TRUTH: statuses eligible for MT5 sync + rule processing
+# ========================================================================
+SYNC_ELIGIBLE_STATUSES = [
+    'active',
+    'funded',
+    'under_review',
+    'phase1_active',
+    'phase2_active',
+    'funded_active',
+]
+
 
 class Moderator(db.Model):
     """Moderator accounts with PBAC (Permission-Based Access Control)"""
@@ -1740,37 +1749,26 @@ class Moderator(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), default='active', nullable=False, index=True)
-    # active, inactive, temp_banned
     ban_until = db.Column(db.DateTime(timezone=True), nullable=True)
     ban_reason = db.Column(db.Text, nullable=True)
-    
-    # Permissions stored as JSON dict {permission_key: boolean}
     permissions = db.Column(db.JSON, nullable=False, default=dict)
-    
-    # Activity tracking
     last_login = db.Column(db.DateTime(timezone=True), nullable=True)
     last_activity = db.Column(db.DateTime(timezone=True), nullable=True)
     login_count = db.Column(db.Integer, default=0)
-    
-    # Audit fields
     created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
-    # Relationships
     admin = db.relationship('User', foreign_keys=[created_by_admin_id], backref=db.backref('created_moderators', lazy=True))
     activity_logs = db.relationship('ModeratorActivityLog', backref='moderator', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
-        """Securely hash password using werkzeug"""
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
     
     def check_password(self, password):
-        """Verify password against hash"""
         return check_password_hash(self.password_hash, password)
     
     def has_permission(self, permission_key):
-        """Check if moderator has specific permission AND is active"""
         if self.status != 'active':
             return False
         if self.status == 'temp_banned' and self.ban_until:
@@ -1779,13 +1777,11 @@ class Moderator(db.Model):
         return self.permissions.get(permission_key, False) if self.permissions else False
     
     def get_active_permissions(self):
-        """Return list of active permission keys"""
         if not self.permissions:
             return []
         return [k for k, v in self.permissions.items() if v and k in MODERATOR_PERMISSIONS]
     
     def is_active(self):
-        """Check if moderator account is currently active"""
         if self.status == 'active':
             return True
         if self.status == 'temp_banned' and self.ban_until:
@@ -1793,7 +1789,6 @@ class Moderator(db.Model):
         return False
     
     def to_dict(self):
-        """Safe serialization - NEVER expose password hash"""
         return {
             'id': self.id,
             'full_name': self.full_name,
@@ -1818,33 +1813,20 @@ class ModeratorActivityLog(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     moderator_id = db.Column(db.Integer, db.ForeignKey('moderators.id'), nullable=False, index=True)
-    
-    # Action classification
     module = db.Column(db.String(50), nullable=False, index=True)
     action = db.Column(db.String(100), nullable=False, index=True)
     description = db.Column(db.Text, nullable=True)
-    
-    # Target tracking
     target_type = db.Column(db.String(50), nullable=True, index=True)
     target_id = db.Column(db.Integer, nullable=True, index=True)
-    
-    # Forensic snapshots (JSON - stored as dict)
     before_state = db.Column(db.JSON, nullable=True)
     after_state = db.Column(db.JSON, nullable=True)
-    
-    # Security context
-    ip_address = db.Column(db.String(45), nullable=True)  # IPv6 compatible
+    ip_address = db.Column(db.String(45), nullable=True)
     user_agent = db.Column(db.Text, nullable=True)
     device_info = db.Column(db.String(200), nullable=True)
-    
-    # Status tracking
-    status = db.Column(db.String(20), default='success', index=True)  # success, failed, blocked
+    status = db.Column(db.String(20), default='success', index=True)
     error_message = db.Column(db.Text, nullable=True)
-    
-    # Timestamps
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     
-    # Indexes for performance
     __table_args__ = (
         Index('idx_modlog_mod_time', 'moderator_id', 'created_at'),
         Index('idx_modlog_module_time', 'module', 'created_at'),
@@ -1852,7 +1834,6 @@ class ModeratorActivityLog(db.Model):
     )
     
     def to_dict(self):
-        """Safe serialization"""
         return {
             'id': self.id,
             'moderator_id': self.moderator_id,
@@ -1871,20 +1852,4 @@ class ModeratorActivityLog(db.Model):
         }
     
     def __repr__(self):
-        return f'<ModeratorActivityLog {self.action} by {self.moderator_id}>'        
-=======
-        return settings
-
-# ========================================================================
-# SINGLE SOURCE OF TRUTH: statuses eligible for MT5 sync + rule processing
-# Add new statuses HERE ONLY. Both mt5_receiver.py and rule_engine.py import this.
-# ========================================================================
-SYNC_ELIGIBLE_STATUSES = [
-    'active',
-    'funded',
-    'under_review',
-    'phase1_active',
-    'phase2_active',
-    'funded_active',
-]
->>>>>>> ae676909ea8d9c067b04c5b2b931b85794de9f36
+        return f'<ModeratorActivityLog {self.action} by {self.moderator_id}>'
