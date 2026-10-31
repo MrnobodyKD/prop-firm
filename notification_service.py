@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
-from models import db, Notification, UserNotification
+from models import db, Notification, UserNotification, User
 
 
 VALID_NOTIFICATION_TYPES = {
@@ -51,19 +51,14 @@ def create_notification(
                 db.session.add(UserNotification(notification_id=existing.id, user_id=user_id))
         return existing
 
-    # FIX: Validate admin_id - if it's a moderator ID, find the super admin
+    # Validate admin_id - if it's a moderator ID or invalid, fall back to the first super admin
     safe_admin_id = None
     if admin_id:
-        from models import User
-        admin_user = User.query.get(admin_id)
+        admin_user = db.session.get(User, admin_id)
         if admin_user and admin_user.is_admin:
             safe_admin_id = admin_id
-        else:
-            # It's a moderator ID or invalid - fall back to first super admin
-            super_admin = User.query.filter_by(is_admin=True).first()
-            safe_admin_id = super_admin.id if super_admin else None
-    else:
-        # No admin_id provided - use first super admin
+
+    if safe_admin_id is None:
         super_admin = User.query.filter_by(is_admin=True).first()
         safe_admin_id = super_admin.id if super_admin else None
 

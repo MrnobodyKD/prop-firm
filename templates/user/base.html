@@ -726,27 +726,7 @@
         {% endif %}
         {% endwith %}
 
-        <!-- REGION DISABLED ALERT - Added this line -->
-        <div class="p-4 lg:p-6 pb-0">
-            <div class="region-disabled-alert">
-                <div class="alert-icon-wrapper">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="alert-content">
-                    <div class="alert-title">
-                        <i class="fas fa-globe-asia mr-2"></i>Region Restricted
-                    </div>
-                    <div class="alert-message">
-                        Challenge purchase is disabled in your region for now. We're working on expanding availability. Please check back later or contact support for assistance.
-                    </div>
-                </div>
-                <div class="flex-shrink-0">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                        <i class="fas fa-clock mr-1"></i>Coming Soon
-                    </span>
-                </div>
-            </div>
-        </div>
+        
 
         <main class="p-4 lg:p-6">
             {% block content %}{% endblock %}
