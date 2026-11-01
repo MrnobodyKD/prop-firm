@@ -489,20 +489,7 @@ def provision_challenge(payment, user, challenge_template_id):
     if acceptance:
         acceptance.challenge_purchase_id = purchase.id
     
-    from models import PartnerEarnings
-    partner = User.query.filter_by(role='partner', is_banned=False).first()
-    if partner:
-        earning = PartnerEarnings(
-            partner_id=partner.id,
-            challenge_id=challenge.id,
-            user_id=user.id,
-            purchase_amount=float(challenge.price),
-            partner_share=round(float(challenge.price) * 0.20, 2),
-            purchased_at=datetime.now(timezone.utc)
-        )
-        db.session.add(earning)
-        if DEV_MODE:
-            print(f"[OK] Added 20% partner revenue share for {partner.email}")
+
     
     if DEV_MODE:
         print(f"[OK] Challenge purchase created: {purchase.id}")
@@ -733,36 +720,7 @@ with app.app_context():
             if DEV_MODE:
                 print(f"[OK] Default admin created: {admin_email}")
 
-        partner_email = os.getenv("PARTNER_EMAIL")
-        partner_password = os.getenv("PARTNER_PASSWORD")
-        if partner_email and partner_password:
-            if not User.query.filter_by(email=partner_email).first():
-                partner = User(
-                    first_name="Tragene",
-                    last_name="Partner",
-                    email=partner_email,
-                    phone="1111111111",
-                    dob=date(1990, 1, 1),
-                    country="India",
-                    state="Maharashtra",
-                    role="partner",
-                    is_banned=False,
-                    phone_verified=True,
-                    email_verified=True,
-                    kyc_status='approved'
-                )
-                partner.set_password(partner_password)
-                db.session.add(partner)
-                db.session.commit()
-                if DEV_MODE:
-                    print(f"[OK] Default partner created: {partner_email}")
-            else:
-                existing_partner = User.query.filter_by(email=partner_email).first()
-                if existing_partner and existing_partner.role != 'partner':
-                    existing_partner.role = 'partner'
-                    db.session.commit()
-                    if DEV_MODE:
-                        print(f"[OK] Updated partner role for: {partner_email}")
+
 
         if not ChallengeTemplate.query.first():
             default_challenges = [
@@ -793,39 +751,7 @@ with app.app_context():
         if DEV_MODE:
             print(f"[INFO] DB not ready for seeding: {e}")
 
-    try:
-        from models import PartnerEarnings
-        partner = User.query.filter_by(role='partner', is_banned=False).first()
-        if partner:
-            existing_purchase_ids = db.session.query(PartnerEarnings.user_id, PartnerEarnings.challenge_id).filter_by(partner_id=partner.id).all()
-            existing_set = set((r[0], r[1]) for r in existing_purchase_ids)
-            
-            all_purchases = ChallengePurchase.query.all()
-            backfilled = 0
-            for purchase in all_purchases:
-                key = (purchase.user_id, purchase.challenge_template_id)
-                if key not in existing_set:
-                    challenge = ChallengeTemplate.query.get(purchase.challenge_template_id)
-                    if challenge:
-                        earning = PartnerEarnings(
-                            partner_id=partner.id,
-                            challenge_id=challenge.id,
-                            user_id=purchase.user_id,
-                            purchase_amount=float(challenge.price),
-                            partner_share=round(float(challenge.price) * 0.20, 2),
-                            purchased_at=purchase.purchased_at or datetime.now(timezone.utc)
-                        )
-                        db.session.add(earning)
-                        backfilled += 1
-            if backfilled > 0:
-                db.session.commit()
-                if DEV_MODE:
-                    print(f"[OK] Backfilled {backfilled} partner earnings for past purchases")
-            elif DEV_MODE:
-                print("[OK] Partner earnings up to date - no backfill needed")
-    except Exception as e:
-        if DEV_MODE:
-            print(f"[INFO] Partner earnings backfill skipped: {e}")
+
 
     blueprints_to_load = [
         ('auth', 'auth_bp'),
@@ -834,7 +760,6 @@ with app.app_context():
         ('blog', 'blog_bp'),
         ('admin_blog', 'admin_blog_bp'),
         ('mt5_receiver', 'receiver_bp'),
-        ('partner_routes', 'partner_bp')
     ]
     
     for module_name, bp_name in blueprints_to_load:
@@ -1662,7 +1587,7 @@ def require_n8n_api_key(f):
 
 def get_palantir_summary_data():
     from sqlalchemy import func, extract
-    from models import SupportTicket, PartnerEarnings
+    from models import SupportTicket
     
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)

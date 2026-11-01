@@ -349,8 +349,6 @@ def login():
             # Redirect based on role
             if user.is_admin:
                 return redirect(url_for('admin.admin_dashboard'))
-            elif getattr(user, 'role', 'user') == 'partner':
-                return redirect(url_for('partner.dashboard'))
             else:
                 return redirect(url_for('user.dashboard'))
         elif user and user.is_banned:

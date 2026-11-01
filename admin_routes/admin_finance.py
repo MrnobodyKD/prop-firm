@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, extract, and_, or_
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, PartnerEarnings, RuleLog
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, RuleLog
 from . import admin_bp, admin_required
 from notification_service import create_notification, notify_all_users
 import secrets
@@ -623,92 +623,3 @@ def admin_coupon_analytics():
     timeline_labels = [str(t.date) for t in timeline_usages]
     timeline_values = [int(t.count) for t in timeline_usages]
     return render_template('admin/coupon_analytics.html', total_coupons=total_coupons, active_coupons=active_coupons, expired_coupons=expired_coupons, total_usages=total_usages, total_discount_given=total_discount_given, total_revenue_generated=total_revenue_generated, top_coupons=top_coupons, timeline_labels=timeline_labels, timeline_values=timeline_values)
-
-
-@admin_bp.route('/affiliate-rewards')
-@admin_required
-def admin_affiliate_rewards():
-    from models import AffiliateSettings, Wallet, ReferralReward, WithdrawalRequest, AffiliateViolation
-    settings = AffiliateSettings.get_settings()
-    affiliate_users = User.query.filter_by(role='partner', is_banned=False).count()
-    referral_sales = ReferralReward.query.filter_by(status='approved').count()
-    discounts = db.session.query(func.sum(ReferralReward.discount_given)).filter_by(status='approved').scalar() or 0.0
-    wallet_rewards = db.session.query(func.sum(Wallet.current_balance)).scalar() or 0.0
-    pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
-    stats = {'affiliate_users': affiliate_users, 'referral_sales': referral_sales, 'discounts': discounts, 'wallet_rewards': wallet_rewards, 'pending_withdrawals': pending_withdrawals}
-    affiliate_users_list = User.query.filter_by(role='partner').all()
-    referrals = ReferralReward.query.order_by(ReferralReward.created_at.desc()).limit(20).all()
-    withdrawals = WithdrawalRequest.query.filter(WithdrawalRequest.status.in_(['pending', 'approved'])).order_by(WithdrawalRequest.requested_at.desc()).limit(20).all()
-    violations = AffiliateViolation.query.filter_by(is_resolved=False).order_by(AffiliateViolation.created_at.desc()).limit(20).all()
-    return render_template('admin/affiliate_rewards.html', stats=stats, settings=settings, affiliate_users=affiliate_users_list, referrals=referrals, withdrawals=withdrawals, violations=violations)
-
-
-@admin_bp.route('/affiliate-rewards/settings', methods=['POST'])
-@admin_required
-def update_affiliate_settings():
-    from models import AffiliateSettings
-    settings = AffiliateSettings.get_settings()
-    settings.buyer_discount_amount = float(request.form.get('buyer_discount_amount', 0))
-    settings.referrer_reward_amount = float(request.form.get('referrer_reward_amount', 0))
-    settings.minimum_withdrawal_amount = float(request.form.get('minimum_withdrawal_amount', 150))
-    settings.affiliate_enabled = 'affiliate_enabled' in request.form
-    settings.cash_withdrawal_enabled = 'cash_withdrawal_enabled' in request.form
-    settings.coupon_conversion_enabled = 'coupon_conversion_enabled' in request.form
-    settings.updated_by_admin_id = session.get('user_id')
-    db.session.commit()
-    flash('Affiliate settings updated successfully.', 'success')
-    return redirect(url_for('admin.admin_affiliate_rewards'))
-
-
-@admin_bp.route('/affiliate-rewards/moderate/<int:user_id>/<action>', methods=['POST'])
-@admin_required
-def moderate_affiliate(user_id, action):
-    user = User.query.get_or_404(user_id)
-    if action == 'enable': user.affiliate_enabled = True; user.affiliate_banned = False; flash(f'Affiliate {user.email} enabled.', 'success')
-    elif action == 'disable': reason = request.form.get('reason', ''); user.affiliate_enabled = False; user.affiliate_disabled_reason = reason; flash(f'Affiliate {user.email} disabled.', 'success')
-    elif action == 'ban': user.affiliate_banned = True; user.affiliate_enabled = False; flash(f'Affiliate {user.email} banned.', 'success')
-    elif action == 'unban': user.affiliate_banned = False; user.affiliate_enabled = True; flash(f'Affiliate {user.email} unbanned.', 'success')
-    elif action == 'reset-code': import string; user.affiliate_code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8)); user.affiliate_code_reset_at = datetime.now(timezone.utc); flash(f'Affiliate code reset for {user.email}.', 'success')
-    db.session.commit()
-    return redirect(url_for('admin.admin_affiliate_rewards'))
-
-
-@admin_bp.route('/affiliate-rewards/adjust-wallet/<int:user_id>', methods=['POST'])
-@admin_required
-def adjust_wallet(user_id):
-    from models import Wallet, WalletTransaction
-    user = User.query.get_or_404(user_id)
-    wallet = Wallet.get_or_create(user_id)
-    action = request.form.get('action')
-    amount = float(request.form.get('amount', 0))
-    if amount <= 0: flash('Amount must be positive.', 'error'); return redirect(url_for('admin.admin_affiliate_rewards'))
-    if action == 'add': wallet.current_balance += amount; wallet.lifetime_earned += amount; txn_type = 'credit'; notes = f'Admin adjustment: +{amount}'
-    elif action == 'remove': wallet.current_balance = max(0, wallet.current_balance - amount); txn_type = 'debit'; notes = f'Admin adjustment: -{amount}'
-    else: flash('Invalid action.', 'error'); return redirect(url_for('admin.admin_affiliate_rewards'))
-    txn = WalletTransaction(wallet_id=wallet.id, user_id=user_id, amount=amount, transaction_type=txn_type, source='admin_adjustment', status='completed', notes=notes, admin_id=session.get('user_id'))
-    db.session.add(txn); db.session.commit()
-    flash(f'Wallet adjusted for {user.email}.', 'success')
-    return redirect(url_for('admin.admin_affiliate_rewards'))
-
-
-@admin_bp.route('/affiliate-rewards/withdrawal/<int:withdrawal_id>/<action>', methods=['POST'])
-@admin_required
-def update_wallet_withdrawal(withdrawal_id, action):
-    from models import WithdrawalRequest, Wallet, WalletTransaction
-    withdrawal = WithdrawalRequest.query.get_or_404(withdrawal_id); admin_id = session.get('user_id')
-    if action == 'approve':
-        if withdrawal.status != 'pending': flash('Only pending withdrawals can be approved.', 'error'); return redirect(url_for('admin.admin_affiliate_rewards'))
-        withdrawal.status = 'approved'; withdrawal.reviewed_at = datetime.now(timezone.utc); withdrawal.reviewed_by_admin_id = admin_id; flash('Withdrawal approved.', 'success')
-    elif action == 'reject':
-        if withdrawal.status not in ['pending', 'approved']: flash('Cannot reject this withdrawal.', 'error'); return redirect(url_for('admin.admin_affiliate_rewards'))
-        wallet = Wallet.get_or_create(withdrawal.user_id); wallet.current_balance += withdrawal.amount; wallet.pending_balance = max(0, wallet.pending_balance - withdrawal.amount)
-        txn = WalletTransaction(wallet_id=wallet.id, user_id=withdrawal.user_id, amount=withdrawal.amount, transaction_type='credit', source='withdrawal_rejected', status='completed', notes=f'Withdrawal #{withdrawal.id} rejected', admin_id=admin_id)
-        db.session.add(txn); withdrawal.status = 'rejected'; withdrawal.reviewed_at = datetime.now(timezone.utc); withdrawal.reviewed_by_admin_id = admin_id; flash('Withdrawal rejected. Amount returned to wallet.', 'success')
-    elif action == 'paid':
-        if withdrawal.status != 'approved': flash('Only approved withdrawals can be marked as paid.', 'error'); return redirect(url_for('admin.admin_affiliate_rewards'))
-        transaction_id = request.form.get('transaction_id', '').strip()
-        if not transaction_id: flash('Transaction ID is required.', 'error'); return redirect(url_for('admin.admin_affiliate_rewards'))
-        withdrawal.status = 'paid'; withdrawal.transaction_id = transaction_id; withdrawal.paid_at = datetime.now(timezone.utc)
-        wallet = Wallet.get_or_create(withdrawal.user_id); wallet.lifetime_withdrawn += withdrawal.amount; wallet.pending_balance = max(0, wallet.pending_balance - withdrawal.amount); flash('Withdrawal marked as paid.', 'success')
-    db.session.commit()
-    return redirect(url_for('admin.admin_affiliate_rewards'))

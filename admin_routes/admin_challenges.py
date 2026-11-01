@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, extract, or_
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, PartnerEarnings, SiteSettings, LeadStatus, LeadNote, FollowUp
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, SiteSettings
 from . import admin_bp, admin_required
 from notification_service import notify_all_users
 import secrets
@@ -974,10 +974,6 @@ def api_palantir():
     top_coupons = db.session.query(Coupon.code, func.count(CouponUsage.id).label('uses'), func.coalesce(func.sum(CouponUsage.final_price), 0).label('revenue')).join(CouponUsage, CouponUsage.coupon_id == Coupon.id).filter(Coupon.is_deleted == False).group_by(Coupon.id).order_by(func.count(CouponUsage.id).desc()).limit(10).all()
     coupons_list = [{'code': c.code, 'uses': c.uses, 'revenue': float(c.revenue)} for c in top_coupons]
     
-    total_partners = User.query.filter_by(role='partner', is_banned=False).count()
-    partner_rankings = db.session.query(User.first_name, User.last_name, func.count(PartnerEarnings.id).label('referrals'), func.coalesce(func.sum(PartnerEarnings.purchase_amount), 0).label('revenue'), func.coalesce(func.sum(PartnerEarnings.partner_share), 0).label('commission')).join(PartnerEarnings, PartnerEarnings.partner_id == User.id).filter(User.role == 'partner').group_by(User.id).order_by(func.count(PartnerEarnings.id).desc()).limit(5).all()
-    partners_list = [{'name': f"{p.first_name} {p.last_name}", 'referrals': p.referrals, 'revenue': float(p.revenue), 'commission': float(p.commission)} for p in partner_rankings]
-    
     near_daily_loss = ChallengePurchase.query.filter(ChallengePurchase.status.in_(['active', 'funded']), ChallengePurchase.is_terminated == False, ChallengePurchase.daily_drawdown >= 4.0).count()
     near_overall_loss = ChallengePurchase.query.filter(ChallengePurchase.status.in_(['active', 'funded']), ChallengePurchase.is_terminated == False, ChallengePurchase.overall_drawdown >= 8.0).count()
     require_review = ChallengePurchase.query.filter_by(review_required=True).count()
@@ -995,7 +991,6 @@ def api_palantir():
         'support': {'open': open_tickets, 'urgent': urgent_tickets, 'closed_today': closed_today, 'latest': tickets_list},
         'payments': {'successful': successful_payments, 'pending': pending_payments_count, 'failed': failed_payments_count, 'success_rate': success_rate, 'latest': payments_list},
         'coupons': {'active': active_coupons_count, 'expired': expired_coupons_count, 'top_10': coupons_list},
-        'partners': {'total': total_partners, 'rankings': partners_list},
         'risk': {'near_daily_loss': near_daily_loss, 'near_overall_loss': near_overall_loss, 'require_review': require_review, 'breached_today': breached_today, 'funded_accounts': funded_accounts}
     })
 

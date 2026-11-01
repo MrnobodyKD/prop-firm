@@ -168,15 +168,6 @@
         <div class="text-xs text-gray-400 mt-1" id="couponUses">--</div>
     </div>
     
-    <div class="glass-card p-4" data-aos="fade-up" data-aos-delay="600">
-        <div class="flex items-center justify-between mb-2">
-            <i class="fas fa-handshake text-indigo-500 text-xl"></i>
-        </div>
-        <div class="text-3xl font-bold text-gray-800 dark:text-white count-up" id="totalPartners">--</div>
-        <div class="text-xs text-gray-500 dark:text-gray-400">Total Partners</div>
-        <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-1" id="partnerRevenue">--</div>
-    </div>
-    
     <div class="glass-card p-4" data-aos="fade-up" data-aos-delay="700">
         <div class="flex items-center justify-between mb-2">
             <i class="fas fa-exclamation-circle text-pink-500 text-xl"></i>
@@ -329,8 +320,8 @@
     </div>
 </div>
 
-<!-- Coupons + Partners Row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<!-- Coupons Row -->
+<div class="mb-6">
     <!-- Coupons -->
     <div class="glass-card p-4">
         <div class="flex items-center justify-between mb-3">
@@ -358,29 +349,6 @@
                 </thead>
                 <tbody id="couponsTable">
                     <tr><td colspan="3" class="text-center py-4 text-gray-400">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <!-- Partners -->
-    <div class="glass-card p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-800 dark:text-white">🤝 Partner Rankings</h3>
-            <a href="/admin/partners" class="text-xs text-blue-500 hover:text-blue-600">View All →</a>
-        </div>
-        <div class="overflow-x-auto max-h-64 overflow-y-auto">
-            <table class="w-full text-xs">
-                <thead>
-                    <tr class="border-b border-gray-200 dark:border-dark-border">
-                        <th class="text-left py-1">Partner</th>
-                        <th class="text-right py-1">Referrals</th>
-                        <th class="text-right py-1">Revenue</th>
-                        <th class="text-right py-1">Commission</th>
-                    </tr>
-                </thead>
-                <tbody id="partnersTable">
-                    <tr><td colspan="4" class="text-center py-4 text-gray-400">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -498,7 +466,6 @@ async function fetchDashboardData() {
         updateSupportPanel(data);
         updatePaymentsPanel(data);
         updateCouponsPanel(data);
-        updatePartnersPanel(data);
         updateRiskPanel(data);
         
         document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
@@ -555,7 +522,6 @@ function updateStatsGrid(data) {
     const kyc = data.kyc || {};
     const support = data.support || {};
     const coupons = data.coupons || {};
-    const partners = data.partners || {};
     const payments = data.payments || {};
     
     document.getElementById('totalUsers').textContent = (users.total || 0).toLocaleString();
@@ -571,8 +537,6 @@ function updateStatsGrid(data) {
     document.getElementById('urgentTickets').textContent = support.urgent ? `${support.urgent} urgent` : '';
     document.getElementById('activeCoupons').textContent = (coupons.active || 0).toLocaleString();
     document.getElementById('couponUses').textContent = coupons.expired ? `${coupons.expired} expired` : '';
-    document.getElementById('totalPartners').textContent = (partners.total || 0).toLocaleString();
-    document.getElementById('partnerRevenue').textContent = partners.rankings?.length ? 'Top partners active' : '';
     document.getElementById('failedPayments').textContent = (payments.failed || 0).toLocaleString();
     document.getElementById('successRate').textContent = payments.success_rate ? `${payments.success_rate}% success` : '';
 }
@@ -735,29 +699,6 @@ function updateCouponsPanel(data) {
             <td class="py-1 font-mono text-xs font-semibold">${c.code || '--'}</td>
             <td class="py-1 text-right">${c.uses || 0}</td>
             <td class="py-1 text-right">${formatCurrency(c.revenue)}</td>
-        </tr>
-    `).join('');
-}
-
-// Update partners panel
-function updatePartnersPanel(data) {
-    const partners = data.partners || {};
-    const rankings = partners.rankings || [];
-    const tbody = document.getElementById('partnersTable');
-    
-    if (rankings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">No partners</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = rankings.map((p, i) => `
-        <tr class="border-b border-gray-100 dark:border-dark-border">
-            <td class="py-1 text-gray-800 dark:text-white">
-                ${i === 0 ? '⭐ ' : ''}${p.name || '--'}
-            </td>
-            <td class="py-1 text-right">${p.referrals || 0}</td>
-            <td class="py-1 text-right">${formatCurrency(p.revenue)}</td>
-            <td class="py-1 text-right">${formatCurrency(p.commission)}</td>
         </tr>
     `).join('');
 }

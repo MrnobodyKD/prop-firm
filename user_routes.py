@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payment, Payout, PayoutAuditLog, SupportTicket, TicketMessage, FAQ, TradeHistory, Notification, UserNotification, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, AffiliateSettings, Wallet, WalletTransaction, ReferralReward, WithdrawalRequest, SurveyAssignment, SurveyResponse, AffiliateViolation, ViolationEvidence, SiteSettings
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payment, Payout, PayoutAuditLog, SupportTicket, TicketMessage, FAQ, TradeHistory, Notification, UserNotification, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, Wallet, WalletTransaction, WithdrawalRequest, SurveyAssignment, SurveyResponse, ViolationEvidence, SiteSettings
 from datetime import datetime, timezone, timedelta
 import os
 import secrets
@@ -1488,81 +1488,6 @@ def user_coupons():
     return render_template('user/user_coupon.html', user=user, coupons=available_coupons)
 
 
-@user_bp.route('/earn')
-@login_required
-def earn():
-    user = User.query.get(session['user_id'])
-    settings = AffiliateSettings.get_settings()
-    wallet = Wallet.get_or_create(user.id)
-    referrals = ReferralReward.query.filter_by(referrer_id=user.id).order_by(ReferralReward.created_at.desc()).limit(10).all()
-    withdrawals = WithdrawalRequest.query.filter_by(user_id=user.id).order_by(WithdrawalRequest.requested_at.desc()).limit(10).all()
-    assignments = SurveyAssignment.query.filter_by(user_id=user.id).order_by(SurveyAssignment.assigned_at.desc()).limit(10).all()
-    db.session.commit()
-    return render_template('user/earn.html', user=user, settings=settings, wallet=wallet, referrals=referrals, withdrawals=withdrawals, assignments=assignments)
-
-
-@user_bp.route('/earn/withdraw', methods=['POST'])
-@login_required
-def request_wallet_withdrawal():
-    user = User.query.get(session['user_id'])
-    settings = AffiliateSettings.get_settings()
-    wallet = Wallet.get_or_create(user.id)
-    if not settings.cash_withdrawal_enabled:
-        flash('Cash withdrawals are currently disabled.', 'error')
-        return redirect(url_for('user.earn'))
-    if wallet.is_frozen:
-        flash(wallet.frozen_reason or 'Your wallet is currently frozen.', 'error')
-        return redirect(url_for('user.earn'))
-    amount = float(request.form.get('amount', 0) or 0)
-    upi_id = request.form.get('upi_id', '').strip()
-    if amount < float(settings.minimum_withdrawal_amount or 0):
-        flash(f'Minimum withdrawal amount is Rs. {settings.minimum_withdrawal_amount:.2f}.', 'error')
-        return redirect(url_for('user.earn'))
-    if amount > wallet.withdrawable_amount:
-        flash('Insufficient withdrawable balance.', 'error')
-        return redirect(url_for('user.earn'))
-    if not upi_id or '@' not in upi_id:
-        flash('Please enter a valid UPI ID.', 'error')
-        return redirect(url_for('user.earn'))
-    withdrawal = WithdrawalRequest(user_id=user.id, wallet_id=wallet.id, amount=amount, upi_id=upi_id)
-    wallet.pending_balance = round(float(wallet.pending_balance or 0) + amount, 2)
-    db.session.add(withdrawal)
-    create_notification(user.id, 'Withdrawal Request Submitted', 'Your wallet withdrawal request is pending admin review.', 'payout', action_url='/user/earn', icon='wallet')
-    db.session.commit()
-    flash('Withdrawal request submitted successfully.', 'success')
-    return redirect(url_for('user.earn'))
-
-
-@user_bp.route('/earn/convert-coupon', methods=['POST'])
-@login_required
-def convert_wallet_to_coupon():
-    user = User.query.get(session['user_id'])
-    settings = AffiliateSettings.get_settings()
-    wallet = Wallet.get_or_create(user.id)
-    if not settings.coupon_conversion_enabled:
-        flash('Coupon conversion is currently disabled.', 'error')
-        return redirect(url_for('user.earn'))
-    if wallet.is_frozen:
-        flash(wallet.frozen_reason or 'Your wallet is currently frozen.', 'error')
-        return redirect(url_for('user.earn'))
-    amount = round(float(request.form.get('amount', 0) or 0), 2)
-    if amount <= 0 or amount > wallet.withdrawable_amount:
-        flash('Invalid coupon conversion amount.', 'error')
-        return redirect(url_for('user.earn'))
-    code = f"WALLET{user.id}{secrets.token_hex(3).upper()}"
-    coupon = Coupon(code=code, description='Wallet balance conversion', coupon_type='specific', discount_type='fixed', discount_value=amount, max_uses=1)
-    db.session.add(coupon)
-    db.session.flush()
-    db.session.add(CouponAssignment(coupon_id=coupon.id, user_id=user.id))
-    wallet.current_balance = round(float(wallet.current_balance or 0) - amount, 2)
-    tx = WalletTransaction(wallet_id=wallet.id, user_id=user.id, amount=-amount, transaction_type='debit', source='coupon_conversion', reference_type='coupon', reference_id=coupon.id, notes=f'Converted to coupon {code}')
-    db.session.add(tx)
-    create_notification(user.id, 'Wallet Coupon Created', f'Your wallet coupon {code} is ready to use.', 'coupon', action_url='/user/my-coupons', icon='gift')
-    db.session.commit()
-    flash(f'Coupon {code} created successfully.', 'success')
-    return redirect(url_for('user.earn'))
-
-
 @user_bp.route('/earn/survey/<int:assignment_id>', methods=['GET', 'POST'])
 @login_required
 def survey_assignment(assignment_id):
@@ -1576,7 +1501,7 @@ def survey_assignment(assignment_id):
             assignment.responded_at = datetime.now(timezone.utc)
             db.session.commit()
             flash('Survey response saved.', 'success')
-            return redirect(url_for('user.earn'))
+            return redirect(url_for('user.dashboard'))
         for question in survey.questions:
             answer = request.form.get(f'question_{question.id}', '').strip()
             db.session.add(SurveyResponse(assignment_id=assignment.id, question_id=question.id, response_text=answer))
@@ -1588,7 +1513,7 @@ def survey_assignment(assignment_id):
             assignment.rewarded_at = datetime.now(timezone.utc)
         db.session.commit()
         flash('Survey submitted and reward added to your wallet.', 'success')
-        return redirect(url_for('user.earn'))
+        return redirect(url_for('user.dashboard'))
     return render_template('user/survey_detail.html', user=user, assignment=assignment, survey=survey)
 
 
@@ -1612,21 +1537,7 @@ def validate_coupon_api():
             
         coupon = Coupon.query.filter_by(code=coupon_code.upper().strip(), is_deleted=False).first()
         if not coupon:
-            settings = AffiliateSettings.get_settings()
-            referrer = User.query.filter_by(affiliate_code=coupon_code.upper().strip()).first()
-            if not settings.affiliate_enabled or not referrer or referrer.id == user_id or referrer.is_banned or referrer.affiliate_banned or not referrer.affiliate_enabled:
-                return jsonify({'success': False, 'error': 'Invalid coupon or affiliate code'})
-            discount_amount = min(float(settings.buyer_discount_amount or 0), max(0.0, float(challenge.price) - 1.0))
-            final_price = max(1.0, float(challenge.price) - discount_amount)
-            return jsonify({
-                'success': True,
-                'message': 'Affiliate code applied successfully',
-                'discount_amount': discount_amount,
-                'final_price': final_price,
-                'coupon_type': 'affiliate',
-                'discount_type': 'fixed',
-                'discount_value': discount_amount
-            })
+            return jsonify({'success': False, 'error': 'Invalid coupon code'})
             
         is_valid, msg, discount_amount, final_price = coupon.validate_for_user_and_price(user_id, float(challenge.price))
         

@@ -237,15 +237,6 @@
             <a href="/admin/users" class="flex items-center space-x-3 p-3 {% if 'admin.users' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
                 <i class="fas fa-users w-5"></i><span>Users</span>
             </a>
-            <a href="/admin/leads" class="flex items-center space-x-3 p-3 {% if 'admin.leads' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
-                <i class="fas fa-users-cog w-5"></i><span>Lead CRM</span>
-            </a>
-            <a href="/admin/partners" class="flex items-center space-x-3 p-3 {% if 'admin.partners' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
-                <i class="fas fa-handshake w-5"></i><span>Partners</span>
-            </a>
-            <a href="/admin/affiliate-rewards" class="flex items-center space-x-3 p-3 {% if request.endpoint in ['admin.affiliate_rewards', 'admin.admin_surveys'] %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
-                <i class="fas fa-coins w-5"></i><span>Affiliate & Rewards</span>
-            </a>
 
             <div class="px-3 py-2 mt-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Operations</div>
             <a href="/admin/kyc" class="flex items-center space-x-3 p-3 {% if 'admin.kyc' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
@@ -326,11 +317,6 @@
             </a>
             {% endif %}
             
-            {% if moderator.has_permission('can_access_lead_crm') %}
-            <a href="/admin/leads" class="flex items-center space-x-3 p-3 {% if 'admin.leads' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
-                <i class="fas fa-users-cog w-5"></i><span>Lead CRM</span>
-            </a>
-            {% endif %}
             
             {% if moderator.has_permission('can_access_kyc') %}
             <a href="/admin/kyc" class="flex items-center space-x-3 p-3 {% if 'admin.kyc' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %} rounded-xl transition">
@@ -427,9 +413,6 @@
             <a href="/admin" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-tachometer-alt w-5"></i><span>Dashboard</span></a>
             <a href="/admin/analytics" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-chart-pie w-5"></i><span>Analytics</span></a>
             <a href="/admin/users" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-users w-5"></i><span>Users</span></a>
-            <a href="/admin/leads" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-users-cog w-5"></i><span>Lead CRM</span></a>
-            <a href="/admin/partners" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-handshake w-5"></i><span>Partners</span></a>
-            <a href="/admin/affiliate-rewards" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-coins w-5"></i><span>Affiliate & Rewards</span></a>
             <div class="px-3 py-2 mt-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Operations</div>
             <a href="/admin/kyc" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-id-card w-5"></i><span>KYC</span></a>
             <a href="/admin/notifications" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-bell w-5"></i><span>Notifications</span></a>
@@ -458,7 +441,6 @@
             <div class="px-3 py-2 mt-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Modules</div>
             {% if moderator.has_permission('can_access_analytics') %}<a href="/admin/analytics" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-chart-pie w-5"></i><span>Analytics</span></a>{% endif %}
             {% if moderator.has_permission('can_access_users') %}<a href="/admin/users" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-users w-5"></i><span>Users</span></a>{% endif %}
-            {% if moderator.has_permission('can_access_lead_crm') %}<a href="/admin/leads" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-users-cog w-5"></i><span>Lead CRM</span></a>{% endif %}
             {% if moderator.has_permission('can_access_kyc') %}<a href="/admin/kyc" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-id-card w-5"></i><span>KYC</span></a>{% endif %}
             {% if moderator.has_permission('can_access_notifications') %}<a href="/admin/notifications" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-bell w-5"></i><span>Notifications</span></a>{% endif %}
             {% if moderator.has_permission('can_access_challenges') %}<a href="/admin/challenges" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-trophy w-5"></i><span>Challenges</span></a>{% endif %}

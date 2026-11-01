@@ -586,8 +586,6 @@ def assign_survey(survey_id):
         ).distinct().all()
         active_ids = [u[0] for u in active_challenge_users]
         users = User.query.filter(User.id.in_(active_ids), User.is_admin == False).all()
-    elif target == 'affiliate_users':
-        users = User.query.filter_by(role='partner', is_banned=False).all()
     elif target == 'selected':
         if not selected_ids:
             flash('No users selected.', 'error')
