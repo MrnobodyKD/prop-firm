@@ -578,8 +578,6 @@ def assign_survey(survey_id):
     
     if target == 'all':
         users = User.query.filter_by(is_admin=False).all()
-    elif target == 'kyc_approved':
-        users = User.query.filter_by(kyc_status='approved', is_admin=False).all()
     elif target == 'active_traders':
         active_challenge_users = db.session.query(ChallengePurchase.user_id).filter(
             ChallengePurchase.status.in_(['active', 'funded'])

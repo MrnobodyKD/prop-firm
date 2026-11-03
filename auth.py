@@ -330,9 +330,8 @@ def login():
             create_notification(
                 user.id,
                 'Ready to Get Funded?',
-                'Your account is ready. Complete KYC verification and choose a challenge to start your funded trading journey.',
+                'Your account is ready. Explore challenges to start your funded trading journey.',
                 'welcome',
-                action_url='/kyc',
                 icon='rocket',
                 dedupe_key=f'first-login:{user.id}',
             )
@@ -427,7 +426,7 @@ def register():
             create_notification(
                 new_user.id,
                 'Welcome to Tragene Funded',
-                'Welcome to Tragene Funded! Your account has been created successfully. Complete your KYC verification and explore our funded challenges to begin your trading journey.',
+                'Welcome to Tragene Funded! Your account has been created successfully. Explore our funded challenges to begin your trading journey.',
                 'welcome',
                 action_url='/dashboard',
                 icon='party',
@@ -469,7 +468,7 @@ def send_verification_email():
 
     if user.email_verified:
         flash('Email already verified!', 'success')
-        return redirect(url_for('user.kyc'))
+        return redirect(url_for('user.dashboard'))
 
     verification_token = secrets.token_urlsafe(32)
     user.email_verification_token = verification_token
@@ -490,7 +489,7 @@ def send_verification_email():
     )
 
     flash('Verification email sent successfully!', 'success')
-    return redirect(url_for('user.kyc'))
+    return redirect(url_for('user.dashboard'))
 
 @auth_bp.route('/verify-email/<token>')
 def verify_email_token(token):

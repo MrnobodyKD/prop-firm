@@ -267,8 +267,6 @@ def validate_permissions(permissions_dict):
 @admin_required
 def admin_dashboard():
     total_users = User.query.count()
-    pending_kyc = User.query.filter_by(kyc_status='submitted').count()
-    approved_kyc = User.query.filter_by(kyc_status='approved').count()
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     
     open_tickets = SupportTicket.query.filter_by(status='open').count()
@@ -306,8 +304,6 @@ def admin_dashboard():
     
     return render_template('admin/admin_dashboard.html', 
                          total_users=total_users,
-                         pending_kyc=pending_kyc,
-                         approved_kyc=approved_kyc,
                          recent_users=recent_users,
                          total_revenue=total_revenue,
                          revenue_change=revenue_change,

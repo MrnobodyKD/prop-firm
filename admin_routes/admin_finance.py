@@ -489,6 +489,9 @@ def admin_coupons():
             coupon_type = request.form.get('coupon_type', 'universal')
             discount_type = request.form.get('discount_type', 'percent')
             discount_value = float(request.form.get('discount_value', 0))
+            currency = request.form.get('currency', 'USD').upper()
+            if currency not in ('USD', 'INR'):
+                raise ValueError('Unsupported coupon currency')
             max_uses = request.form.get('max_uses')
             max_uses = int(max_uses) if max_uses and max_uses.strip() else None
             expires_at_str = request.form.get('expires_at')
@@ -508,6 +511,7 @@ def admin_coupons():
                 coupon_type=coupon_type,
                 discount_type=discount_type,
                 discount_value=discount_value,
+                currency=currency,
                 max_uses=max_uses,
                 expires_at=expires_at,
                 created_by_admin_id=session['user_id']

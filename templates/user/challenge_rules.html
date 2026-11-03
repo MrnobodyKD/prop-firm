@@ -38,10 +38,12 @@
             <div class="text-sm text-gray-500 dark:text-gray-400">Leverage</div>
             <div class="text-lg font-bold text-gray-900 dark:text-white">{{ rules.leverage }}</div>
         </div>
+        {% if rules.min_days %}
         <div class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border dark:border-gray-700">
             <div class="text-sm text-gray-500 dark:text-gray-400">Minimum Days</div>
             <div class="text-lg font-bold text-gray-900 dark:text-white">{{ rules.min_days }}</div>
         </div>
+        {% endif %}
         <div class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border dark:border-gray-700">
             <div class="text-sm text-gray-500 dark:text-gray-400">Weekend Trading Allowed</div>
             <div class="text-lg font-bold text-gray-900 dark:text-white">{{ 'Yes' if template.weekend_trading else 'No' }}</div>
@@ -54,10 +56,63 @@
             <div class="text-sm text-gray-500 dark:text-gray-400">Payout Cycle</div>
             <div class="text-lg font-bold text-gray-900 dark:text-white">{{ template.payout_cycle|replace('_', ' ')|title }}</div>
         </div>
+        {% if rules.duration is not none %}
         <div class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border dark:border-gray-700">
             <div class="text-sm text-gray-500 dark:text-gray-400">Challenge Duration</div>
             <div class="text-lg font-bold text-gray-900 dark:text-white">{{ rules.duration }} days</div>
         </div>
+        {% else %}
+        <div class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border dark:border-gray-700">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Challenge Duration</div>
+            <div class="text-lg font-bold text-gray-900 dark:text-white">No time limit</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="glass-card p-6 border dark:border-dark-border mt-4">
+    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Additional Challenge Rules</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% if template.no_expiry %}
+        <div><span class="font-medium">Expiry:</span> No time limit</div>
+        {% endif %}
+        {% if template.consistency_enabled %}
+        <div><span class="font-medium">Consistency:</span> No single day above {{ template.max_single_day_profit_percent }}% of phase profit ({{ template.consistency_action|title }})</div>
+        {% endif %}
+        {% if template.activity_rule_enabled %}
+        <div><span class="font-medium">Inactivity:</span> No more than {{ template.max_inactive_days }} inactive days</div>
+        {% endif %}
+        {% if template.sl_mandatory_enabled %}
+        <div><span class="font-medium">Stop-loss:</span> Mandatory, with {{ template.sl_grace_period_minutes }} minute grace period</div>
+        {% endif %}
+        {% if template.max_lot_size_enabled %}
+        <div><span class="font-medium">Lot size cap:</span> {{ template.max_lot_size }}</div>
+        {% endif %}
+        <div><span class="font-medium">Max risk per trade guidance:</span> {{ template.max_risk_per_trade_percent }}%</div>
+        <div><span class="font-medium">News trading:</span> {{ 'Allowed' if rules.news_trading_allowed else 'Not allowed' }}</div>
+        <div><span class="font-medium">Overnight holding:</span> {{ 'Allowed' if rules.overnight_trading_allowed else 'Not allowed' }}</div>
+        <div><span class="font-medium">Expert advisors:</span> {{ 'Allowed' if rules.ea_allowed else 'Not allowed' }}</div>
+        {% if template.first_withdrawal_days is not none %}
+        <div><span class="font-medium">First withdrawal:</span> {{ template.first_withdrawal_days }} days after funding</div>
+        {% endif %}
+        {% if template.min_payout_percent is not none %}
+        <div><span class="font-medium">Minimum payout:</span> {{ template.min_payout_percent }}%</div>
+        {% endif %}
+        {% if template.max_accounts_per_user is not none %}
+        <div><span class="font-medium">Active/funded account limit:</span> {{ template.max_accounts_per_user }}</div>
+        {% endif %}
+        {% if template.performance_reward_mode and template.performance_reward_mode != 'off' %}
+        <div><span class="font-medium">Performance reward:</span> {{ template.performance_reward_percent }}% ({{ template.performance_reward_mode }})</div>
+        {% endif %}
+        {% if template.fee_refund_on_pass %}
+        <div><span class="font-medium">Fee refund on pass:</span> Yes</div>
+        {% endif %}
+        {% if template.refund_policy_text %}
+        <div class="md:col-span-2"><span class="font-medium">Refund policy:</span> {{ template.refund_policy_text }}</div>
+        {% endif %}
+        {% if template.banned_practices %}
+        <div class="md:col-span-2"><span class="font-medium">Banned practices:</span> {{ template.banned_practices|join(', ') }}</div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

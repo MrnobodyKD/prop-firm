@@ -15,6 +15,24 @@ ALL FEATURES:
 - ✅ FIXED: Violations detected even when already under review
 """
 
+# RULE INDEX
+# RULE-01 Daily drawdown | check_equity_violations | daily loss + drawdown type | hard breach | Kisiki ON
+# RULE-02 Overall drawdown | check_equity_violations | overall loss + drawdown type | hard breach | Kisiki ON
+# RULE-03 Profit target + min days gate | check_rules | phase targets + min days | pass gate | Kisiki ON
+# RULE-04 Phase progression | _handle_phase_progression | challenge type + current phase | progression | Kisiki ON
+# RULE-05 Expiry | check_rules | duration + no_expiry | hard breach | Kisiki OFF for no-expiry
+# RULE-06 Stop-loss mandatory | check_stoploss_mandatory | sl_mandatory_enabled + grace | hard breach | Kisiki OFF
+# RULE-07 Inactivity | check_trading_activity | activity_rule_enabled + max_inactive_days | flag or hard breach | Kisiki ON
+# RULE-08 Lot size | check_lot_size_compliance | max_lot_size_enabled + max_lot_size | flag or hard breach | Kisiki OFF
+# RULE-09 Max risk per trade | NOT WIRED | max_risk_per_trade_percent | guidance only | Kisiki OFF
+# RULE-10 Weekend | check_weekend_trading | weekend_trading | hard breach, stored open time as-is for weekday | Kisiki ON
+# RULE-11 Consistency | check_consistency | consistency_enabled + max_single_day_profit_percent + consistency_action | flag or hard breach | NEW
+# RULE-12 Anti-cheat flags | check_anti_cheat | account balance + credit + heartbeat | flag | Kisiki ON
+# RULE-13 Banned practices | trader display + admin review checklist | banned_practices | manual review | Kisiki ON
+# RULE-14 Payout gates | user_routes.payout_eligibility | first_withdrawal_days + min_payout_percent | gate | Kisiki ON
+
+
+
 from datetime import datetime, timezone, date, timedelta
 from collections import defaultdict
 from models import (
@@ -154,6 +172,8 @@ def notify_user(user_id, title, message):
 # MAIN ENTRY POINT
 # ========================================================================
 
+# RULE PIPELINE: Receiver snapshot remains saved before these rule checks.
+
 def process_sync(challenge, data):
     """
     Called from receiver.py after every heartbeat.
@@ -190,6 +210,12 @@ def process_sync(challenge, data):
         # ⚖️ 5.7: Check lot size compliance (NEW)
         check_lot_size_compliance(challenge, data, rules)
 
+        # 5.8: Check consistency
+        check_consistency(challenge, data, rules)
+
+        # 5.9: Check weekend policy (stored trade time, no timezone conversion)
+        check_weekend_trading(challenge, data, rules)
+
         # 6. Core challenge rules (profit target, expiry)
         check_rules(challenge, data, rules)
 
@@ -223,6 +249,7 @@ def process_sync(challenge, data):
 # 🛡️ MANDATORY STOP-LOSS RULE
 # ========================================================================
 
+# RULE-06: Stop-loss mandatory | Fields: sl_mandatory_enabled, sl_grace_period_minutes | Action: hard breach
 def check_stoploss_mandatory(challenge, data, rules):
     """
     MANDATORY STOP-LOSS RULE
@@ -334,6 +361,7 @@ def check_stoploss_mandatory(challenge, data, rules):
 # ⏱️ TRADING ACTIVITY RULE (NO 4+ DAY GAPS)
 # ========================================================================
 
+# RULE-07: Inactivity | Fields: activity_rule_enabled, max_inactive_days | Action: flag or hard breach
 def check_trading_activity(challenge, data, rules):
     """
     TRADING ACTIVITY RULE
@@ -411,6 +439,7 @@ def check_trading_activity(challenge, data, rules):
 # ⚖️ MAX LOT SIZE RULE (NEW)
 # ========================================================================
 
+# RULE-08: Lot size | Fields: max_lot_size_enabled, max_lot_size, lot_size_violation_action | Action: flag or hard breach
 def check_lot_size_compliance(challenge, data, rules):
     """
     MAX LOT SIZE RULE
@@ -493,6 +522,7 @@ def check_lot_size_compliance(challenge, data, rules):
 # EQUITY-BASED VIOLATION DETECTION
 # ========================================================================
 
+# RULE-01/02: Daily and overall drawdown | Fields: phase drawdown limits and models | Action: hard breach
 def check_equity_violations(challenge, data, rules):
     """
     Check configured drawdown violations and record immutable evidence.
@@ -779,7 +809,7 @@ def _ensure_starting_balance(challenge, data):
     if not challenge.lowest_equity_phase:
         challenge.lowest_equity_phase = balance
 
-    if not challenge.end_date and challenge.start_date:
+    if not challenge.end_date and challenge.start_date and not (challenge.challenge_template and challenge.challenge_template.no_expiry):
         duration = 30
         if challenge.challenge_template:
             if challenge.challenge_type == 'instant':
@@ -809,6 +839,12 @@ def get_active_rules(challenge):
             'activity_rule_enabled': False, 'max_inactive_days': 4,
             'max_lot_size_enabled': False, 'max_lot_size': 0.02,
             'lot_size_violation_action': 'flag',
+            'consistency_enabled': False, 'max_single_day_profit_percent': 40,
+            'consistency_action': 'flag', 'no_expiry': False,
+            'first_withdrawal_days': None, 'min_payout_percent': None,
+            'max_accounts_per_user': None, 'banned_practices': [],
+            'news_trading_allowed': True, 'overnight_trading_allowed': True,
+            'ea_allowed': True,
         }
 
     ctype = challenge.challenge_type
@@ -823,6 +859,17 @@ def get_active_rules(challenge):
         'max_lot_size_enabled': getattr(t, 'max_lot_size_enabled', False),
         'max_lot_size': getattr(t, 'max_lot_size', 0.02),
         'lot_size_violation_action': getattr(t, 'lot_size_violation_action', 'flag'),
+        'consistency_enabled': getattr(t, 'consistency_enabled', False),
+        'max_single_day_profit_percent': getattr(t, 'max_single_day_profit_percent', 40),
+        'consistency_action': getattr(t, 'consistency_action', 'flag'),
+        'no_expiry': getattr(t, 'no_expiry', False),
+        'first_withdrawal_days': getattr(t, 'first_withdrawal_days', None),
+        'min_payout_percent': getattr(t, 'min_payout_percent', None),
+        'max_accounts_per_user': getattr(t, 'max_accounts_per_user', None),
+        'banned_practices': getattr(t, 'banned_practices', None) or [],
+        'news_trading_allowed': getattr(t, 'news_trading_allowed', True),
+        'overnight_trading_allowed': getattr(t, 'overnight_trading_allowed', True),
+        'ea_allowed': getattr(t, 'ea_allowed', True),
     }
 
     if ctype == 'two_phase' and phase == 2:
@@ -835,7 +882,7 @@ def get_active_rules(challenge):
             'overall_loss': _safe_float(t.phase2_overall_loss),
             'overall_dd_type': getattr(t, 'phase2_overall_dd_type', 'equity') or 'equity',
             'min_days': _safe_int(t.phase2_min_days),
-            'duration': _safe_int(t.phase2_duration),
+            'duration': None if base['no_expiry'] else _safe_int(t.phase2_duration),
             'leverage': t.phase2_leverage,
             'weekend': getattr(t, 'weekend_trading', True),
         }
@@ -847,7 +894,7 @@ def get_active_rules(challenge):
             'daily_dd_type': getattr(t, 'instant_daily_dd_type', 'equity') or 'equity',
             'overall_loss': _safe_float(t.instant_overall_loss),
             'overall_dd_type': getattr(t, 'instant_overall_dd_type', 'equity') or 'equity',
-            'min_days': 0, 'duration': 365,
+            'min_days': 0, 'duration': None if base['no_expiry'] else 365,
             'leverage': t.instant_leverage,
             'weekend': getattr(t, 'weekend_trading', True),
         }
@@ -861,7 +908,7 @@ def get_active_rules(challenge):
             'overall_loss': _safe_float(t.phase1_overall_loss),
             'overall_dd_type': getattr(t, 'phase1_overall_dd_type', 'equity') or 'equity',
             'min_days': _safe_int(t.phase1_min_days),
-            'duration': _safe_int(t.phase1_duration),
+            'duration': None if base['no_expiry'] else _safe_int(t.phase1_duration),
             'leverage': t.phase1_leverage,
             'weekend': getattr(t, 'weekend_trading', True),
         }
@@ -1021,7 +1068,10 @@ def update_metrics(challenge, data):
             challenge.last_trade_date        = today
 
     now = datetime.now(timezone.utc)
-    if challenge.end_date:
+    if challenge.challenge_template and challenge.challenge_template.no_expiry:
+        challenge.end_date = None
+        challenge.days_remaining = None
+    elif challenge.end_date:
         end = ensure_utc(challenge.end_date)
         challenge.days_remaining = max(0, (end - now).days)
     elif challenge.start_date:
@@ -1074,10 +1124,94 @@ def _calc_distances(challenge, rules):
 
     challenge.distance_to_breach = min(gaps) if gaps else None
 
+# RULE-11: Consistency | Fields: consistency_enabled, max_single_day_profit_percent, consistency_action | Action: flag or hard breach
+def check_consistency(challenge, data, rules):
+    if not rules.get('consistency_enabled'):
+        return
+    if challenge.status in (ChallengeState.PASSED, ChallengeState.FAILED) or challenge.is_terminated:
+        return
+    phase_start = ensure_utc(challenge.phase_start_date)
+    trades = TradeHistory.query.filter_by(challenge_id=challenge.id, is_open=False).all()
+    daily_profit = defaultdict(float)
+    for trade in trades:
+        if not trade.close_time:
+            continue
+        close_time = ensure_utc(trade.close_time)
+        if phase_start and close_time and close_time < phase_start:
+            continue
+        daily_profit[trade.close_time.date()] += _safe_float(trade.profit)
+    total_profit = sum(daily_profit.values())
+    if total_profit <= 0 or not daily_profit:
+        return
+    biggest_day = max(daily_profit.values())
+    ratio = biggest_day / total_profit * 100
+    limit = _safe_float(rules.get('max_single_day_profit_percent'), 40)
+    if ratio <= limit:
+        return
+    existing = ViolationEvidence.query.filter_by(
+        challenge_purchase_id=challenge.id,
+        violation_type='consistency_violation',
+        is_reviewed=False
+    ).first()
+    if existing:
+        return
+    hard = rules.get('consistency_action') == 'hard'
+    reason = f"Consistency rule exceeded: biggest day was {ratio:.2f}% of phase profit (limit {limit:.2f}%)."
+    create_violation_evidence(
+        challenge=challenge, data=data,
+        violation_type='consistency_violation', rule_name='Consistency',
+        rule_limit=limit, actual_value=round(ratio, 4), reason=reason,
+        severity='hard_breach' if hard else 'warning'
+    )
+    challenge.violation_reason = reason
+    challenge.status = ChallengeState.UNDER_REVIEW
+    challenge.monitoring_status = ChallengeState.UNDER_REVIEW
+    challenge.review_required = True
+    challenge.violation_reviewed = False
+    log_rule(challenge.id, 'consistency', Severity.VIOLATION, reason, ratio, limit)
+    notify_user(challenge.user_id, 'Consistency Review', 'Your account has been flagged for consistency review.')
+    db.session.commit()
+
+
+# RULE-10: Weekend | Fields: weekend_trading | Action: hard breach; reads stored open time without timezone conversion
+def check_weekend_trading(challenge, data, rules):
+    if rules.get('weekend', True):
+        return
+    if challenge.status in (ChallengeState.PASSED, ChallengeState.FAILED) or challenge.is_terminated:
+        return
+    trades = TradeHistory.query.filter_by(challenge_id=challenge.id).all()
+    weekend_trades = [trade for trade in trades if trade.open_time and trade.open_time.weekday() >= 5]
+    if not weekend_trades:
+        return
+    existing = ViolationEvidence.query.filter_by(
+        challenge_purchase_id=challenge.id,
+        violation_type='weekend_trading',
+        is_reviewed=False
+    ).first()
+    if existing:
+        return
+    reason = f"Weekend trading is not allowed. {len(weekend_trades)} trade(s) opened on Saturday or Sunday."
+    create_violation_evidence(
+        challenge=challenge, data=data,
+        violation_type='weekend_trading', rule_name='Weekend Trading',
+        rule_limit=0, actual_value=len(weekend_trades), reason=reason,
+        severity='hard_breach'
+    )
+    challenge.violation_reason = reason
+    challenge.status = ChallengeState.UNDER_REVIEW
+    challenge.monitoring_status = ChallengeState.UNDER_REVIEW
+    challenge.review_required = True
+    challenge.violation_reviewed = False
+    log_rule(challenge.id, 'weekend_trading', Severity.VIOLATION, reason, len(weekend_trades), 0)
+    notify_user(challenge.user_id, 'Weekend Trading Review', 'Your account has been flagged for weekend trading review.')
+    db.session.commit()
+
+
 # ========================================================================
 # CORE CHALLENGE RULES
 # ========================================================================
 
+# RULE-03/05: Profit target + min days gate and expiry | Fields: phase targets, min days, duration, no_expiry | Action: pass gate or hard breach
 def check_rules(challenge, data, rules):
     if challenge.status in (ChallengeState.PASSED, ChallengeState.FAILED, ChallengeState.FUNDED):
         return
@@ -1098,7 +1232,7 @@ def check_rules(challenge, data, rules):
                      f"Profit reached but need {needed} more trading day(s). ({phase_days}/{min_days})",
                      phase_days, min_days)
 
-    if challenge.end_date:
+    if not rules.get('no_expiry') and challenge.end_date:
         end_date_utc = ensure_utc(challenge.end_date)
         if end_date_utc and datetime.now(timezone.utc) > end_date_utc:
             if phase_profit >= pt and phase_days >= min_days:
@@ -1113,6 +1247,7 @@ def check_rules(challenge, data, rules):
 
     db.session.commit()
 
+# RULE-04: Phase progression | Fields: challenge_type, current_phase | Action: advance phase or fund
 def _handle_phase_progression(challenge):
     if challenge.challenge_type == 'two_phase' and challenge.current_phase == 1:
         now = datetime.now(timezone.utc)
@@ -1144,6 +1279,7 @@ def _handle_phase_progression(challenge):
 # ANTI-CHEAT SUITE
 # ========================================================================
 
+# RULE-12: Anti-cheat flags | Fields: balance, credit, heartbeat | Action: flag
 def check_anti_cheat(challenge, data):
     account = data.get('account', {})
     cur_balance  = _safe_float(account.get('balance') or data.get('balance'))
@@ -1194,7 +1330,10 @@ def update_challenge_status(challenge, rules):
         challenge.progress_percentage = 0.0
 
     now = datetime.now(timezone.utc)
-    if challenge.end_date:
+    if rules.get('no_expiry'):
+        challenge.end_date = None
+        challenge.days_remaining = None
+    elif challenge.end_date:
         end_date_utc = ensure_utc(challenge.end_date)
         challenge.days_remaining = max(0, (end_date_utc - now).days)
     elif challenge.start_date:

@@ -57,10 +57,8 @@
                     </div>
                 </div>
                 <div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Days Remaining</div>
-                    <div class="text-xl font-bold text-gray-900 dark:text-white">{{ challenge.days_remaining if
-                        challenge.days_remaining
-                        else 'N/A' }}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Time Limit</div>
+                    <div class="text-xl font-bold text-gray-900 dark:text-white">{{ 'No time limit' if challenge.challenge_template and challenge.challenge_template.no_expiry else (challenge.days_remaining if challenge.days_remaining is not none else 'N/A') }}</div>
                 </div>
             </div>
 
@@ -89,7 +87,7 @@
                     </span>
                     <span>
                         {% if challenge.challenge_type == 'instant' %}
-                            Current: ₹{{ "{:,.2f}".format(challenge.current_profit or 0) }}
+                            Current: ${{ "{:,.2f}".format(challenge.current_profit or 0) }}
                         {% else %}
                             {{ "%.1f"|format(progress) }}%
                         {% endif %}

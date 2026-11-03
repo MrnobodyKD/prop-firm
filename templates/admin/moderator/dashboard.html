@@ -29,17 +29,6 @@
 
 <!-- Quick Stats Grid -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    {% if moderator.has_permission('can_access_kyc') %}
-    <a href="/admin/kyc" class="glass-card p-4 hover:shadow-lg transition cursor-pointer">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-2xl font-bold text-orange-600">{{ stats.pending_kyc }}</div>
-                <div class="text-sm text-gray-600">Pending KYC</div>
-            </div>
-            <i class="fas fa-id-card text-3xl text-orange-400"></i>
-        </div>
-    </a>
-    {% endif %}
     
     {% if moderator.has_permission('can_access_support') %}
     <a href="/admin/support" class="glass-card p-4 hover:shadow-lg transition cursor-pointer">

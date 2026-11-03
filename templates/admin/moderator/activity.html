@@ -53,30 +53,6 @@
 <!-- ACTION BREAKDOWN CARDS -->
 <!-- ======================================================================== -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <!-- KYC Actions -->
-    <div class="glass-card p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h4 class="font-semibold text-gray-700 dark:text-gray-300">
-                <i class="fas fa-id-card text-blue-500 mr-2"></i>KYC Actions
-            </h4>
-            <span class="text-2xl font-bold text-blue-600">{{ stats.kyc_actions or 0 }}</span>
-        </div>
-        <div class="space-y-1 text-sm">
-            <div class="flex justify-between">
-                <span class="text-gray-500">Approved</span>
-                <span class="font-medium text-green-600">{{ stats.kyc_approved or 0 }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-500">Rejected</span>
-                <span class="font-medium text-red-600">{{ stats.kyc_rejected or 0 }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-500">Cleared</span>
-                <span class="font-medium text-yellow-600">{{ stats.kyc_cleared or 0 }}</span>
-            </div>
-        </div>
-    </div>
-
     <!-- Lead CRM Actions -->
     <div class="glass-card p-4">
         <div class="flex items-center justify-between mb-3">

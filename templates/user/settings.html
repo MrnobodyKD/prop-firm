@@ -47,7 +47,7 @@
 
                 <!-- Full Name (Read-only) -->
                 <div class="space-y-2">
-                    <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-500">Legal Name (KYC)</label>
+                    <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-500">Legal Name</label>
                     <p class="bg-gray-100 dark:bg-gray-900/40 rounded-xl py-3 px-4 text-gray-500 dark:text-gray-500 font-medium">
                         {{ user.first_name }} {{ user.last_name }}
                     </p>
@@ -121,34 +121,7 @@
         </div>
     </div>
 
-    <!-- KYC Status Verification Box -->
-    <div class="glass-card p-6 lg:p-10 border dark:border-dark-border" data-aos="fade-up" style="animation-delay: 0.2s;">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-4 text-center md:text-left">
-                <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center">
-                    <i class="fas fa-shield-check text-emerald-600 dark:text-emerald-400 text-3xl"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">KYC Verification</h3>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm">Current Status: 
-                        <span class="font-bold uppercase {{ 'text-emerald-500' if user.kyc_status == 'approved' else 'text-amber-500' }}">
-                            {{ user.kyc_status|title }}
-                        </span>
-                    </p>
-                </div>
-            </div>
-            {% if user.kyc_status != 'approved' %}
-            <a href="{{ url_for('user.kyc') }}" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold transition">
-                Continue Verification
-            </a>
-            {% else %}
-            <div class="text-emerald-500 flex items-center gap-2 font-bold">
-                <i class="fas fa-check-circle"></i> Verified Account
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
+    
 </div>
 {% endblock %}
 

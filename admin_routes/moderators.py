@@ -509,10 +509,6 @@ def moderator_activity():
     # ========================================================================
     # ACTION BREAKDOWN STATS
     # ========================================================================
-    stats['kyc_actions'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'kyc').count()
-    stats['kyc_approved'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'kyc', ModeratorActivityLog.action == 'approved_kyc').count()
-    stats['kyc_rejected'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'kyc', ModeratorActivityLog.action == 'rejected_kyc').count()
-    stats['kyc_cleared'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'kyc', ModeratorActivityLog.action == 'cleared_kyc').count()
 
     stats['lead_actions'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'lead_crm').count()
     stats['lead_notes'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'lead_crm', ModeratorActivityLog.action == 'added_note').count()
@@ -527,7 +523,7 @@ def moderator_activity():
     stats['blog_actions'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'blog').count()
     stats['notification_actions'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'notifications').count()
     stats['partner_actions'] = ModeratorActivityLog.query.filter(ModeratorActivityLog.module == 'partners').count()
-    stats['other_actions'] = stats['total'] - stats['kyc_actions'] - stats['lead_actions'] - stats['user_actions'] - stats['blog_actions'] - stats['notification_actions'] - stats['partner_actions']
+    stats['other_actions'] = stats['total'] - stats['lead_actions'] - stats['user_actions'] - stats['blog_actions'] - stats['notification_actions'] - stats['partner_actions']
     if stats['other_actions'] < 0:
         stats['other_actions'] = 0
 
@@ -671,14 +667,11 @@ def moderator_dashboard():
     
     stats = {
         'assigned_modules': len(moderator.get_active_permissions()),
-        'pending_kyc': 0,
         'open_tickets': 0,
         'active_challenges': 0,
         'blog_posts': 0,
     }
     
-    if moderator.has_permission('can_access_kyc'):
-        stats['pending_kyc'] = User.query.filter_by(kyc_status='submitted').count()
     if moderator.has_permission('can_access_support'):
         stats['open_tickets'] = SupportTicket.query.filter_by(status='open').count()
     if moderator.has_permission('can_access_challenges'):

@@ -217,7 +217,8 @@ def payout_eligibility(challenge):
     template = challenge.challenge_template
     account_size = float(template.account_size if template else challenge.starting_balance or challenge.current_balance or 0)
     profit_share = float(template.user_profit_share if template else 0)
-    minimum = round(account_size * 0.05, 2)
+    minimum_percent = template.min_payout_percent if template and template.min_payout_percent is not None else 5
+    minimum = round(account_size * (float(minimum_percent) / 100.0), 2)
     is_funded = challenge.status in ['funded', 'funded_active'] or challenge.challenge_type == 'instant'
     if not is_funded or challenge.status in ['active', 'passed', 'pending_phase2', 'pending_funded', 'phase1_active', 'phase2_active', 'failed', 'expired', 'revoked']:
         return {
@@ -241,7 +242,8 @@ def payout_eligibility(challenge):
     ).order_by(Payout.updated_at.desc()).first()
     if last_completed:
         cycle_start = _aware(last_completed.paid_at or last_completed.updated_at or last_completed.created_at) or cycle_start
-    next_date = cycle_start + timedelta(days=cycle_days)
+    first_days = template.first_withdrawal_days if template and template.first_withdrawal_days is not None else cycle_days
+    next_date = cycle_start + timedelta(days=(cycle_days if last_completed else first_days))
 
     active_request = Payout.query.filter(
         Payout.challenge_purchase_id == challenge.id,
@@ -316,7 +318,9 @@ def dashboard():
     # Calculate days remaining
     now_utc = datetime.now(timezone.utc)
     for challenge in active_challenges:
-        if challenge.end_date:
+        if challenge.challenge_template and challenge.challenge_template.no_expiry:
+            challenge.days_remaining = None
+        elif challenge.end_date:
             end_date = challenge.end_date.replace(tzinfo=timezone.utc) if challenge.end_date.tzinfo is None else challenge.end_date
             days_left = (end_date - now_utc).days
             challenge.days_remaining = max(0, days_left)
@@ -409,149 +413,6 @@ def dashboard_stats():
     
     return jsonify({'success': True, 'stats': stats})
 
-# ===== KYC ROUTES =====
-@user_bp.route('/kyc')
-@login_required
-def kyc():
-    user = User.query.get(session['user_id'])
-    return render_template('user/kyc_verify.html', user=user)
-
-@user_bp.route('/kyc/verify', methods=['GET', 'POST'])
-@login_required
-def kyc_verification():
-    user = User.query.get(session['user_id'])
-    
-    if request.method == 'POST':
-        if not user.email_verified:
-            flash('Please verify your email address first.', 'error')
-            return redirect(url_for('user.kyc_verification'))
-
-        document_type = request.form.get('document_type')
-        document_number = request.form.get('document_number', '').strip()
-        
-        if document_type not in ['aadhaar', 'pan', 'driving_license']:
-            flash('Please select a valid document type.', 'error')
-            return redirect(url_for('user.kyc_verification'))
-        
-        if not document_number:
-            flash('Please enter your document number.', 'error')
-            return redirect(url_for('user.kyc_verification'))
-        
-        front_file = request.files.get('front_file')
-        back_file = request.files.get('back_file')
-        
-        if not front_file or front_file.filename == '':
-            flash('Please upload front side of your document.', 'error')
-            return redirect(url_for('user.kyc_verification'))
-        
-        if not back_file or back_file.filename == '':
-            flash('Please upload back side of your document.', 'error')
-            return redirect(url_for('user.kyc_verification'))
-        
-        # Check file sizes before processing
-        max_size = 16 * 1024 * 1024  # 16MB per file
-        
-        front_file.seek(0, 2)
-        front_size = front_file.tell()
-        front_file.seek(0)
-        if front_size > max_size:
-            flash('Your front document image is too large. Please reduce the size and try again.', 'warning')
-            return redirect(url_for('user.file_too_large'))
-        
-        back_file.seek(0, 2)
-        back_size = back_file.tell()
-        back_file.seek(0)
-        if back_size > max_size:
-            flash('Your back document image is too large. Please reduce the size and try again.', 'warning')
-            return redirect(url_for('user.file_too_large'))
-        
-        def allowed_file(filename):
-            return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'pdf'}
-        
-        if not (allowed_file(front_file.filename) and allowed_file(back_file.filename)):
-            flash('Only PNG, JPG, JPEG, and PDF files are allowed.', 'error')
-            return redirect(url_for('user.kyc_verification'))
-        
-        def process_kyc_image(file_storage, prefix):
-            ext = file_storage.filename.rsplit('.', 1)[1].lower()
-            timestamp = int(time.time())
-            base_filename = f"{user.id}_{timestamp}_{prefix}"
-            
-            kyc_dir = os.path.join('static', 'uploads', 'kyc')
-            os.makedirs(kyc_dir, exist_ok=True)
-            
-            if ext in ['png', 'jpg', 'jpeg']:
-                target_filename = f"{base_filename}.jpg"
-                target_path = os.path.join(kyc_dir, target_filename)
-                
-                if HAS_PIL:
-                    img = Image.open(file_storage)
-                    
-                    if img.mode in ("RGBA", "P"):
-                        img = img.convert("RGB")
-                    
-                    max_width = 1200
-                    if img.width > max_width:
-                        ratio = max_width / float(img.width)
-                        height = int(float(img.height) * ratio)
-                        img = img.resize((max_width, height), RESAMPLING_METHOD)
-                    
-                    img.save(target_path, "JPEG", quality=65, optimize=True)
-                else:
-                    # If PIL not available, save as is
-                    file_storage.save(target_path)
-                return f"uploads/kyc/{target_filename}"
-            
-            elif ext == 'pdf':
-                target_filename = f"{base_filename}.pdf"
-                target_path = os.path.join(kyc_dir, target_filename)
-                file_storage.save(target_path)
-                return f"uploads/kyc/{target_filename}"
-            
-            return None
-
-        try:
-            front_rel_path = process_kyc_image(front_file, 'front')
-            back_rel_path = process_kyc_image(back_file, 'back')
-            
-            if not front_rel_path or not back_rel_path:
-                flash('Error processing files. Please try again.', 'error')
-                return redirect(url_for('user.kyc_verification'))
-
-            user.id_front_url = front_rel_path
-            user.id_back_url = back_rel_path
-            user.document_type = document_type
-            user.document_number = document_number
-            user.kyc_status = 'submitted'
-            user.kyc_submitted_at = datetime.now(timezone.utc)
-            create_notification(
-                user.id,
-                'KYC Submitted',
-                'Your KYC documents have been submitted successfully and are currently under review. We will notify you once verification is completed.',
-                'kyc',
-                action_url='/kyc',
-                icon='file',
-                dedupe_key=f'kyc-submitted:{user.id}:{user.kyc_submitted_at.isoformat()}',
-            )
-            db.session.commit()
-            
-            return _json_or_redirect(True, 'KYC Submitted Successfully. Status: Pending Review.', 'user.dashboard', 'success')
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"KYC submission error: {e}")
-            if _wants_json():
-                return jsonify({'success': False, 'message': 'Error submitting KYC. Please try again.'}), 500
-            flash('Error submitting KYC. Please try again.', 'error')
-    
-    return render_template('user/kyc_verify.html', user=user)
-
-@user_bp.route('/kyc/status')
-@login_required
-def kyc_status():
-    user = User.query.get(session['user_id'])
-    return render_template('user/kyc_status.html', user=user)
-
 @user_bp.route('/phone-verification')
 @login_required
 def phone_verification():
@@ -618,7 +479,9 @@ def trading():
     
     now_utc = datetime.now(timezone.utc)
     for challenge in active_challenges:
-        if challenge.end_date:
+        if challenge.challenge_template and challenge.challenge_template.no_expiry:
+            challenge.days_remaining = None
+        elif challenge.end_date:
             end_date = challenge.end_date.replace(tzinfo=timezone.utc) if challenge.end_date.tzinfo is None else challenge.end_date
             days_left = (end_date - now_utc).days
             challenge.days_remaining = max(0, days_left)
@@ -754,26 +617,21 @@ def request_payout():
             flash(info['reason'] or 'This account is not eligible for payout yet.', 'error')
             return redirect(url_for('user.payouts'))
         
-        if amount < info['minimum'] or amount > info['available_profit']:
+        if amount <= 0 or amount < info['minimum'] or amount > info['available_profit']:
             flash('Invalid payout amount.', 'error')
             return redirect(url_for('user.payouts'))
 
-        if payment_method not in ['upi', 'bank_transfer']:
+        if payment_method not in ['bank_transfer', 'crypto']:
             flash('Please select a valid payout method.', 'error')
             return redirect(url_for('user.payouts'))
 
-        if not account_holder_name:
+        if payment_method == 'bank_transfer' and not account_holder_name:
             flash('Account holder name is required.', 'error')
             return redirect(url_for('user.payouts'))
 
-        upi_id = ''
         bank_details = {}
-        if payment_method == 'upi':
-            upi_id = request.form.get('upi_id', '').strip()
-            if not upi_id or '@' not in upi_id:
-                flash('Please enter a valid UPI ID.', 'error')
-                return redirect(url_for('user.payouts'))
-        else:
+        crypto_address = ''
+        if payment_method == 'bank_transfer':
             bank_details = {
                 'bank_name': request.form.get('bank_name', '').strip(),
                 'account_number': request.form.get('account_number', '').strip(),
@@ -781,6 +639,11 @@ def request_payout():
             }
             if not all(bank_details.values()):
                 flash('Please complete all bank transfer fields.', 'error')
+                return redirect(url_for('user.payouts'))
+        else:
+            crypto_address = request.form.get('crypto_address', '').strip()
+            if not crypto_address:
+                flash('Please enter your crypto payout address.', 'error')
                 return redirect(url_for('user.payouts'))
         
         payout = Payout(
@@ -797,8 +660,8 @@ def request_payout():
             due_date=info['next_date'],
             payment_method=payment_method,
             account_holder_name=account_holder_name,
-            upi_id=upi_id,
-            bank_account_details=json.dumps(bank_details) if bank_details else ''
+            bank_account_details=json.dumps(bank_details) if bank_details else '',
+            crypto_address=crypto_address
         )
         
         db.session.add(payout)
@@ -1539,6 +1402,10 @@ def validate_coupon_api():
         if not coupon:
             return jsonify({'success': False, 'error': 'Invalid coupon code'})
             
+        template_currency = (challenge.currency or 'INR').upper()
+        coupon_currency = (coupon.currency or template_currency).upper()
+        if coupon_currency != template_currency:
+            return jsonify({'success': False, 'error': f'This coupon is in {coupon_currency}; the challenge is priced in {template_currency}.'})
         is_valid, msg, discount_amount, final_price = coupon.validate_for_user_and_price(user_id, float(challenge.price))
         
         if not is_valid:

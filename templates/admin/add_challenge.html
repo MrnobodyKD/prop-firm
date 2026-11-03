@@ -160,7 +160,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">₹{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ '$' if c.currency == 'USD' else '₹' }}{{ c.price }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -220,7 +220,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">₹{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ '$' if c.currency == 'USD' else '₹' }}{{ c.price }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -291,7 +291,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">₹{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ '$' if c.currency == 'USD' else '₹' }}{{ c.price }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -352,7 +352,7 @@
                     <input type="text" id="challengeName" name="name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price (₹) *</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price *</label>
                     <input type="number" id="challengePrice" name="price" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
                 </div>
             </div>
@@ -419,7 +419,6 @@
                         <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Drawdown Type</label><select id="instant_daily_dd_type" name="instant_daily_dd_type" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="equity">Equity Based</option><option value="static">Static Balance Based</option></select></div>
                         <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Overall Loss (%)</label><input type="number" step="0.1" id="instant_overall_loss" name="instant_overall_loss" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
                         <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Overall Drawdown Type</label><select id="instant_overall_dd_type" name="instant_overall_dd_type" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="equity">Equity Based</option><option value="static">Static Balance Based</option></select></div>
-                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Min Days</label><input type="number" id="instant_min_days" name="instant_min_days" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
                         <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Leverage</label><input type="text" id="instant_leverage" name="instant_leverage" placeholder="1:100" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></div>
                     </div>
                 </div>
@@ -551,6 +550,43 @@
                 <div id="instantRulesGroup" class="space-y-2 mt-4 hidden">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Instant Rules Text</label>
                     <textarea id="instantRules" name="instant_rules_text" rows="3" placeholder="Enter rules for Instant Funded Account..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></textarea>
+                </div>
+            </div>
+
+            <div class="border-t dark:border-gray-700 pt-6">
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Challenge Policy & Currency</h4>
+                <p class="text-xs text-amber-700 dark:text-amber-300 mb-4">Kisiki challenges: leave Stop-Loss mandatory and Lot cap OFF.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Currency</label><select id="currency" name="currency" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="USD" selected>USD</option><option value="INR">INR</option></select></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="noExpiry" name="no_expiry" class="w-4 h-4"><label for="noExpiry" class="text-sm">No expiry</label></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">First withdrawal days (blank uses payout cycle)</label><input type="number" min="0" id="firstWithdrawalDays" name="first_withdrawal_days" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Minimum payout (% of account; blank uses 5%)</label><input type="number" step="0.1" min="0" max="100" id="minPayoutPercent" name="min_payout_percent" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Maximum active/funded accounts per user (blank unlimited)</label><input type="number" min="1" id="maxAccountsPerUser" name="max_accounts_per_user" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="consistencyEnabled" name="consistency_enabled" class="w-4 h-4"><label for="consistencyEnabled" class="text-sm">Consistency rule enabled</label></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Max single-day profit share (%)</label><input type="number" step="0.1" min="0" max="100" value="40" id="maxSingleDayProfitPercent" name="max_single_day_profit_percent" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Consistency action</label><select id="consistencyAction" name="consistency_action" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="flag">Flag for review</option><option value="hard">Hard breach</option></select></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Performance reward (%)</label><input type="number" step="0.1" min="0" id="performanceRewardPercent" name="performance_reward_percent" value="0" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                    <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Performance reward mode</label><select id="performanceRewardMode" name="performance_reward_mode" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="off">Off</option><option value="fee refund on pass">Fee refund on pass</option><option value="add to first payout">Add to first payout</option></select></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="feeRefundOnPass" name="fee_refund_on_pass" class="w-4 h-4"><label for="feeRefundOnPass" class="text-sm">Fee refund on pass</label></div>
+                    <div class="md:col-span-2"><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Refund policy (display only)</label><textarea id="refundPolicyText" name="refund_policy_text" rows="2" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></textarea></div>
+                </div>
+                <div class="mt-4">
+                    <div class="text-sm font-medium mb-2">Banned practices (display + admin review checklist)</div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                        <label><input type="checkbox" name="banned_practices" value="HFT"> HFT</label>
+                        <label><input type="checkbox" name="banned_practices" value="Copy/signal copying"> Copy/signal copying</label>
+                        <label><input type="checkbox" name="banned_practices" value="Account sharing"> Account sharing</label>
+                        <label><input type="checkbox" name="banned_practices" value="Third-party trading"> Third-party trading</label>
+                        <label><input type="checkbox" name="banned_practices" value="Latency arbitrage"> Latency arbitrage</label>
+                        <label><input type="checkbox" name="banned_practices" value="Pricing-error exploitation"> Pricing-error exploitation</label>
+                        <label><input type="checkbox" name="banned_practices" value="Grid trading with no stop loss"> Grid trading with no stop loss</label>
+                        <label><input type="checkbox" name="banned_practices" value="Cheating/fraud"> Cheating/fraud</label>
+                    </div>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-5 text-sm">
+                    <label><input type="checkbox" id="newsTradingAllowed" name="news_trading_allowed" checked> News trading allowed</label>
+                    <label><input type="checkbox" id="overnightTradingAllowed" name="overnight_trading_allowed" checked> Overnight holding allowed</label>
+                    <label><input type="checkbox" id="eaAllowed" name="ea_allowed" checked> EA allowed</label>
                 </div>
             </div>
 
@@ -742,8 +778,25 @@
         document.getElementById('instant_daily_dd_type').value = c.instant_daily_dd_type || 'equity';
         if(c.instant_overall_loss) document.getElementById('instant_overall_loss').value = c.instant_overall_loss;
         document.getElementById('instant_overall_dd_type').value = c.instant_overall_dd_type || 'equity';
-        if(c.instant_min_days !== null) document.getElementById('instant_min_days').value = c.instant_min_days;
         if(c.instant_leverage) document.getElementById('instant_leverage').value = c.instant_leverage;
+
+        // Challenge policy and currency
+        document.getElementById('currency').value = c.currency || 'INR';
+        document.getElementById('noExpiry').checked = c.no_expiry || false;
+        document.getElementById('consistencyEnabled').checked = c.consistency_enabled || false;
+        document.getElementById('maxSingleDayProfitPercent').value = c.max_single_day_profit_percent ?? 40;
+        document.getElementById('consistencyAction').value = c.consistency_action || 'flag';
+        document.getElementById('firstWithdrawalDays').value = c.first_withdrawal_days ?? '';
+        document.getElementById('minPayoutPercent').value = c.min_payout_percent ?? '';
+        document.getElementById('performanceRewardPercent').value = c.performance_reward_percent ?? 0;
+        document.getElementById('performanceRewardMode').value = c.performance_reward_mode || 'off';
+        document.getElementById('maxAccountsPerUser').value = c.max_accounts_per_user ?? '';
+        document.getElementById('feeRefundOnPass').checked = c.fee_refund_on_pass || false;
+        document.getElementById('refundPolicyText').value = c.refund_policy_text || '';
+        document.querySelectorAll('input[name="banned_practices"]').forEach(input => { input.checked = (c.banned_practices || []).includes(input.value); });
+        document.getElementById('newsTradingAllowed').checked = c.news_trading_allowed !== false;
+        document.getElementById('overnightTradingAllowed').checked = c.overnight_trading_allowed !== false;
+        document.getElementById('eaAllowed').checked = c.ea_allowed !== false;
 
         // 🛡️ Safety rules
         document.getElementById('slMandatoryEnabled').checked = c.sl_mandatory_enabled || false;

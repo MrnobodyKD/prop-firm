@@ -79,10 +79,6 @@
         <i class="fas fa-exclamation-triangle"></i> TODAY'S ACTIONS REQUIRED
     </h2>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" id="actionCards">
-        <div class="glass-card p-4 border-l-4 border-red-500">
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400 count-up" id="actionKYC">--</div>
-            <div class="text-xs text-gray-600 dark:text-gray-400">Pending KYC</div>
-        </div>
         <div class="glass-card p-4 border-l-4 border-orange-500">
             <div class="text-2xl font-bold text-orange-600 dark:text-orange-400 count-up" id="actionTickets">--</div>
             <div class="text-xs text-gray-600 dark:text-gray-400">Open Tickets</div>
@@ -125,7 +121,7 @@
     
     <div class="glass-card p-4" data-aos="fade-up" data-aos-delay="100">
         <div class="flex items-center justify-between mb-2">
-            <i class="fas fa-rupee-sign text-green-500 text-xl"></i>
+            <i class="fas fa-dollar-sign text-green-500 text-xl"></i>
         </div>
         <div class="text-3xl font-bold text-gray-800 dark:text-white count-up" id="revenueToday">--</div>
         <div class="text-xs text-gray-500 dark:text-gray-400">Revenue Today</div>
@@ -141,14 +137,6 @@
         <div class="text-xs text-green-600 dark:text-green-400 mt-1" id="fundedAccounts">--</div>
     </div>
     
-    <div class="glass-card p-4" data-aos="fade-up" data-aos-delay="300">
-        <div class="flex items-center justify-between mb-2">
-            <i class="fas fa-id-card text-orange-500 text-xl"></i>
-        </div>
-        <div class="text-3xl font-bold text-gray-800 dark:text-white count-up" id="pendingKYC">--</div>
-        <div class="text-xs text-gray-500 dark:text-gray-400">Pending KYC</div>
-        <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1" id="kycToday">--</div>
-    </div>
     
     <div class="glass-card p-4" data-aos="fade-up" data-aos-delay="400">
         <div class="flex items-center justify-between mb-2">
@@ -178,7 +166,7 @@
     </div>
 </div>
 
-<!-- Challenge Rankings + KYC Panel -->
+<!-- Challenge Rankings -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     <!-- Challenge Rankings -->
     <div class="glass-card p-4">
@@ -201,42 +189,6 @@
         </div>
     </div>
     
-    <!-- KYC Panel -->
-    <div class="glass-card p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-800 dark:text-white">👤 KYC Applications</h3>
-            <a href="/admin/kyc" class="text-xs text-blue-500 hover:text-blue-600">View All →</a>
-        </div>
-        <div class="grid grid-cols-3 gap-2 mb-3">
-            <div class="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
-                <div class="text-lg font-bold text-yellow-600 dark:text-yellow-400" id="kycPending">--</div>
-                <div class="text-xs text-gray-500">Pending</div>
-            </div>
-            <div class="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                <div class="text-lg font-bold text-green-600 dark:text-green-400" id="kycApproved">--</div>
-                <div class="text-xs text-gray-500">Approved</div>
-            </div>
-            <div class="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded">
-                <div class="text-lg font-bold text-red-600 dark:text-red-400" id="kycRejected">--</div>
-                <div class="text-xs text-gray-500">Rejected</div>
-            </div>
-        </div>
-        <div class="overflow-x-auto max-h-64 overflow-y-auto">
-            <table class="w-full text-xs">
-                <thead>
-                    <tr class="border-b border-gray-200 dark:border-dark-border">
-                        <th class="text-left py-1">User</th>
-                        <th class="text-left py-1">Country</th>
-                        <th class="text-left py-1">Status</th>
-                        <th class="text-right py-1">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="kycTable">
-                    <tr><td colspan="4" class="text-center py-4 text-gray-400">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
 <!-- Support + Payments Row -->
@@ -406,7 +358,7 @@
 
 // Format currency
 function formatCurrency(amount) {
-    return '₹' + Number(amount || 0).toLocaleString('en-IN');
+    return '$' + Number(amount || 0).toLocaleString('en-IN');
 }
 
 // Format date
@@ -462,7 +414,6 @@ async function fetchDashboardData() {
         updateSummary(data);
         updateStatsGrid(data);
         updateChallengeRankings(data);
-        updateKYCPanel(data);
         updateSupportPanel(data);
         updatePaymentsPanel(data);
         updateCouponsPanel(data);
@@ -492,7 +443,6 @@ async function fetchActivityFeed() {
 // Update action cards
 function updateActionCards(data) {
     const actions = data.actions || {};
-    document.getElementById('actionKYC').textContent = actions.pending_kyc || 0;
     document.getElementById('actionTickets').textContent = actions.open_tickets || 0;
     document.getElementById('actionFailedPayments').textContent = actions.failed_payments || 0;
     document.getElementById('actionNearBreach').textContent = actions.near_breach || 0;
@@ -506,7 +456,6 @@ function updateSummary(data) {
         summary.new_users_today ? `+${summary.new_users_today} new users today` : '',
         summary.revenue_today ? `• ${formatCurrency(summary.revenue_today)} revenue today` : '',
         summary.top_challenge ? `• Most sold: ${summary.top_challenge}` : '',
-        summary.pending_kyc ? `• ${summary.pending_kyc} KYC pending` : '',
         summary.pending_tickets ? `• ${summary.pending_tickets} tickets open` : '',
         `• System: ${summary.system_health || 'NORMAL'}`
     ].filter(Boolean).join(' ');
@@ -519,7 +468,6 @@ function updateStatsGrid(data) {
     const users = data.users || {};
     const revenue = data.revenue || {};
     const challenges = data.challenges || {};
-    const kyc = data.kyc || {};
     const support = data.support || {};
     const coupons = data.coupons || {};
     const payments = data.payments || {};
@@ -531,8 +479,6 @@ function updateStatsGrid(data) {
     document.getElementById('revenueMonth').textContent = revenue.this_month ? `${formatCurrency(revenue.this_month)} this month` : '';
     document.getElementById('activeChallenges').textContent = (challenges.active || 0).toLocaleString();
     document.getElementById('fundedAccounts').textContent = challenges.funded ? `${challenges.funded} funded` : '';
-    document.getElementById('pendingKYC').textContent = (kyc.pending || 0).toLocaleString();
-    document.getElementById('kycToday').textContent = kyc.today ? `${kyc.today} new today` : '';
     document.getElementById('openTickets').textContent = (support.open || 0).toLocaleString();
     document.getElementById('urgentTickets').textContent = support.urgent ? `${support.urgent} urgent` : '';
     document.getElementById('activeCoupons').textContent = (coupons.active || 0).toLocaleString();
@@ -562,63 +508,6 @@ function updateChallengeRankings(data) {
             <td class="py-2 text-right font-semibold">${formatCurrency(c.revenue)}</td>
         </tr>
     `).join('');
-}
-
-// Update KYC panel
-function updateKYCPanel(data) {
-    const kyc = data.kyc || {};
-    
-    document.getElementById('kycPending').textContent = kyc.pending || 0;
-    document.getElementById('kycApproved').textContent = kyc.approved || 0;
-    document.getElementById('kycRejected').textContent = kyc.rejected || 0;
-    
-    const latest = kyc.latest || [];
-    const tbody = document.getElementById('kycTable');
-    
-    if (latest.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">No KYC applications</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = latest.map(k => `
-        <tr class="border-b border-gray-100 dark:border-dark-border">
-            <td class="py-1 text-gray-800 dark:text-white">${k.user_name || '--'}</td>
-            <td class="py-1 text-xs text-gray-500">${k.country || '--'}</td>
-            <td class="py-1">
-                <span class="px-2 py-0.5 rounded text-xs ${getStatusColor(k.status)}">${k.status || '--'}</span>
-            </td>
-            <td class="py-1 text-right">
-                ${k.status === 'submitted' ? `
-                    <button onclick="quickKYCApprove(${k.user_id})" class="text-green-500 hover:text-green-700 text-xs mr-1" title="Approve">✓</button>
-                    <button onclick="quickKYCReject(${k.user_id})" class="text-red-500 hover:text-red-700 text-xs" title="Reject">✗</button>
-                ` : '--'}
-            </td>
-        </tr>
-    `).join('');
-}
-
-// Quick KYC actions
-async function quickKYCApprove(userId) {
-    if (!confirm('Approve this KYC application?')) return;
-    try {
-        const resp = await fetch(`/admin/kyc/${userId}/approve`);
-        if (resp.ok) {
-            fetchDashboardData();
-        }
-    } catch(e) { console.error(e); }
-}
-
-async function quickKYCReject(userId) {
-    const reason = prompt('Rejection reason:');
-    if (!reason) return;
-    try {
-        const formData = new FormData();
-        formData.append('rejection_reason', reason);
-        const resp = await fetch(`/admin/kyc/${userId}/reject`, { method: 'POST', body: formData });
-        if (resp.ok) {
-            fetchDashboardData();
-        }
-    } catch(e) { console.error(e); }
 }
 
 // Update support panel
@@ -726,9 +615,6 @@ function renderActivityFeed(events) {
     const icons = {
         'registration': 'fa-user-plus text-green-500',
         'challenge_purchase': 'fa-shopping-cart text-blue-500',
-        'kyc_submitted': 'fa-file-upload text-yellow-500',
-        'kyc_approved': 'fa-check-circle text-green-500',
-        'kyc_rejected': 'fa-times-circle text-red-500',
         'payment_success': 'fa-money-bill-wave text-green-500',
         'payment_failed': 'fa-exclamation-circle text-red-500',
         'support_ticket': 'fa-ticket-alt text-purple-500',

@@ -16,7 +16,7 @@
             </div>
             <div>
                 <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Revenue</p>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">₹{{ "%.2f"|format(stats.total_revenue) or 0.00 }}</h3>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">${{ "%.2f"|format(stats.total_revenue) or 0.00 }}</h3>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
             <div>
                 <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Pending Payouts</p>
                 <div class="flex items-baseline space-x-2">
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">₹{{ "%.2f"|format(stats.pending_payouts) or 0.00 }}</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">${{ "%.2f"|format(stats.pending_payouts) or 0.00 }}</h3>
                     <span class="text-xs font-medium text-blue-600 dark:text-blue-400">{{ stats.payout_eligible or 0 }} traders</span>
                 </div>
             </div>
@@ -165,7 +165,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="text-sm font-semibold text-gray-900 dark:text-white">
-                            ₹{{ "%.2f"|format(challenge.amount) }}
+                            ${{ "%.2f"|format(challenge.amount) }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">

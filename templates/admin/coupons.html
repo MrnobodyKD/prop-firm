@@ -74,7 +74,7 @@
                             {% if coupon.discount_type == 'percent' %}
                                 {{ coupon.discount_value|int }}% OFF
                             {% else %}
-                                ₹{{ coupon.discount_value|int }} OFF
+                                ${{ coupon.discount_value|int }} OFF
                             {% endif %}
                         </td>
                         <td class="p-4">
@@ -157,13 +157,19 @@
                 <textarea name="description" id="description" rows="2" placeholder="Describe the promotion or event..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"></textarea>
             </div>
 
+            <div>
+                <label for="currency" class="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2">Currency</label>
+                <select name="currency" id="currency" required class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white">
+                    <option value="USD">USD</option><option value="INR">INR</option>
+                </select>
+            </div>
             <div class="grid grid-cols-2 gap-4">
                 <!-- Discount Type -->
                 <div>
                     <label for="discount_type" class="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2">Discount Type</label>
                     <select name="discount_type" id="discount_type" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <option value="percent">Percentage (%)</option>
-                        <option value="fixed">Fixed Value (₹)</option>
+                        <option value="fixed">Fixed Value ($)</option>
                     </select>
                 </div>
 

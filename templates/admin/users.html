@@ -30,17 +30,6 @@
             </select>
         </div>
 
-        <!-- KYC Filter -->
-        <div>
-            <select id="kycFilter" class="bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 w-full text-gray-900 dark:text-gray-100">
-                <option value="all">All KYC Status</option>
-                <option value="approved">KYC Approved</option>
-                <option value="submitted">KYC Pending</option>
-                <option value="rejected">KYC Rejected</option>
-                <option value="none">KYC Not Submitted</option>
-            </select>
-        </div>
-
         <!-- Sort Filter -->
         <div>
             <select id="sortFilter" class="bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 w-full text-gray-900 dark:text-gray-100">
@@ -129,7 +118,6 @@
         currentPage = page;
         const search = document.getElementById('searchInput').value;
         const account = document.getElementById('accountFilter').value;
-        const kyc = document.getElementById('kycFilter').value;
         const sort = document.getElementById('sortFilter').value;
 
         const tableBody = document.getElementById('usersTableBody');
@@ -137,7 +125,7 @@
 
         try {
             const params = new URLSearchParams({
-                page, search, account_status: account, kyc_status: kyc, sort
+                page, search, account_status: account, sort
             });
             const response = await fetch(`/admin/api/users?${params.toString()}`);
             const data = await response.json();
@@ -269,7 +257,6 @@
     function resetFilters() {
         document.getElementById('searchInput').value = '';
         document.getElementById('accountFilter').value = 'all';
-        document.getElementById('kycFilter').value = 'all';
         document.getElementById('sortFilter').value = 'newest';
         fetchUsers(1);
     }

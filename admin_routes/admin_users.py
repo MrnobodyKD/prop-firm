@@ -42,159 +42,6 @@ def admin_users():
     return render_template('admin/users.html', users=users, admin_count=admin_count)
 
 
-@admin_bp.route('/kyc')
-@admin_required
-def admin_kyc():
-    status_filter = request.args.get('status', 'submitted')
-    search_query = request.args.get('search', '')
-    
-    query = User.query
-    
-    if status_filter == 'submitted':
-        query = query.filter_by(kyc_status='submitted')
-    elif status_filter == 'approved':
-        query = query.filter_by(kyc_status='approved')
-    elif status_filter == 'rejected':
-        query = query.filter_by(kyc_status='rejected')
-    else:
-        query = query.filter(User.kyc_status != 'pending')
-    
-    if search_query:
-        query = query.filter(
-            (User.first_name.ilike(f'%{search_query}%')) |
-            (User.last_name.ilike(f'%{search_query}%')) |
-            (User.email.ilike(f'%{search_query}%'))
-        )
-    
-    kyc_users = query.all()
-    
-    return render_template('admin/kyc_applications.html', 
-                         kyc_users=kyc_users, 
-                         status_filter=status_filter)
-
-
-@admin_bp.route('/kyc/<int:user_id>')
-@admin_required
-def admin_kyc_review(user_id):
-    user = User.query.get_or_404(user_id)
-    return render_template('admin/kyc_review.html', user=user)
-
-
-@admin_bp.route('/kyc/<int:user_id>/approve')
-@admin_required
-def admin_approve_kyc(user_id):
-    user = User.query.get_or_404(user_id)
-    before_state = {'kyc_status': user.kyc_status}
-    user.kyc_status = 'approved'
-    user.kyc_notes = ''
-    create_notification(
-        user.id,
-        'KYC Verified',
-        'Congratulations! Your KYC has been successfully verified. You can now purchase challenges and participate fully on the platform.',
-        'kyc',
-        action_url='/challenges',
-        icon='check',
-        admin_id=_current_user_id(),
-        dedupe_key=f'kyc-approved:{user.id}',
-    )
-    db.session.commit()
-    
-    _log_if_moderator('kyc', 'approved_kyc', f'Approved KYC for {user.email}', 'user', user.id, before_state, {'kyc_status': 'approved'})
-    
-    from email_service import send_automation_email
-    send_automation_email('kyc_approved', user)
-    
-    flash(f'KYC for {user.email} has been approved.', 'success')
-    return redirect(url_for('admin.admin_kyc'))
-
-
-@admin_bp.route('/kyc/<int:user_id>/reject', methods=['POST'])
-@admin_required
-def admin_reject_kyc(user_id):
-    user = User.query.get_or_404(user_id)
-    rejection_reason = request.form.get('rejection_reason', 'Document not clear')
-    before_state = {'kyc_status': user.kyc_status}
-    user.kyc_status = 'rejected'
-    user.kyc_notes = rejection_reason
-    create_notification(
-        user.id,
-        'KYC Verification Failed',
-        'Unfortunately your KYC verification was not approved. Please review the rejection reason and upload updated documents.',
-        'kyc',
-        action_url='/kyc',
-        icon='warning',
-        admin_id=_current_user_id(),
-        dedupe_key=f'kyc-rejected:{user.id}:{datetime.now(timezone.utc).date().isoformat()}',
-    )
-    db.session.commit()
-    
-    _log_if_moderator('kyc', 'rejected_kyc', f'Rejected KYC for {user.email}: {rejection_reason}', 'user', user.id, before_state, {'kyc_status': 'rejected', 'reason': rejection_reason})
-    
-    flash(f'KYC for {user.email} has been rejected.', 'success')
-    return redirect(url_for('admin.admin_kyc'))
-
-
-@admin_bp.route('/kyc/<int:user_id>/delete')
-@admin_required
-def admin_delete_kyc(user_id):
-    user = User.query.get_or_404(user_id)
-    before_state = {'kyc_status': user.kyc_status}
-    user.kyc_status = 'pending'
-    user.id_front_url = ''
-    user.id_back_url = ''
-    user.document_type = ''
-    user.kyc_submitted_at = None
-    user.kyc_notes = ''
-    db.session.commit()
-    
-    _log_if_moderator('kyc', 'cleared_kyc', f'Cleared KYC data for {user.email}', 'user', user.id, before_state, {'kyc_status': 'pending'})
-    
-    flash(f'KYC data cleared for {user.email}.', 'success')
-    return redirect(url_for('admin.admin_kyc'))
-
-
-@admin_bp.route('/bulk_kyc_action', methods=['POST'])
-@admin_required
-def admin_bulk_kyc_action():
-    user_ids = request.form.getlist('user_ids')
-    action = request.form.get('action')
-    current_id = _current_user_id()
-    
-    users = User.query.filter(User.id.in_(user_ids)).all()
-    
-    if action == 'approve':
-        for user in users:
-            user.kyc_status = 'approved'
-            user.kyc_notes = ''
-            create_notification(user.id, 'KYC Verified', 'Congratulations! Your KYC has been successfully verified.', 'kyc', action_url='/challenges', icon='check', admin_id=current_id, dedupe_key=f'kyc-approved:{user.id}')
-        db.session.commit()
-        _log_if_moderator('kyc', 'bulk_approved_kyc', f'Bulk approved {len(users)} KYC applications', 'kyc_batch', None, None, {'count': len(users)})
-        from email_service import send_automation_email
-        for user in users:
-            send_automation_email('kyc_approved', user)
-        flash(f'Approved {len(users)} KYC applications.', 'success')
-    elif action == 'reject':
-        for user in users:
-            user.kyc_status = 'rejected'
-            user.kyc_notes = 'Bulk rejection'
-        db.session.commit()
-        _log_if_moderator('kyc', 'bulk_rejected_kyc', f'Bulk rejected {len(users)} KYC applications', 'kyc_batch', None, None, {'count': len(users)})
-        flash(f'Rejected {len(users)} KYC applications.', 'success')
-    elif action == 'delete':
-        for user in users:
-            user.kyc_status = 'pending'
-            user.id_front_url = ''
-            user.id_back_url = ''
-            user.document_type = ''
-            user.kyc_submitted_at = None
-            user.kyc_notes = ''
-        db.session.commit()
-        _log_if_moderator('kyc', 'bulk_cleared_kyc', f'Bulk cleared {len(users)} KYC applications', 'kyc_batch', None, None, {'count': len(users)})
-        flash(f'Cleared {len(users)} KYC applications.', 'success')
-    
-    return redirect(url_for('admin.admin_kyc'))
-
-
 @admin_bp.route('/ban_user/<int:user_id>')
 @admin_required
 def admin_ban_user(user_id):
@@ -300,9 +147,6 @@ def api_users():
         elif account_status == 'new':
             week_ago = datetime.now(timezone.utc) - timedelta(days=7)
             query = query.filter(User.created_at >= week_ago)
-    kyc_status = request.args.get('kyc_status', 'all')
-    if kyc_status != 'all':
-        query = query.filter(User.kyc_status == kyc_status)
         
     sort = request.args.get('sort', 'newest')
     if sort == 'oldest':
@@ -320,7 +164,6 @@ def api_users():
             'country': getattr(u, 'country', 'N/A'),
             'status': 'banned' if u.is_banned else 'active',
             'created_at': u.created_at.isoformat() if u.created_at else None,
-            'kyc_status': getattr(u, 'kyc_status', 'N/A'),
         })
     return jsonify({
         'success': True, 'users': users_data,

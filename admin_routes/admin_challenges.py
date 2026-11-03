@@ -351,6 +351,24 @@ def validate_challenge_form(data):
             raise ValueError("Instant Min Trading Days cannot be negative")
         validate_leverage(data.get('instant_leverage'))
 
+    for key in ['max_single_day_profit_percent', 'min_payout_percent']:
+        value = data.get(key)
+        if value not in (None, '') and not 0 <= float(value) <= 100:
+            raise ValueError(f"{key.replace('_', ' ').title()} must be between 0 and 100")
+    for key in ['first_withdrawal_days']:
+        value = data.get(key)
+        if value not in (None, '') and int(value) < 0:
+            raise ValueError("First withdrawal days cannot be negative")
+    value = data.get('max_accounts_per_user')
+    if value not in (None, '') and int(value) < 1:
+        raise ValueError("Maximum accounts per user must be at least 1")
+    if data.get('consistency_action', 'flag') not in ['flag', 'hard']:
+        raise ValueError("Consistency action must be Flag or Hard")
+    if data.get('performance_reward_mode', 'off') not in ['off', 'fee refund on pass', 'add to first payout']:
+        raise ValueError("Invalid performance reward mode")
+    if data.get('currency', 'USD') not in ['USD', 'INR']:
+        raise ValueError("Currency must be USD or INR")
+
 
 @admin_bp.route('/save-challenge', methods=['POST'])
 @admin_required
@@ -453,6 +471,27 @@ def admin_save_challenge():
         challenge.weekend_trading = 'weekend_trading' in request.form
         challenge.is_active = 'is_active' in request.form
         challenge.description = request.form.get('description', '')
+
+        challenge.currency = request.form.get('currency', 'USD') or 'USD'
+        challenge.no_expiry = 'no_expiry' in request.form
+        challenge.consistency_enabled = 'consistency_enabled' in request.form
+        challenge.max_single_day_profit_percent = get_float('max_single_day_profit_percent')
+        if challenge.max_single_day_profit_percent is None:
+            challenge.max_single_day_profit_percent = 40
+        challenge.consistency_action = request.form.get('consistency_action', 'flag')
+        challenge.first_withdrawal_days = get_int('first_withdrawal_days')
+        challenge.min_payout_percent = get_float('min_payout_percent')
+        challenge.performance_reward_percent = get_float('performance_reward_percent')
+        if challenge.performance_reward_percent is None:
+            challenge.performance_reward_percent = 0
+        challenge.performance_reward_mode = request.form.get('performance_reward_mode', 'off')
+        challenge.max_accounts_per_user = get_int('max_accounts_per_user')
+        challenge.fee_refund_on_pass = 'fee_refund_on_pass' in request.form
+        challenge.refund_policy_text = request.form.get('refund_policy_text', '')
+        challenge.banned_practices = request.form.getlist('banned_practices')
+        challenge.news_trading_allowed = 'news_trading_allowed' in request.form
+        challenge.overnight_trading_allowed = 'overnight_trading_allowed' in request.form
+        challenge.ea_allowed = 'ea_allowed' in request.form
         
         challenge.sl_mandatory_enabled = 'sl_mandatory_enabled' in request.form
         challenge.sl_grace_period_minutes = int(request.form.get('sl_grace_period_minutes', 3) or 3)
@@ -948,12 +987,6 @@ def api_palantir():
     rankings = [{'name': r.name, 'price': float(r.price), 'total_purchases': r.total_purchases, 'revenue': float(r.revenue)} for r in challenge_rankings]
     top_challenge = rankings[0]['name'] if rankings else 'None'
     
-    pending_kyc = User.query.filter_by(kyc_status='submitted').count()
-    approved_kyc = User.query.filter_by(kyc_status='approved').count()
-    rejected_kyc = User.query.filter_by(kyc_status='rejected').count()
-    kyc_today = User.query.filter(User.kyc_status == 'submitted', User.kyc_submitted_at >= today_start).count()
-    latest_kyc = User.query.filter(User.kyc_status.in_(['submitted', 'approved', 'rejected'])).order_by(User.kyc_submitted_at.desc().nullslast()).limit(10).all()
-    kyc_list = [{'user_id': u.id, 'user_name': u.get_full_name(), 'country': u.country or 'N/A', 'status': u.kyc_status, 'submitted_at': u.kyc_submitted_at.isoformat() if u.kyc_submitted_at else None} for u in latest_kyc]
     
     open_tickets = SupportTicket.query.filter_by(status='open').count()
     urgent_tickets = SupportTicket.query.filter(SupportTicket.status == 'open', SupportTicket.priority == 'urgent').count()
@@ -979,15 +1012,14 @@ def api_palantir():
     require_review = ChallengePurchase.query.filter_by(review_required=True).count()
     breached_today = ChallengePurchase.query.filter(ChallengePurchase.is_terminated == True, ChallengePurchase.completed_at >= today_start).count()
     
-    summary = {'new_users_today': users_today, 'revenue_today': revenue_today, 'top_challenge': top_challenge, 'pending_kyc': pending_kyc, 'pending_tickets': open_tickets, 'system_health': 'NORMAL'}
-    actions = {'pending_kyc': pending_kyc, 'open_tickets': open_tickets, 'failed_payments': failed_payments_count, 'near_breach': near_daily_loss + near_overall_loss, 'require_review': require_review}
+    summary = {'new_users_today': users_today, 'revenue_today': revenue_today, 'top_challenge': top_challenge, 'pending_tickets': open_tickets, 'system_health': 'NORMAL'}
+    actions = {'open_tickets': open_tickets, 'failed_payments': failed_payments_count, 'near_breach': near_daily_loss + near_overall_loss, 'require_review': require_review}
     
     return jsonify({
         'success': True, 'summary': summary, 'actions': actions,
         'users': {'total': total_users, 'today': users_today, 'this_month': users_this_month, 'growth_today': growth_today, 'registrations_by_day_labels': reg_labels, 'registrations_by_day_values': reg_values, 'latest': latest_registrations},
         'revenue': {'today': revenue_today, 'yesterday': revenue_yesterday, 'this_month': revenue_this_month, 'lifetime': revenue_lifetime, 'revenue_by_day_labels': rev_labels, 'revenue_by_day_values': rev_values},
         'challenges': {'active': active_challenges, 'funded': funded_accounts, 'breached': breached_accounts, 'rankings': rankings},
-        'kyc': {'pending': pending_kyc, 'approved': approved_kyc, 'rejected': rejected_kyc, 'today': kyc_today, 'latest': kyc_list},
         'support': {'open': open_tickets, 'urgent': urgent_tickets, 'closed_today': closed_today, 'latest': tickets_list},
         'payments': {'successful': successful_payments, 'pending': pending_payments_count, 'failed': failed_payments_count, 'success_rate': success_rate, 'latest': payments_list},
         'coupons': {'active': active_coupons_count, 'expired': expired_coupons_count, 'top_10': coupons_list},
@@ -1010,9 +1042,6 @@ def api_palantir_activity():
         status_lower = (p.status or '').lower()
         event_type = 'payment_success' if 'success' in status_lower else ('payment_failed' if 'fail' in status_lower else 'payment')
         events.append({'timestamp': p.created_at.isoformat() if p.created_at else None, 'type': event_type, 'user': p.user.get_full_name() if p.user else 'Unknown', 'description': f"Payment of ₹{float(p.amount or 0):,.2f} - {p.status}"})
-    kyc_users = User.query.filter(User.kyc_status.in_(['submitted', 'approved', 'rejected'])).order_by(User.kyc_submitted_at.desc().nullslast()).limit(10).all()
-    for u in kyc_users:
-        events.append({'timestamp': u.kyc_submitted_at.isoformat() if u.kyc_submitted_at else None, 'type': f"kyc_{u.kyc_status}", 'user': u.get_full_name(), 'description': f"KYC {u.kyc_status}"})
     tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).limit(10).all()
     for t in tickets:
         events.append({'timestamp': t.created_at.isoformat() if t.created_at else None, 'type': 'support_ticket', 'user': t.user.get_full_name() if t.user else 'Unknown', 'description': f"Ticket #{t.ticket_number}: {(t.subject or '')[:50]}"})

@@ -79,7 +79,7 @@
     // Determine template icon
     function getNotificationIcon(title, is_global) {
         const t = title.toLowerCase();
-        if (t.includes('kyc') || t.includes('verified') || t.includes('identity')) {
+        if (t.includes('verified') || t.includes('identity')) {
             return {
                 icon: 'fas fa-id-card',
                 bg: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'

@@ -24,7 +24,7 @@
 <!-- Top Stats Row -->
 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6" id="topStats">
     <div class="stat-card glass-card p-4 text-center rounded-xl">
-        <div class="text-2xl font-bold text-blue-600" id="statTotalRevenue">₹0</div>
+        <div class="text-2xl font-bold text-blue-600" id="statTotalRevenue">$0</div>
         <div class="text-xs text-gray-500 mt-1">Total Revenue</div>
     </div>
     <div class="stat-card glass-card p-4 text-center rounded-xl">
@@ -48,7 +48,7 @@
         <div class="text-xs text-gray-500 mt-1">Repeat Buyers</div>
     </div>
     <div class="stat-card glass-card p-4 text-center rounded-xl">
-        <div class="text-2xl font-bold text-teal-600" id="statAvgOrder">₹0</div>
+        <div class="text-2xl font-bold text-teal-600" id="statAvgOrder">$0</div>
         <div class="text-xs text-gray-500 mt-1">Avg Order Value</div>
     </div>
     <div class="stat-card glass-card p-4 text-center rounded-xl">
@@ -241,13 +241,13 @@ async function refreshAll() {
 }
 
 function updateStats(stats) {
-    document.getElementById('statTotalRevenue').textContent = '₹' + (stats?.total_revenue || 0).toLocaleString('en-IN');
+    document.getElementById('statTotalRevenue').textContent = '$' + (stats?.total_revenue || 0).toLocaleString('en-IN');
     document.getElementById('statSuccessful').textContent = stats?.successful || 0;
     document.getElementById('statPending').textContent = stats?.pending || 0;
     document.getElementById('statFailed').textContent = stats?.failed || 0;
     document.getElementById('statUniqueUsers').textContent = stats?.unique_buyers || 0;
     document.getElementById('statRepeatUsers').textContent = stats?.repeat_buyers || 0;
-    document.getElementById('statAvgOrder').textContent = '₹' + (stats?.avg_order_value || 0).toLocaleString('en-IN');
+    document.getElementById('statAvgOrder').textContent = '$' + (stats?.avg_order_value || 0).toLocaleString('en-IN');
     document.getElementById('statSuccessRate').textContent = (stats?.success_rate || 0) + '%';
 }
 
@@ -263,7 +263,7 @@ function updateCharts(data) {
         data: {
             labels: data.revenue_trend?.labels || [],
             datasets: [{
-                label: 'Revenue (₹)',
+                label: 'Revenue ($)',
                 data: data.revenue_trend?.values || [],
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59,130,246,0.1)',
@@ -278,7 +278,7 @@ function updateCharts(data) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
+                y: { ticks: { callback: v => '$' + v.toLocaleString('en-IN') } }
             }
         }
     });
@@ -315,7 +315,7 @@ function updateTopSpenders(spenders) {
             <td class="py-2 font-bold">${i+1}</td>
             <td class="py-2"><div class="font-medium">${s.name}</div><div class="text-xs text-gray-400">${s.email}</div></td>
             <td class="py-2">${s.order_count}</td>
-            <td class="py-2 font-semibold">₹${(s.total_spent || 0).toLocaleString('en-IN')}</td>
+            <td class="py-2 font-semibold">$${(s.total_spent || 0).toLocaleString('en-IN')}</td>
             <td class="py-2 text-xs text-gray-400">${s.last_purchase || '--'}</td>
         </tr>
     `).join('');
@@ -331,7 +331,7 @@ function updateChallengePerf(challenges) {
         <tr class="border-b">
             <td class="py-2 font-medium">${c.name}</td>
             <td class="py-2">${c.sales}</td>
-            <td class="py-2">₹${(c.revenue || 0).toLocaleString('en-IN')}</td>
+            <td class="py-2">$${(c.revenue || 0).toLocaleString('en-IN')}</td>
             <td class="py-2"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${c.conversion > 50 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${c.conversion}%</span></td>
         </tr>
     `).join('');
@@ -346,13 +346,13 @@ function renderTable(payments) {
     tbody.innerHTML = payments.map(p => {
         const statusColors = { success: 'badge-success', pending: 'badge-pending', failed: 'badge-failed' };
         const statusClass = statusColors[p.status?.toLowerCase()] || 'bg-gray-100 text-gray-600';
-        const couponInfo = p.coupon_code ? `<span class="text-xs text-purple-600 font-medium">${p.coupon_code}</span><br><span class="text-xs text-gray-400">-₹${p.coupon_discount || 0}</span>` : '<span class="text-xs text-gray-400">--</span>';
+        const couponInfo = p.coupon_code ? `<span class="text-xs text-purple-600 font-medium">${p.coupon_code}</span><br><span class="text-xs text-gray-400">-$${p.coupon_discount || 0}</span>` : '<span class="text-xs text-gray-400">--</span>';
         return `
             <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 transition">
                 <td class="px-4 py-3 font-mono text-xs">${p.order_id?.substring(0, 20) || '--'}</td>
                 <td class="px-4 py-3"><div class="font-medium">${p.user_name || '--'}</div><div class="text-xs text-gray-400">${p.user_email || ''}</div></td>
-                <td class="px-4 py-3 text-sm">${p.challenge_name || '--'}<br><span class="text-xs text-gray-400">₹${p.challenge_price || 0}</span></td>
-                <td class="px-4 py-3 font-semibold">₹${(p.final_amount || 0).toLocaleString('en-IN')}</td>
+                <td class="px-4 py-3 text-sm">${p.challenge_name || '--'}<br><span class="text-xs text-gray-400">$${p.challenge_price || 0}</span></td>
+                <td class="px-4 py-3 font-semibold">$${(p.final_amount || 0).toLocaleString('en-IN')}</td>
                 <td class="px-4 py-3">${couponInfo}</td>
                 <td class="px-4 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${statusClass}">${p.status || '--'}</span></td>
                 <td class="px-4 py-3 text-xs text-gray-400">${p.date || '--'}</td>

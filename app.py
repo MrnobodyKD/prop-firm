@@ -248,6 +248,22 @@ def to_dict_filter(obj):
             'instant_overall_loss': obj.instant_overall_loss,
             'instant_overall_dd_type': obj.instant_overall_dd_type,
             'instant_min_days': obj.instant_min_days,
+            'currency': obj.currency,
+            'no_expiry': obj.no_expiry,
+            'consistency_enabled': obj.consistency_enabled,
+            'max_single_day_profit_percent': obj.max_single_day_profit_percent,
+            'consistency_action': obj.consistency_action,
+            'first_withdrawal_days': obj.first_withdrawal_days,
+            'min_payout_percent': obj.min_payout_percent,
+            'performance_reward_percent': obj.performance_reward_percent,
+            'performance_reward_mode': obj.performance_reward_mode,
+            'max_accounts_per_user': obj.max_accounts_per_user,
+            'fee_refund_on_pass': obj.fee_refund_on_pass,
+            'refund_policy_text': obj.refund_policy_text,
+            'banned_practices': obj.banned_practices or [],
+            'news_trading_allowed': obj.news_trading_allowed,
+            'overnight_trading_allowed': obj.overnight_trading_allowed,
+            'ea_allowed': obj.ea_allowed,
             'instant_leverage': obj.instant_leverage,
             'user_profit_share': obj.user_profit_share,
             'payout_cycle': obj.payout_cycle,
@@ -288,7 +304,6 @@ def inject_user():
                     self.first_name = user_obj.first_name
                     self.last_name = user_obj.last_name
                     self.name = f"{user_obj.first_name} {user_obj.last_name}"
-                    self.kyc_status = user_obj.kyc_status
                     self.phone_verified = user_obj.phone_verified
                     self.email_verified = user_obj.email_verified
                     self.is_authenticated = True
@@ -416,7 +431,9 @@ def provision_challenge(payment, user, challenge_template_id):
         initial_status = 'funded_active'
         initial_phase = 0
         
-    if ctype == 'instant':
+    if challenge.no_expiry:
+        initial_duration = None
+    elif ctype == 'instant':
         initial_duration = 999
     else:
         initial_duration = challenge.phase1_duration or 30
@@ -432,7 +449,7 @@ def provision_challenge(payment, user, challenge_template_id):
         current_phase=initial_phase,
         is_terminated=False,
         start_date=datetime.now(timezone.utc),
-        end_date=datetime.now(timezone.utc) + timedelta(days=initial_duration),
+        end_date=datetime.now(timezone.utc) + timedelta(days=initial_duration) if initial_duration is not None else None,
         mt5_account=f"TRG_{user.id}_{challenge.id}_{datetime.now().strftime('%Y%m%d')}",
         current_profit=0.0,
         current_loss=0.0,
@@ -712,7 +729,6 @@ with app.app_context():
                 is_admin=True,
                 phone_verified=True,
                 email_verified=True,
-                kyc_status='approved'
             )
             admin.set_password(admin_password)
             db.session.add(admin)
@@ -736,7 +752,6 @@ with app.app_context():
                 
         if not NotificationTemplate.query.first():
             default_templates = [
-                NotificationTemplate(name="✅ KYC Verified", title="✅ KYC Verified", message="Congratulations! Your KYC documents have been reviewed and approved. You are now fully eligible to purchase challenges and start your trading journey.", category="kyc"),
                 NotificationTemplate(name="🏆 Challenge Passed", title="🏆 Challenge Passed", message="Outstanding performance! You have successfully passed the evaluation phase of your challenge. Your credentials for the next phase are being prepared and will be sent shortly.", category="challenge"),
                 NotificationTemplate(name="💰 Payout Processed", title="💰 Payout Processed", message="Success! Your recent payout request has been verified and processed by our finance team. The funds should reflect in your registered account shortly.", category="payout"),
                 NotificationTemplate(name="🎯 New Challenge Available", title="🎯 New Challenge Available", message="Check it out! A brand new challenge template has been added to our catalog with enhanced leverage and lower drawdown thresholds. Head over to the challenges section to buy now.", category="challenge"),
@@ -865,9 +880,14 @@ def create_cashfree_order():
         challenge = ChallengeTemplate.query.get(challenge_id)
         if not challenge:
             return jsonify({'success': False, 'error': 'Challenge not found'})
-        
-        if user.kyc_status != 'approved':
-            return jsonify({'success': False, 'error': 'Please complete KYC verification first'})
+
+        template_currency = (challenge.currency or 'INR').upper()
+        active_challenges = ChallengePurchase.query.filter(
+            ChallengePurchase.user_id == user.id,
+            ChallengePurchase.status.in_(['active', 'phase1_active', 'phase2_active', 'funded', 'funded_active', 'pending_phase2', 'pending_funded', 'pending_credentials', 'passed', 'under_review', 'flagged', 'offline'])
+        ).count()
+        if challenge.max_accounts_per_user is not None and active_challenges >= challenge.max_accounts_per_user:
+            return jsonify({'success': False, 'error': f'Maximum of {challenge.max_accounts_per_user} active or funded accounts reached.'})
 
         if request.form.get('rule_acknowledgement') != 'on':
             return jsonify({'success': False, 'error': 'Please confirm that you understand the challenge drawdown rules'})
@@ -881,6 +901,9 @@ def create_cashfree_order():
             if not coupon:
                 return jsonify({'success': False, 'error': 'Invalid coupon code'})
             
+            coupon_currency = (coupon.currency or template_currency).upper()
+            if coupon_currency != template_currency:
+                return jsonify({'success': False, 'error': f'This coupon is in {coupon_currency}; the challenge is priced in {template_currency}.'})
             is_valid, msg, discount_amount, discounted_base = coupon.validate_for_user_and_price(user.id, base_price)
             if not is_valid:
                 return jsonify({'success': False, 'error': msg})
@@ -907,7 +930,7 @@ def create_cashfree_order():
         
         create_order_request = CreateOrderRequest(
             order_amount=expected_payable_amount,
-            order_currency="INR",
+            order_currency=template_currency,
             order_id=internal_order_id,
             customer_details=customer_details,
             order_meta=order_meta,
@@ -918,7 +941,7 @@ def create_cashfree_order():
         order_response = api_response.data
         
         if DEV_MODE:
-            print(f"[OK] Cashfree Order Created: {internal_order_id} for INR {expected_payable_amount}")
+            print(f"[OK] Cashfree Order Created: {internal_order_id} for {template_currency} {expected_payable_amount}")
         
         payment = Payment(
             user_id=user.id,
@@ -926,7 +949,7 @@ def create_cashfree_order():
             payment_id=internal_order_id,
             amount=expected_payable_amount,
             expected_amount=expected_payable_amount,
-            currency='INR',
+            currency=template_currency,
             payment_method='cashfree',
             status='pending',
             gateway='cashfree',
@@ -1019,7 +1042,7 @@ def cashfree_webhook():
                 db.session.commit()
                 return jsonify({'status': 'amount mismatch'}), 200
                 
-            if payment_currency != 'INR':
+            if payment_currency != (payment.currency or 'INR'):
                 payment.status = 'failed'
                 webhook_log.status = 'failed'
                 webhook_log.error_message = 'Currency mismatch'
@@ -1615,7 +1638,6 @@ def get_palantir_summary_data():
         ChallengePurchase.is_terminated == False
     ).count()
     
-    pending_kyc = User.query.filter_by(kyc_status='submitted').count()
     
     open_tickets = SupportTicket.query.filter_by(status='open').count()
     
@@ -1655,7 +1677,7 @@ def get_palantir_summary_data():
     most_sold_challenge = top_challenge.name if top_challenge else 'None'
     
     system_status = 'NORMAL'
-    if pending_kyc > 10 or open_tickets > 10 or near_breach > 5 or need_review > 5:
+    if open_tickets > 10 or near_breach > 5 or need_review > 5:
         system_status = 'NEEDS ATTENTION'
     if near_breach > 20 or need_review > 20:
         system_status = 'CRITICAL'
@@ -1667,7 +1689,6 @@ def get_palantir_summary_data():
         'revenue_today': revenue_today,
         'revenue_this_month': revenue_this_month,
         'active_challenges': active_challenges,
-        'pending_kyc': pending_kyc,
         'open_tickets': open_tickets,
         'active_coupons': active_coupons,
         'expired_coupons': expired_coupons,
@@ -1720,31 +1741,6 @@ def n8n_tickets():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/n8n/kyc')
-@require_n8n_api_key
-def n8n_kyc():
-    try:
-        pending_users = User.query.filter_by(kyc_status='submitted').order_by(User.kyc_submitted_at.desc()).all()
-        
-        users_data = [{
-            'id': u.id,
-            'name': u.get_full_name(),
-            'email': u.email,
-            'country': u.country or 'N/A',
-            'phone': u.phone or 'N/A',
-            'submitted_at': u.kyc_submitted_at.isoformat() if u.kyc_submitted_at else None,
-            'hours_pending': round(((datetime.now(timezone.utc) - u.kyc_submitted_at).total_seconds() / 3600), 1) if u.kyc_submitted_at else None,
-            'document_type': u.document_type or 'N/A'
-        } for u in pending_users]
-        
-        return jsonify({
-            'success': True,
-            'count': len(users_data),
-            'pending_kyc': users_data
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @app.route('/api/n8n/newusers')
 @require_n8n_api_key
 def n8n_newusers():
@@ -1759,7 +1755,6 @@ def n8n_newusers():
             'email': u.email,
             'country': u.country or 'N/A',
             'phone': u.phone or 'N/A',
-            'kyc_status': u.kyc_status,
             'created_at': u.created_at.isoformat() if u.created_at else None
         } for u in new_users]
         

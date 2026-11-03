@@ -91,7 +91,7 @@
                             {% if coupon.discount_type == 'percent' %}
                                 {{ coupon.discount_value|int }}% OFF
                             {% else %}
-                                ₹{{ coupon.discount_value|int }} OFF
+                                ${{ coupon.discount_value|int }} OFF
                             {% endif %}
                         </p>
                     </div>

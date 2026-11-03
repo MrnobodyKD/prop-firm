@@ -32,10 +32,10 @@ DEFAULT_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Tragene Funded <support@tra
 COMPANY_NAME = "Tragene Funded"
 PLACEHOLDER_RE = re.compile(r"{{\s*([a-zA-Z0-9_]+)\s*}}")
 
-TEMPLATE_CATEGORIES = ["transactional", "marketing", "support", "challenge", "kyc", "promotion", "newsletter"]
+TEMPLATE_CATEGORIES = ["transactional", "marketing", "support", "challenge", "promotion", "newsletter"]
 CAMPAIGN_TYPES = ["newsletter", "promotion", "coupon", "announcement", "maintenance", "challenge_launch", "general"]
 AUDIENCE_TYPES = [
-    "all_users", "verified_users", "unverified_users", "kyc_pending", "kyc_approved",
+    "all_users", "verified_users", "unverified_users",
     "purchased_users", "never_purchased", "challenge_active", "challenge_failed",
     "challenge_passed", "specific_user", "multiple_users", "partner_users", "admins",
     "inactive_users", "new_users", "registered_today", "registered_last_7_days",
@@ -235,10 +235,6 @@ def audience_query(audience_type, filters=None):
         q = q.filter_by(email_verified=True)
     elif audience_type == "unverified_users":
         q = q.filter_by(email_verified=False)
-    elif audience_type == "kyc_pending":
-        q = q.filter(User.kyc_status.in_(["pending", "submitted"]))
-    elif audience_type == "kyc_approved":
-        q = q.filter_by(kyc_status="approved")
     elif audience_type == "purchased_users":
         q = q.join(ChallengePurchase, ChallengePurchase.user_id == User.id).distinct()
     elif audience_type == "never_purchased":
@@ -414,7 +410,6 @@ def seed_email_center():
           <p style="font-size:12px;color:#6b7280">If you did not create this account, you can ignore this email.</p>
         </div>""", ["name", "verification_link", "company_name"]),
         ("welcome-email", "Welcome Email", "transactional", "Welcome to Tragene Funded", "<p>Hello {{name}}, welcome to {{company_name}}. Your account is ready.</p>", ["name", "company_name"]),
-        ("kyc-approved", "KYC Approved", "kyc", "KYC Approved - Tragene Funded", "<p>Hello {{name}}, your KYC has been approved. You can now purchase challenges.</p>", ["name"]),
         ("purchase-confirmation", "Purchase Confirmation", "transactional", "Challenge Purchase Confirmed", "<p>Hello {{name}}, your {{challenge}} purchase is confirmed. Order: {{order_id}}</p>", ["name", "challenge", "order_id"]),
         ("challenge-passed", "Challenge Passed", "challenge", "Challenge Passed - Tragene Funded", "<p>Congratulations {{name}}, you passed {{challenge}}.</p>", ["name", "challenge"]),
         ("challenge-failed", "Challenge Failed", "challenge", "Challenge Failed - Tragene Funded", "<p>Hello {{name}}, your {{challenge}} has been marked failed. You can review available evidence here: {{evidence_url}}</p>", ["name", "challenge", "evidence_url"]),
@@ -444,7 +439,6 @@ def seed_email_center():
     automations = [
         ("email_verification", "Email Verification", "registration", "email-verification", "none", True),
         ("welcome_email", "Welcome Email", "email_verified", "welcome-email", "user", False),
-        ("kyc_approved", "KYC Approved", "kyc_approved", "kyc-approved", "user", False),
         ("purchase_confirmation", "Purchase Confirmation", "payment_success", "purchase-confirmation", "none", False),
         ("challenge_passed", "Challenge Passed", "challenge_passed", "challenge-passed", "challenge", False),
         ("challenge_failed", "Challenge Failed", "challenge_failed", "challenge-failed", "challenge", False),

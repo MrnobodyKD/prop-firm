@@ -75,7 +75,7 @@
                         <td class="font-bold">${{ '%.2f'|format(payout.amount) }}</td>
                         <td>{{ '%.0f'|format(payout.profit_share_percentage or 0) }}%</td>
                         <td>{{ payout.payment_method|replace('_',' ')|title }}</td>
-                        <td class="max-w-xs">{{ payout.upi_id or payout.bank_account_details or '-' }}</td>
+                        <td class="max-w-xs">{{ payout.crypto_address or payout.bank_account_details or '-' }}</td>
                         <td>{{ payout.created_at.strftime('%d %b %Y') if payout.created_at else '-' }}</td>
                         <td><span class="px-2 py-1 rounded text-xs font-bold bg-gray-100 dark:bg-gray-800">{{ payout.status|replace('_',' ')|title }}</span></td>
                         <td class="space-y-2 min-w-56">

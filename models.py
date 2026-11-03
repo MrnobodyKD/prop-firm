@@ -42,14 +42,6 @@ class ProgressionRequestStatus:
 
     ALL = [PENDING, APPROVED, DECLINED]
 
-class KYCStatus:
-    PENDING = 'pending'
-    SUBMITTED = 'submitted'
-    APPROVED = 'approved'
-    REJECTED = 'rejected'
-    
-    ALL = [PENDING, SUBMITTED, APPROVED, REJECTED]
-
 class MonitoringStatus:
     ACTIVE = 'active'
     OFFLINE = 'offline'
@@ -77,17 +69,14 @@ class User(db.Model):
     is_banned = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     
-    # KYC Fields
+    # Verification fields
     phone_verified = db.Column(db.Boolean, default=False, index=True)
     email_verified = db.Column(db.Boolean, default=False, index=True)
-    kyc_status = db.Column(db.String(20), default=KYCStatus.PENDING, index=True)
     id_front_url = db.Column(db.String(500), default='')
     id_back_url = db.Column(db.String(500), default='')
     selfie_url = db.Column(db.String(500), default='')
     document_type = db.Column(db.String(20), default='')
     document_number = db.Column(db.String(50), default='')
-    kyc_submitted_at = db.Column(db.DateTime(timezone=True), default=None)
-    kyc_notes = db.Column(db.Text, default='')
 
 
     
@@ -128,26 +117,8 @@ class User(db.Model):
         today = date.today()
         return today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
     
-    def is_kyc_approved(self):
-        return self.kyc_status == KYCStatus.APPROVED
-    
     def can_buy_challenge(self):
-        return self.is_kyc_approved() and not self.is_banned
-    
-    def is_kyc_submitted(self):
-        return self.kyc_status == KYCStatus.SUBMITTED
-    
-    def is_kyc_pending(self):
-        return self.kyc_status == KYCStatus.PENDING
-    
-    def get_kyc_status_display(self):
-        status_map = {
-            KYCStatus.PENDING: 'Not Started',
-            KYCStatus.SUBMITTED: 'Under Review', 
-            KYCStatus.APPROVED: 'Approved',
-            KYCStatus.REJECTED: 'Rejected'
-        }
-        return status_map.get(self.kyc_status, 'Not Started')
+        return not self.is_banned
     
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
@@ -210,6 +181,22 @@ class ChallengeTemplate(db.Model):
     user_profit_share = db.Column(db.Integer, nullable=False)
     payout_cycle = db.Column(db.String(20), default='biweekly')
     weekend_trading = db.Column(db.Boolean, default=True)
+    currency = db.Column(db.String(10), nullable=True, default='USD')
+    no_expiry = db.Column(db.Boolean, nullable=True, default=False)
+    consistency_enabled = db.Column(db.Boolean, nullable=True, default=False)
+    max_single_day_profit_percent = db.Column(db.Float, nullable=True, default=40)
+    consistency_action = db.Column(db.String(20), nullable=True, default='flag')
+    first_withdrawal_days = db.Column(db.Integer, nullable=True)
+    min_payout_percent = db.Column(db.Float, nullable=True)
+    performance_reward_percent = db.Column(db.Float, nullable=True, default=0)
+    performance_reward_mode = db.Column(db.String(30), nullable=True, default='off')
+    max_accounts_per_user = db.Column(db.Integer, nullable=True)
+    fee_refund_on_pass = db.Column(db.Boolean, nullable=True, default=False)
+    refund_policy_text = db.Column(db.Text, nullable=True)
+    banned_practices = db.Column(db.JSON, nullable=True)
+    news_trading_allowed = db.Column(db.Boolean, nullable=True, default=True)
+    overnight_trading_allowed = db.Column(db.Boolean, nullable=True, default=True)
+    ea_allowed = db.Column(db.Boolean, nullable=True, default=True)
     is_active = db.Column(db.Boolean, default=True, index=True)
     description = db.Column(db.Text)
     challenge_type = db.Column(db.String(20), nullable=False, default='one_phase', index=True)
@@ -244,6 +231,8 @@ class ChallengeTemplate(db.Model):
 
     @property
     def duration_days(self):
+        if self.no_expiry:
+            return None
         if self.challenge_type == 'instant':
             return 365
         return self.phase1_duration or 30
@@ -260,36 +249,81 @@ class ChallengeTemplate(db.Model):
         if ctype == 'instant' or phase == 0:
             return {
                 'phase_name': 'Instant',
+                'currency': self.currency, 'no_expiry': self.no_expiry,
+                'consistency_enabled': self.consistency_enabled,
+                'max_single_day_profit_percent': self.max_single_day_profit_percent,
+                'consistency_action': self.consistency_action,
+                'first_withdrawal_days': self.first_withdrawal_days,
+                'min_payout_percent': self.min_payout_percent,
+                'performance_reward_percent': self.performance_reward_percent,
+                'performance_reward_mode': self.performance_reward_mode,
+                'max_accounts_per_user': self.max_accounts_per_user,
+                'fee_refund_on_pass': self.fee_refund_on_pass,
+                'refund_policy_text': self.refund_policy_text,
+                'banned_practices': self.banned_practices or [],
+                'news_trading_allowed': self.news_trading_allowed,
+                'overnight_trading_allowed': self.overnight_trading_allowed,
+                'ea_allowed': self.ea_allowed,
                 'target': 0.0,
                 'daily_loss': self.instant_daily_loss or 0.0,
                 'daily_dd_type': self.instant_daily_dd_type or 'equity',
                 'overall_loss': self.instant_overall_loss or 0.0,
                 'overall_dd_type': self.instant_overall_dd_type or 'equity',
                 'min_days': self.instant_min_days or 0,
-                'duration': 365,
+                'duration': None if self.no_expiry else 365,
                 'leverage': self.instant_leverage or '1:100',
             }
         if ctype == 'two_phase' and phase == 2:
             return {
                 'phase_name': 'Phase 2',
+                'currency': self.currency, 'no_expiry': self.no_expiry,
+                'consistency_enabled': self.consistency_enabled,
+                'max_single_day_profit_percent': self.max_single_day_profit_percent,
+                'consistency_action': self.consistency_action,
+                'first_withdrawal_days': self.first_withdrawal_days,
+                'min_payout_percent': self.min_payout_percent,
+                'performance_reward_percent': self.performance_reward_percent,
+                'performance_reward_mode': self.performance_reward_mode,
+                'max_accounts_per_user': self.max_accounts_per_user,
+                'fee_refund_on_pass': self.fee_refund_on_pass,
+                'refund_policy_text': self.refund_policy_text,
+                'banned_practices': self.banned_practices or [],
+                'news_trading_allowed': self.news_trading_allowed,
+                'overnight_trading_allowed': self.overnight_trading_allowed,
+                'ea_allowed': self.ea_allowed,
                 'target': self.phase2_target or 0.0,
                 'daily_loss': self.phase2_daily_loss or 0.0,
                 'daily_dd_type': self.phase2_daily_dd_type or 'equity',
                 'overall_loss': self.phase2_overall_loss or 0.0,
                 'overall_dd_type': self.phase2_overall_dd_type or 'equity',
                 'min_days': self.phase2_min_days or 0,
-                'duration': self.phase2_duration or 30,
+                'duration': None if self.no_expiry else (self.phase2_duration or 30),
                 'leverage': self.phase2_leverage or '1:100',
             }
         return {
             'phase_name': 'Phase 1',
+                'currency': self.currency, 'no_expiry': self.no_expiry,
+                'consistency_enabled': self.consistency_enabled,
+                'max_single_day_profit_percent': self.max_single_day_profit_percent,
+                'consistency_action': self.consistency_action,
+                'first_withdrawal_days': self.first_withdrawal_days,
+                'min_payout_percent': self.min_payout_percent,
+                'performance_reward_percent': self.performance_reward_percent,
+                'performance_reward_mode': self.performance_reward_mode,
+                'max_accounts_per_user': self.max_accounts_per_user,
+                'fee_refund_on_pass': self.fee_refund_on_pass,
+                'refund_policy_text': self.refund_policy_text,
+                'banned_practices': self.banned_practices or [],
+                'news_trading_allowed': self.news_trading_allowed,
+                'overnight_trading_allowed': self.overnight_trading_allowed,
+                'ea_allowed': self.ea_allowed,
             'target': self.phase1_target or 0.0,
             'daily_loss': self.phase1_daily_loss or 0.0,
             'daily_dd_type': self.phase1_daily_dd_type or 'equity',
             'overall_loss': self.phase1_overall_loss or 0.0,
             'overall_dd_type': self.phase1_overall_dd_type or 'equity',
             'min_days': self.phase1_min_days or 0,
-            'duration': self.phase1_duration or 30,
+            'duration': None if self.no_expiry else (self.phase1_duration or 30),
             'leverage': self.phase1_leverage or '1:100',
         }
 
@@ -310,6 +344,22 @@ class ChallengeTemplate(db.Model):
             'phase2': self.get_phase_rules(2),
             'instant': self.get_phase_rules(0),
             'weekend_trading': self.weekend_trading,
+            'currency': self.currency,
+            'no_expiry': self.no_expiry,
+            'consistency_enabled': self.consistency_enabled,
+            'max_single_day_profit_percent': self.max_single_day_profit_percent,
+            'consistency_action': self.consistency_action,
+            'first_withdrawal_days': self.first_withdrawal_days,
+            'min_payout_percent': self.min_payout_percent,
+            'performance_reward_percent': self.performance_reward_percent,
+            'performance_reward_mode': self.performance_reward_mode,
+            'max_accounts_per_user': self.max_accounts_per_user,
+            'fee_refund_on_pass': self.fee_refund_on_pass,
+            'refund_policy_text': self.refund_policy_text,
+            'banned_practices': self.banned_practices,
+            'news_trading_allowed': self.news_trading_allowed,
+            'overnight_trading_allowed': self.overnight_trading_allowed,
+            'ea_allowed': self.ea_allowed,
             'profit_split': self.user_profit_share,
             'payout_cycle': self.payout_cycle,
             # 🛡️ Safety rules in snapshot
@@ -490,6 +540,8 @@ class TradingJourney(db.Model):
         return self.is_active() and self.has_credentials()
     
     def get_days_remaining(self):
+        if self.challenge_template and self.challenge_template.no_expiry:
+            return None
         if not self.end_date:
             return None
         remaining = (self.end_date - datetime.now(timezone.utc)).days
@@ -528,7 +580,7 @@ class TradingJourney(db.Model):
         
         if not self.start_date:
             self.start_date = datetime.now(timezone.utc)
-        if not self.end_date and self.challenge_template:
+        if not self.end_date and self.challenge_template and not self.challenge_template.no_expiry and self.challenge_template.duration_days:
             self.end_date = datetime.now(timezone.utc) + timedelta(days=self.challenge_template.duration_days)
     
     def revoke_credentials(self):
@@ -1061,6 +1113,7 @@ class Payout(db.Model):
     upi_id = db.Column(db.String(120), default='')
     transaction_id = db.Column(db.String(100))
     bank_account_details = db.Column(db.Text)
+    crypto_address = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     user = db.relationship('User', backref='payouts_list', foreign_keys=[user_id])
@@ -1342,6 +1395,7 @@ class Coupon(db.Model):
     coupon_type = db.Column(db.String(20), nullable=False, default='universal')
     discount_type = db.Column(db.String(20), nullable=False, default='percent')
     discount_value = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), nullable=True, default='USD')
     max_uses = db.Column(db.Integer, nullable=True)
     used_count = db.Column(db.Integer, default=0, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
@@ -1540,7 +1594,6 @@ class SiteSettings(db.Model):
 MODERATOR_PERMISSIONS = {
     'can_access_analytics': 'Analytics',
     'can_access_users': 'Users',
-    'can_access_kyc': 'KYC Applications',
     'can_access_notifications': 'Notifications',
     'can_access_challenges': 'Challenges',
     'can_access_progression': 'Progression Requests',

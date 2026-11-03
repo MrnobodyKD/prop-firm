@@ -91,27 +91,6 @@
 
 {% block content %}
 {% macro dd_label(value) -%}{{ 'Static Balance Based' if value == 'static' else 'Equity Based' }}{%- endmacro %}
-<!-- KYC Warning -->
-{% if user and user.kyc_status != 'approved' %}
-<div class="glass-card p-4 mb-6 border-l-4 border-orange-500" data-aos="fade-up">
-    <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-        <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                <i class="fas fa-id-card text-orange-600 dark:text-orange-400 text-xl"></i>
-            </div>
-            <div>
-                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">KYC Verification Required</h3>
-                <p class="text-gray-600 dark:text-gray-400">Complete verification to purchase challenges</p>
-            </div>
-        </div>
-        <a href="/user/kyc"
-            class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition whitespace-nowrap">
-            Start Verification
-        </a>
-    </div>
-</div>
-{% endif %}
-
 <!-- Page Header -->
 <div class="mb-6 text-center">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">Start Your Funded Trading Journey</h1>
@@ -175,10 +154,10 @@
                     </h3>
 
                     <div class="flex items-center justify-center gap-2 mb-1">
-                        <span class="text-4xl font-bold text-gray-900 dark:text-white">₹{{ challenge.price }}</span>
+                        <span class="text-4xl font-bold text-gray-900 dark:text-white">{{ '$' if challenge.currency == 'USD' else '₹' }}{{ challenge.price }}</span>
                         <span class="text-gray-500 dark:text-gray-300">/ one-time</span>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-300">≈ ${{ (challenge.price * 0.012)|round(1) }} USD</p>
+                    <p class="text-gray-600 dark:text-gray-300"></p>
                     <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">${{ "{:,}".format(challenge.account_size) }} Account Size</div>
                     
                     <!-- 🛡️ Safety Rule Badges -->
@@ -243,7 +222,6 @@
                 {% endif %}
 
                 <!-- Action Button -->
-                {% if user and user.kyc_status == 'approved' %}
                 {% if challenge.challenge_type == 'one_phase' %}
                 {% set button_class = 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700' %}
                 {% elif challenge.challenge_type == 'two_phase' %}
@@ -256,16 +234,6 @@
                     class="block w-full {{ button_class }} text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] text-center no-underline">
                     <i class="fas fa-bolt mr-2"></i> SELECT CHALLENGE
                 </a>
-                {% else %}
-                <div
-                    class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-700 dark:to-gray-800 text-white py-4 rounded-xl font-bold text-lg text-center cursor-not-allowed">
-                    {% if user %}
-                    COMPLETE KYC TO PURCHASE
-                    {% else %}
-                    LOGIN TO PURCHASE
-                    {% endif %}
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>

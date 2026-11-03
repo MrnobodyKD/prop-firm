@@ -6,21 +6,6 @@
 {% block header_subtitle %}Welcome back, {{ user.first_name }}{% endblock %}
 
 {% block content %}
-<!-- KYC Status Banner -->
-{% if user.kyc_status != 'approved' %}
-<div class="glass-card p-3 mb-4 border-l-4 border-orange-500 dark:border-orange-500" data-aos="fade-up">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-id-card text-orange-600 dark:text-orange-400"></i>
-            <span class="text-sm text-gray-700 dark:text-gray-300">KYC Verification Required</span>
-        </div>
-        <a href="/user/kyc" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap">
-            Complete KYC
-        </a>
-    </div>
-</div>
-{% endif %}
-
 <!-- ===== ROW 1: ACTIVE CHALLENGES SUMMARY ===== -->
 <div class="mb-4">
     <div class="flex items-center justify-between mb-3">
@@ -156,28 +141,6 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
     <!-- Quick Stats Column -->
     <div class="lg:col-span-1 space-y-3">
-        <!-- KYC Card -->
-        <div class="glass-card p-3 border dark:border-dark-border flex items-center justify-between" data-aos="fade-up">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center
-                    {% if user.kyc_status == 'approved' %}bg-green-100 dark:bg-green-900/30
-                    {% elif user.kyc_status == 'submitted' %}bg-yellow-100 dark:bg-yellow-900/30
-                    {% else %}bg-red-100 dark:bg-red-900/30{% endif %}">
-                    <i class="fas fa-id-card text-xs 
-                        {% if user.kyc_status == 'approved' %}text-green-600
-                        {% elif user.kyc_status == 'submitted' %}text-yellow-600
-                        {% else %}text-red-600{% endif %}"></i>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-400">KYC</p>
-                    <p class="text-xs font-semibold text-gray-900 dark:text-white">{{ user.kyc_status|title if user.kyc_status else 'Pending' }}</p>
-                </div>
-            </div>
-            {% if user.kyc_status != 'approved' %}
-            <a href="/user/kyc" class="text-[10px] text-blue-600 hover:underline">Complete</a>
-            {% endif %}
-        </div>
-
         <!-- Balance Card -->
         <div class="glass-card p-3 border dark:border-dark-border flex items-center justify-between" data-aos="fade-up" data-aos-delay="50">
             <div class="flex items-center gap-2">

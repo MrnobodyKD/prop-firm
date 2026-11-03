@@ -35,7 +35,7 @@
                     {% if coupon.discount_type == 'percent' %}
                         {{ coupon.discount_value|int }}% OFF
                     {% else %}
-                        ₹{{ coupon.discount_value|int }} OFF
+                        ${{ coupon.discount_value|int }} OFF
                     {% endif %}
                 </p>
             </div>
@@ -90,7 +90,7 @@
         <div class="glass-card p-6 border dark:border-dark-border flex items-center justify-between">
             <div>
                 <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Revenue Generated</span>
-                <h3 class="text-3xl font-extrabold text-green-600 dark:text-green-400 mt-2">₹{{ "{:,.2f}".format(total_revenue_generated) }}</h3>
+                <h3 class="text-3xl font-extrabold text-green-600 dark:text-green-400 mt-2">${{ "{:,.2f}".format(total_revenue_generated) }}</h3>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center text-xl">
                 <i class="fas fa-hand-holding-usd"></i>
@@ -101,7 +101,7 @@
         <div class="glass-card p-6 border dark:border-dark-border flex items-center justify-between">
             <div>
                 <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Discount Distributed</span>
-                <h3 class="text-3xl font-extrabold text-orange-600 dark:text-orange-400 mt-2">₹{{ "{:,.2f}".format(total_discount_given) }}</h3>
+                <h3 class="text-3xl font-extrabold text-orange-600 dark:text-orange-400 mt-2">${{ "{:,.2f}".format(total_discount_given) }}</h3>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center text-xl">
                 <i class="fas fa-percentage"></i>
@@ -157,13 +157,13 @@
                             Challenge (ID: {{ usage.challenge_purchase_id }})
                         </td>
                         <td class="p-4 text-right font-medium text-gray-900 dark:text-white">
-                            ₹{{ "{:,.2f}".format(usage.original_price) }}
+                            ${{ "{:,.2f}".format(usage.original_price) }}
                         </td>
                         <td class="p-4 text-right font-bold text-green-600 dark:text-green-400">
-                            -₹{{ "{:,.2f}".format(usage.discount_amount) }}
+                            -${{ "{:,.2f}".format(usage.discount_amount) }}
                         </td>
                         <td class="p-4 text-right font-extrabold text-blue-600 dark:text-blue-400">
-                            ₹{{ "{:,.2f}".format(usage.final_price) }}
+                            ${{ "{:,.2f}".format(usage.final_price) }}
                         </td>
                         <td class="p-4 text-center text-gray-600 dark:text-gray-400">
                             {{ usage.used_at.strftime('%Y-%m-%d %H:%M:%S') }}

@@ -521,10 +521,6 @@
 
             <div class="nav-section-label">Account</div>
 
-            <a href="/user/kyc" class="nav-item {% if request.endpoint == 'user.kyc' or request.endpoint == 'user.kyc_verification' %}active{% endif %}">
-                <i class="fas fa-id-card"></i>
-                <span>KYC Verification</span>
-            </a>
 
             <a href="/user/payouts" class="nav-item {% if request.endpoint == 'user.payouts' %}active{% endif %}">
                 <i class="fas fa-wallet"></i>
@@ -627,10 +623,6 @@
 
             <div class="nav-section-label">Account</div>
 
-            <a href="/user/kyc" class="nav-item {% if request.endpoint == 'user.kyc' %}active{% endif %}" onclick="toggleSidebar()">
-                <i class="fas fa-id-card"></i>
-                <span>KYC Verification</span>
-            </a>
 
             <a href="/user/payouts" class="nav-item {% if request.endpoint == 'user.payouts' %}active{% endif %}" onclick="toggleSidebar()">
                 <i class="fas fa-wallet"></i>
