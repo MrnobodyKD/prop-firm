@@ -1,9 +1,10 @@
 {% extends "user/base.html" %}
+{% set status_success = status in ['success', 'paid'] %}
 
 {% block title %}Payment Status - Tragene Funded{% endblock %}
 
 {% block header_title %}
-{% if status == 'success' %}
+{% if status_success %}
 Payment Successful
 {% elif status == 'pending' %}
 Payment Pending
@@ -15,7 +16,7 @@ Payment Status
 {% endblock %}
 
 {% block header_subtitle %}
-{% if status == 'success' %}
+{% if status_success %}
 Your transaction was completed successfully
 {% elif status == 'pending' %}
 Your transaction is being processed
@@ -67,7 +68,7 @@ Your transaction could not be completed
 <!-- Page Header Content -->
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-        {% if status == 'success' %}
+        {% if status_success %}
         <i class="fas fa-check-circle text-green-500 mr-2 animate-bounce"></i> Payment Successful!
         {% elif status == 'pending' %}
         <i class="fas fa-clock text-yellow-500 mr-2 animate-pulse"></i> Payment Pending
@@ -78,7 +79,7 @@ Your transaction could not be completed
         {% endif %}
     </h1>
     <div class="text-gray-600 dark:text-gray-400">
-        {% if status == 'success' %}
+        {% if status_success %}
         Your payment has been processed successfully. Your challenge account is being created.
         {% elif status == 'pending' %}
         Your payment is being processed. This may take a few minutes.
@@ -99,7 +100,7 @@ Your transaction could not be completed
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">Payment Details</h2>
                 <span
-                    class="px-3 py-1 rounded-full text-sm font-medium {% if status == 'success' %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400{% elif status == 'pending' %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400{% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400{% endif %}">
+                    class="px-3 py-1 rounded-full text-sm font-medium {% if status_success %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400{% elif status == 'pending' %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400{% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400{% endif %}">
                     {{ status|upper }}
                 </span>
             </div>
@@ -114,8 +115,7 @@ Your transaction could not be completed
                     </div>
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Amount</p>
-                        <p class="text-lg font-bold text-gray-900 dark:text-white">${{ payment.amount if payment else
-                            '0' }}</p>
+                        <p class="text-lg font-bold text-gray-900 dark:text-white">{{ payment.currency or 'USD' }} {{ payment.amount if payment else '0' }}</p>
                     </div>
                 </div>
 
@@ -128,18 +128,19 @@ Your transaction could not be completed
                     </div>
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Method</p>
-                        <p class="font-medium text-gray-900 dark:text-white">{{ payment.payment_method|upper if payment
-                            else 'N/A' }}
+                        <p class="font-medium text-gray-900 dark:text-white">{{ (payment.method_name or payment.payment_method)|upper if payment else 'N/A' }}
                         </p>
                     </div>
                 </div>
 
-                {% if payment and payment.gateway_id %}
+                {% if payment and (payment.external_reference or payment.gateway_id) %}
                 <div>
                     <p class="text-sm text-gray-600 dark:text-gray-400">Transaction ID</p>
-                    <p class="font-mono text-sm text-gray-900 dark:text-white">{{ payment.gateway_id }}</p>
+                    <p class="font-mono text-sm text-gray-900 dark:text-white">{{ payment.external_reference or payment.gateway_id }}</p>
                 </div>
                 {% endif %}
+                {% if payment and payment.evidence_path %}<a class="text-indigo-600" href="{{ url_for('user.payment_evidence', payment_id=payment.id) }}">View submitted payment evidence</a>{% endif %}
+                {% if payment and payment.receipt_url %}<a class="text-indigo-600 ml-3" href="{{ payment.receipt_url }}" target="_blank" rel="noopener">View payment receipt</a>{% endif %}
 
                 {% if payment and payment.rule_acceptance_timestamp %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t dark:border-gray-700">
@@ -156,7 +157,7 @@ Your transaction could not be completed
             </div>
 
             <!-- Progress Bar for Account Creation -->
-            {% if status == 'success' and challenge and challenge.status == 'account_creating' %}
+            {% if status_success and challenge and challenge.status == 'account_creating' %}
             <div class="mt-8">
                 <div class="flex justify-between mb-2">
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Creating Trading Account</span>
@@ -172,7 +173,7 @@ Your transaction could not be completed
 
             <!-- Action Buttons -->
             <div class="mt-8 flex flex-wrap gap-3">
-                {% if status == 'success' %}
+                {% if status_success %}
                 <a href="/user/dashboard"
                     class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition">
                     <i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard

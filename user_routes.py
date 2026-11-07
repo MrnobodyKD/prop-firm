@@ -1,11 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort, current_app, send_from_directory
 from functools import wraps
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payment, Payout, PayoutAuditLog, SupportTicket, TicketMessage, FAQ, TradeHistory, Notification, UserNotification, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, Wallet, WalletTransaction, WithdrawalRequest, SurveyAssignment, SurveyResponse, ViolationEvidence, SiteSettings
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payment, PaymentMethod, PurchaseRuleAcceptance, Payout, PayoutAuditLog, SupportTicket, TicketMessage, FAQ, TradeHistory, Notification, UserNotification, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, Wallet, WalletTransaction, WithdrawalRequest, SurveyAssignment, SurveyResponse, ViolationEvidence, SiteSettings
 from datetime import datetime, timezone, timedelta
 import os
 import secrets
 import random
 import json
+import uuid
 from werkzeug.utils import secure_filename
 
 # ===== FIX: Handle PIL import gracefully =====
@@ -461,11 +462,222 @@ def buy_challenge(challenge_id):
         flash('This challenge is currently unavailable.', 'error')
         return redirect(url_for('user.challenges'))
 
+    payment_methods = PaymentMethod.query.filter_by(is_active=True).order_by(PaymentMethod.sort_order, PaymentMethod.name).all()
+
     return render_template(
         'user/buy_challenge.html',
         user=user,
-        challenge=challenge
+        challenge=challenge,
+        payment_methods=payment_methods,
+        nowpayments_enabled=bool(os.getenv('NOWPAYMENTS_API_KEY'))
     )
+
+
+def _checkout_coupon_price(user, challenge, code):
+    price = float(challenge.price)
+    if not code:
+        return price
+    coupon = Coupon.query.filter_by(code=code.upper().strip(), is_deleted=False).first()
+    if not coupon:
+        raise ValueError('Invalid coupon code')
+    challenge_currency = (challenge.currency or 'USD').upper()
+    if (coupon.currency or challenge_currency).upper() != challenge_currency:
+        raise ValueError(f'This coupon is in {(coupon.currency or challenge_currency).upper()}; the challenge is priced in {challenge_currency}.')
+    valid, message, _discount, discounted_price = coupon.validate_for_user_and_price(user.id, price)
+    if not valid:
+        raise ValueError(message)
+    return float(discounted_price)
+
+
+def _purchase_guard(user, challenge):
+    settings = SiteSettings.get_settings()
+    if settings.marketplace_locked:
+        raise ValueError(settings.marketplace_lock_reason or 'Purchases are temporarily disabled.')
+    if not challenge.is_active:
+        raise ValueError('This challenge is currently unavailable.')
+    active = ChallengePurchase.query.filter(
+        ChallengePurchase.user_id == user.id,
+        ChallengePurchase.status.in_(['active', 'phase1_active', 'phase2_active', 'funded', 'funded_active', 'pending_phase2', 'pending_funded', 'pending_credentials', 'passed', 'under_review', 'flagged', 'offline'])
+    ).count()
+    if challenge.max_accounts_per_user is not None and active >= challenge.max_accounts_per_user:
+        raise ValueError(f'Maximum of {challenge.max_accounts_per_user} active or funded accounts reached.')
+
+
+@user_bp.route('/manual-payment/<int:challenge_id>/<int:method_id>', methods=['GET', 'POST'])
+@login_required
+def manual_payment(challenge_id, method_id):
+    user = User.query.get_or_404(session['user_id'])
+    challenge = ChallengeTemplate.query.get_or_404(challenge_id)
+    method = PaymentMethod.query.filter_by(id=method_id, is_active=True).first_or_404()
+    try:
+        _purchase_guard(user, challenge)
+        coupon_code = request.values.get('coupon_code', '').strip()
+        final_price = _checkout_coupon_price(user, challenge, coupon_code)
+        amount_local = round(final_price / method.exchange_rate_to_usd, 2) if method.exchange_rate_to_usd else None
+    except ValueError as exc:
+        flash(str(exc), 'error')
+        return redirect(url_for('user.challenges'))
+
+    if request.method == 'POST':
+        if request.form.get('terms_acknowledgement') != 'on' or request.form.get('rule_acknowledgement') != 'on':
+            flash('Accept the terms and challenge rules before submitting proof.', 'error')
+            return render_template('user/manual_payment.html', user=user, challenge=challenge, method=method, amount=final_price, amount_local=amount_local, coupon_code=coupon_code)
+        transaction_id = request.form.get('transaction_id', '').strip()
+        message = request.form.get('message', '').strip()
+        upload = request.files.get('evidence')
+        if not transaction_id or len(transaction_id) > 160 or not upload or not upload.filename:
+            flash('Add the transaction reference and payment screenshot.', 'error')
+            return render_template('user/manual_payment.html', user=user, challenge=challenge, method=method, amount=final_price, amount_local=amount_local, coupon_code=coupon_code)
+        data = upload.read(5 * 1024 * 1024 + 1)
+        upload.stream.seek(0)
+        extension = secure_filename(upload.filename).rsplit('.', 1)[-1].lower() if '.' in upload.filename else ''
+        normalized_extension = 'jpg' if extension == 'jpeg' else extension
+        signatures = {'png': b'\x89PNG\r\n\x1a\n', 'jpg': b'\xff\xd8\xff', 'gif': b'GIF8', 'webp': b'RIFF'}
+        detected = next((ext for ext, header in signatures.items() if data.startswith(header) and (ext != 'webp' or data[8:12] == b'WEBP')), None)
+        if len(data) > 5 * 1024 * 1024 or detected is None or detected != normalized_extension:
+            flash('Upload a valid PNG, JPEG, GIF, or WebP screenshot no larger than 5 MB.', 'error')
+            return render_template('user/manual_payment.html', user=user, challenge=challenge, method=method, amount=final_price, amount_local=amount_local, coupon_code=coupon_code)
+
+        evidence_name = f'{uuid.uuid4().hex}.{detected}'
+        evidence_dir = os.path.join(current_app.instance_path, 'payment_evidence')
+        os.makedirs(evidence_dir, exist_ok=True)
+        with open(os.path.join(evidence_dir, evidence_name), 'wb') as evidence_file:
+            evidence_file.write(data)
+        payment = Payment(
+            user_id=user.id,
+            payment_id=f'MAN-{uuid.uuid4().hex}',
+            amount=final_price,
+            expected_amount=final_price,
+            currency='USD',
+            payment_method=method.name,
+            gateway='manual',
+            challenge_template_id=challenge.id,
+            status='pending',
+            payment_method_type='manual',
+            payment_method_id=method.id,
+            method_name=method.name,
+            external_reference=transaction_id,
+            evidence_path=evidence_name,
+            amount_local=amount_local,
+            local_currency=method.currency if amount_local is not None else None,
+            gateway_status='manual_claim_submitted',
+            gateway_message=message,
+            coupon_id=Coupon.query.filter_by(code=coupon_code.upper(), is_deleted=False).first().id if coupon_code else None,
+            rule_acceptance_timestamp=datetime.now(timezone.utc),
+            rule_acceptance_ip=request.headers.get('X-Forwarded-For', request.remote_addr),
+            rule_acceptance_user_agent=request.headers.get('User-Agent'),
+            challenge_version_snapshot=challenge.rule_snapshot(),
+            rule_version_snapshot='rulebook-v1',
+        )
+        db.session.add(payment)
+        db.session.flush()
+        db.session.add(PurchaseRuleAcceptance(
+            user_id=user.id,
+            challenge_template_id=challenge.id,
+            payment_id=payment.id,
+            accepted_at=payment.rule_acceptance_timestamp,
+            ip_address=payment.rule_acceptance_ip,
+            user_agent=payment.rule_acceptance_user_agent,
+            challenge_version_snapshot=payment.challenge_version_snapshot,
+            rule_version_snapshot=payment.rule_version_snapshot,
+        ))
+        db.session.commit()
+        flash('Payment proof submitted. Your challenge will be created after an admin verifies the payment.', 'success')
+        return redirect(url_for('user.payment_status_page', payment_id=payment.id))
+
+    return render_template('user/manual_payment.html', user=user, challenge=challenge, method=method, amount=final_price, amount_local=amount_local, coupon_code=coupon_code)
+
+
+@user_bp.route('/crypto-payment', methods=['POST'])
+@login_required
+def crypto_payment_start():
+    user = User.query.get_or_404(session['user_id'])
+    challenge = ChallengeTemplate.query.get_or_404(request.form.get('challenge_id', type=int))
+    if request.form.get('terms_acknowledgement') != 'on' or request.form.get('rule_acknowledgement') != 'on':
+        flash('Accept the terms and challenge rules before continuing.', 'error')
+        return redirect(url_for('user.buy_challenge', challenge_id=challenge.id))
+    try:
+        _purchase_guard(user, challenge)
+        coupon_code = request.form.get('coupon_code', '').strip()
+        final_price = _checkout_coupon_price(user, challenge, coupon_code)
+        if (challenge.currency or 'USD').upper() != 'USD':
+            raise ValueError('Crypto checkout currently requires a USD challenge price.')
+        from crypto_gateway import create_invoice
+        payment = Payment(
+            user_id=user.id,
+            payment_id=f'NP-{uuid.uuid4().hex}',
+            amount=final_price,
+            expected_amount=final_price,
+            currency='USD',
+            payment_method='crypto',
+            gateway='nowpayments',
+            challenge_template_id=challenge.id,
+            status='waiting',
+            payment_method_type='nowpayments',
+            method_name='NOWPayments',
+            coupon_id=Coupon.query.filter_by(code=coupon_code.upper(), is_deleted=False).first().id if coupon_code else None,
+            rule_acceptance_timestamp=datetime.now(timezone.utc),
+            rule_acceptance_ip=request.headers.get('X-Forwarded-For', request.remote_addr),
+            rule_acceptance_user_agent=request.headers.get('User-Agent'),
+            challenge_version_snapshot=challenge.rule_snapshot(),
+            rule_version_snapshot='rulebook-v1',
+        )
+        db.session.add(payment)
+        db.session.flush()
+        invoice = create_invoice(
+            final_price,
+            payment.payment_id,
+            url_for('nowpayments_webhook', _external=True),
+            url_for('payment_success', order_id=payment.payment_id, _external=True),
+            url_for('payment_status', payment_id=payment.id, _external=True),
+            order_description=challenge.name,
+        )
+        payment.gateway_order_id = str(invoice['id'])
+        payment.invoice_url = invoice['invoice_url']
+        payment.gateway_status = str(invoice.get('payment_status', 'waiting'))
+        invoice_expiry = invoice.get('expiration_estimate_date') or invoice.get('expires_at') or invoice.get('expiration_date')
+        if invoice_expiry:
+            payment.expires_at = datetime.fromisoformat(str(invoice_expiry).replace('Z', '+00:00'))
+        else:
+            payment.expires_at = None
+        db.session.commit()
+        return redirect(invoice['invoice_url'])
+    except Exception as exc:
+        db.session.rollback()
+        flash(str(exc) if isinstance(exc, ValueError) else 'Crypto checkout is currently unavailable. Please try again.', 'error')
+        return redirect(url_for('user.buy_challenge', challenge_id=challenge.id))
+
+
+@user_bp.route('/payment-status/<int:payment_id>')
+@login_required
+def payment_status_page(payment_id):
+    payment = Payment.query.filter_by(id=payment_id, user_id=session['user_id']).first_or_404()
+    return render_template('user/payment_status.html', user=User.query.get(session['user_id']), payment=payment, challenge=payment.challenge_purchase, status=payment.status)
+
+
+@user_bp.route('/payment-evidence/<int:payment_id>')
+@login_required
+def payment_evidence(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    viewer = User.query.get(session['user_id'])
+    if payment.user_id != viewer.id and not viewer.is_admin:
+        abort(404)
+    if not payment.evidence_path or os.path.basename(payment.evidence_path) != payment.evidence_path:
+        abort(404)
+    return send_from_directory(os.path.join(current_app.instance_path, 'payment_evidence'), payment.evidence_path)
+
+
+@user_bp.route('/payment-method-image/<int:method_id>/<image_kind>')
+@login_required
+def payment_method_image(method_id, image_kind):
+    method = PaymentMethod.query.get_or_404(method_id)
+    viewer = User.query.get(session['user_id'])
+    if not method.is_active and not viewer.is_admin:
+        abort(404)
+    filename = method.qr_image if image_kind == 'qr' else method.help_image if image_kind == 'help' else None
+    if not filename or os.path.basename(filename) != filename:
+        abort(404)
+    return send_from_directory(os.path.join(current_app.instance_path, 'payment_method_assets'), filename)
 
 # ===== TRADING ROUTES =====
 @user_bp.route('/trading')
@@ -504,6 +716,20 @@ def challenge_rules(challenge_id):
 @login_required
 def user_history():
     user = User.query.get(session['user_id'])
+    pending_crypto = Payment.query.filter_by(user_id=user.id, payment_method_type='nowpayments', status='waiting').all()
+    now = datetime.now(timezone.utc)
+    for payment in pending_crypto:
+        if payment.expires_at:
+            expiry = payment.expires_at.replace(tzinfo=timezone.utc) if payment.expires_at.tzinfo is None else payment.expires_at
+            if expiry <= now:
+                payment.status = 'expired'
+                payment.gateway_status = 'expired'
+    if pending_crypto:
+        db.session.commit()
+    user_payments = Payment.query.filter_by(user_id=user.id).order_by(Payment.created_at.desc()).all()
+    for payment in user_payments:
+        expiry = payment.expires_at.replace(tzinfo=timezone.utc) if payment.expires_at and payment.expires_at.tzinfo is None else payment.expires_at
+        payment.can_continue = bool(payment.status == 'waiting' and payment.invoice_url and (expiry is None or expiry > now))
     purchases = ChallengePurchase.query.filter(
         ChallengePurchase.user_id == user.id,
         ChallengePurchase.status.in_(HISTORY_CHALLENGE_STATUSES)
@@ -521,7 +747,7 @@ def user_history():
         'progression_requests': len(progression_requests)
     }
     
-    return render_template('user/user_history.html', user=user, purchases=purchases, progression_requests=progression_requests, stats=stats)
+    return render_template('user/user_history.html', user=user, purchases=purchases, progression_requests=progression_requests, stats=stats, payments=user_payments, now=now)
 
 @user_bp.route('/trading/history')
 @login_required
@@ -564,10 +790,25 @@ def update_profile():
 def payments():
     user = User.query.get(session['user_id'])
     user_payments = Payment.query.filter_by(user_id=user.id).order_by(Payment.created_at.desc()).all()
+    now = datetime.now(timezone.utc)
+    changed = False
+    for payment in user_payments:
+        if payment.payment_method_type == 'nowpayments' and payment.status == 'waiting' and payment.expires_at:
+            expiry = payment.expires_at.replace(tzinfo=timezone.utc) if payment.expires_at.tzinfo is None else payment.expires_at
+            if expiry <= now:
+                payment.status = 'expired'
+                payment.gateway_status = 'expired'
+                changed = True
+    if changed:
+        db.session.commit()
+    for payment in user_payments:
+        expiry = payment.expires_at.replace(tzinfo=timezone.utc) if payment.expires_at and payment.expires_at.tzinfo is None else payment.expires_at
+        payment.can_continue = bool(payment.status == 'waiting' and payment.invoice_url and (expiry is None or expiry > now))
     
-    return render_template('user/payments.html',
+    return render_template('user/payment_history.html',
                          user=user,
-                         payments=user_payments)
+                         payments=user_payments,
+                         now=now)
 
 @user_bp.route('/payouts')
 @login_required
@@ -635,7 +876,8 @@ def request_payout():
             bank_details = {
                 'bank_name': request.form.get('bank_name', '').strip(),
                 'account_number': request.form.get('account_number', '').strip(),
-                'ifsc_code': request.form.get('ifsc_code', '').strip().upper()
+            'swift_bic': request.form.get('swift_bic', '').strip().upper(),
+            'bank_address': request.form.get('bank_address', '').strip()
             }
             if not all(bank_details.values()):
                 flash('Please complete all bank transfer fields.', 'error')
@@ -711,7 +953,7 @@ def request_progression(challenge_id, request_type):
             submitted_title = 'Phase 2 Request Submitted'
             submitted_message = 'Your Phase 2 account request is pending admin review.'
         else:
-            allowed = challenge.current_phase == 2
+            allowed = challenge.current_phase == 2 or (challenge.challenge_type == 'one_phase' and challenge.current_phase == 1)
             submitted_title = 'Funded Request Submitted'
             submitted_message = 'Your funded account request is pending admin review.'
 
@@ -1106,12 +1348,14 @@ def history_details(challenge_id):
     if challenge.status == 'failed':
         evidence_reports = [_user_evidence_report(e) for e in _confirmed_user_evidence(challenge_id)]
     trades = TradeHistory.query.filter_by(challenge_id=challenge_id).order_by(TradeHistory.close_time.desc()).limit(50).all()
+    payments = Payment.query.filter_by(challenge_purchase_id=challenge_id, user_id=user.id).order_by(Payment.created_at.desc()).all()
     
     return render_template('user/history_details.html',
                          user=user,
                          challenge=challenge,
                          evidence_reports=evidence_reports,
                          review_message=COMPLIANCE_REVIEW_MESSAGE if _is_under_compliance_review(challenge) else None,
+                         payments=payments,
                          trades=trades)
 
 @user_bp.route('/api/challenge/<int:challenge_id>/history')

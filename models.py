@@ -1133,6 +1133,26 @@ class PayoutAuditLog(db.Model):
     admin = db.relationship('User', foreign_keys=[admin_user_id])
     def __repr__(self): return f'<PayoutAuditLog {self.action} - Payout {self.payout_id}>'
 
+class PaymentMethod(db.Model):
+    __tablename__ = 'payment_method'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False, index=True)
+    type = db.Column(db.String(40), nullable=False, default='bank', index=True)
+    currency = db.Column(db.String(10), nullable=False)
+    details = db.Column(db.JSON, nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
+    qr_image = db.Column(db.String(255), nullable=True)
+    help_image = db.Column(db.String(255), nullable=True)
+    exchange_rate_to_usd = db.Column(db.Float, nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0, index=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    payments = db.relationship('Payment', back_populates='payment_method_record', lazy='dynamic')
+
+    def __repr__(self): return f'<PaymentMethod {self.name}>'
+
+
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
@@ -1149,6 +1169,16 @@ class Payment(db.Model):
     cf_payment_id = db.Column(db.String(100))
     payment_session_id = db.Column(db.String(200))
     status = db.Column(db.String(20), default='pending', index=True)
+    payment_method_type = db.Column(db.String(30), nullable=True, index=True)
+    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_method.id'), nullable=True, index=True)
+    method_name = db.Column(db.String(120), nullable=True)
+    external_reference = db.Column(db.String(160), nullable=True, index=True)
+    receipt_url = db.Column(db.String(500), nullable=True)
+    evidence_path = db.Column(db.String(255), nullable=True)
+    amount_local = db.Column(db.Float, nullable=True)
+    local_currency = db.Column(db.String(10), nullable=True)
+    invoice_url = db.Column(db.String(1000), nullable=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
     gateway_id = db.Column(db.String(100))
     gateway_order_id = db.Column(db.String(100))
     gateway_response = db.Column(db.Text)
@@ -1174,6 +1204,12 @@ class Payment(db.Model):
     user = db.relationship('User', backref='payments_list', foreign_keys=[user_id])
     challenge_purchase = db.relationship('TradingJourney', backref='payment_obj', foreign_keys=[challenge_purchase_id])
     coupon = db.relationship('Coupon', backref='payments_list')
+    payment_method_record = db.relationship('PaymentMethod', foreign_keys=[payment_method_id], back_populates='payments')
+    challenge_template = db.relationship(
+        'ChallengeTemplate',
+        primaryjoin='Payment.challenge_template_id == ChallengeTemplate.id',
+        foreign_keys=[challenge_template_id],
+    )
     def __repr__(self): return f'<Payment {self.payment_id} - {self.status}>'
 
 class WebhookLog(db.Model):

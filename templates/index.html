@@ -956,7 +956,7 @@
                 <!-- Buttons -->
                 <div class="flex items-center space-x-2">
                     {% if session.get('user_id') %}
-                    <a href="{{ url_for('user.dashboard') }}"
+                    <a href="{{ url_for('admin.admin_dashboard') if session.get('is_admin') else url_for('user.dashboard') }}"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition duration-300">
                         Dashboard
                     </a>
@@ -991,7 +991,7 @@
                 <div data-aos="fade-down" data-aos-delay="200">
                     <span
                         class="liquid-glass text-cyan-300 px-4 py-2 rounded-full text-sm font-medium mb-6 inline-block">
-                        🚀 Premier Evaluation Prop Firm
+                        Kisiki Capital Trading Challenges
                     </span>
                 </div>
 
@@ -1316,7 +1316,7 @@
                                 <div class="browser-dot red"></div>
                                 <div class="browser-dot yellow"></div>
                                 <div class="browser-dot green"></div>
-                                <div class="browser-url">kisikicapital.com/dashboard</div>
+                                <div class="browser-url">trade.kisikicapital.com/dashboard</div>
                             </div>
 
                             <!-- Scanning line effect -->
@@ -1599,10 +1599,10 @@
                         </div>
                         <ul class="space-y-4">
                             <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Kilimanjaro (Two-Step):</strong> Phase 1: 8% | Phase 2: 5%</span>
+                                    class="text-white"><strong>Kilimanjaro (Two-Step):</strong> Phase 1: 8% | Phase 2: 6%</span>
                             </li>
                             <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Everest (One-Step):</strong> Single phase 10% target</span></li>
+                                    class="text-white"><strong>Everest (One-Step):</strong> Single phase 8% target</span></li>
                             <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
                                     class="text-white"><strong>Instant Funding:</strong> 0% target — simulated funded from Day 1</span></li>
                             <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
@@ -1620,11 +1620,11 @@
                         <ul class="space-y-4">
                             <li class="flex items-start"><i
                                     class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Maximum Daily Loss:</strong> 4% (5% on Everest Phase 1 & Instant)</span>
+                                    class="text-white"><strong>Maximum Daily Loss:</strong> 4% on Kilimanjaro & Pay Later; 5% on Everest; 2% on Instant</span>
                             </li>
                             <li class="flex items-start"><i
                                     class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Maximum Overall Loss:</strong> 8% (10% on Instant)</span></li>
+                                    class="text-white"><strong>Maximum Overall Loss:</strong> 8% on Kilimanjaro & Pay Later; 10% on Everest; 3% on Instant</span></li>
                             <li class="flex items-start"><i
                                     class="fas fa-check text-green-400 mt-1 mr-3"></i><span
                                     class="text-white"><strong>Overnight & Weekend Holding:</strong> Fully permitted across all plans</span></li>
@@ -1673,7 +1673,7 @@
                                     class="text-white"><strong>Prohibited:</strong> Copy trading across multiple accounts, account/device sharing</span></li>
                             <li class="flex items-start"><i
                                     class="fas fa-times-circle text-red-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Immediate Breach:</strong> HFT, latency arbitrage, tick scalping, feed error exploitation</span></li>
+                                    class="text-white"><strong>Immediate Breach:</strong> HFT, demo-server exploitation, copy trading, account/device sharing, multiple registrations, or strategy switching mid-phase</span></li>
                         </ul>
                     </div>
                 </div>

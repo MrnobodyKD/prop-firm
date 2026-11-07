@@ -1353,23 +1353,6 @@ def update_challenge_status(challenge, rules):
     db.session.commit()
 
 # ========================================================================
-# ADMIN CLEAR FLAG
-# ========================================================================
-
-def admin_clear_flag(challenge):
-    now = datetime.now(timezone.utc)
-    challenge.status = ChallengeState.ACTIVE
-    challenge.monitoring_status = ChallengeState.ACTIVE
-    challenge.review_required = False
-    challenge.violation_reason = None
-    challenge.violation_reviewed = True
-    challenge.manipulation_check_baseline = _safe_float(challenge.current_balance)
-    challenge.manipulation_baseline_set_at = now
-    log_rule(challenge.id, "admin_clear_flag", Severity.INFO,
-             f"Admin cleared flag. Baseline reset to ${challenge.current_balance:.2f}")
-    db.session.commit()
-
-# ========================================================================
 # HELPER FUNCTIONS
 # ========================================================================
 

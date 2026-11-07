@@ -1,755 +1,94 @@
 {% extends "user/base.html" %}
-
-{% block title %}Purchase Challenge - Tragene Funded{% endblock %}
-
-{% block header_title %}Purchase Challenge{% endblock %}
-{% block header_subtitle %}Complete your purchase to start trading{% endblock %}
-
-{% block head %}
-<!-- Cashfree Checkout -->
-<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
-
-<style>
-    .payment-option {
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-    .dark .payment-option {
-        border-color: #374151;
-        background-color: #1f2937;
-    }
-    .payment-option:hover {
-        border-color: #3b82f6;
-        background-color: #f0f9ff;
-    }
-    .dark .payment-option:hover {
-        border-color: #3b82f6;
-        background-color: #1e3a8a;
-    }
-    .payment-option.selected {
-        border-color: #3b82f6;
-        background-color: #dbeafe;
-    }
-    .dark .payment-option.selected {
-        border-color: #3b82f6;
-        background-color: #1e3a8a;
-    }
-    .loader {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #3b82f6;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    .alert-success {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        border: 1px solid #10b981;
-        color: #065f46;
-    }
-    .dark .alert-success {
-        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
-        border: 1px solid #10b981;
-        color: #d1fae5;
-    }
-    .alert-error {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        border: 1px solid #ef4444;
-        color: #7f1d1d;
-    }
-    .dark .alert-error {
-        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
-        border: 1px solid #ef4444;
-        color: #fee2e2;
-    }
-    .alert-warning {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border: 1px solid #f59e0b;
-        color: #92400e;
-    }
-    .dark .alert-warning {
-        background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
-        border: 1px solid #f59e0b;
-        color: #fef3c7;
-    }
-    .floating {
-        animation: floating 3s ease-in-out infinite;
-    }
-    @keyframes floating {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-5px); }
-    }
-    .ripple {
-        position: relative;
-        overflow: hidden;
-    }
-    .ripple:after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 5px;
-        height: 5px;
-        background: rgba(255, 255, 255, 0.5);
-        opacity: 0;
-        border-radius: 100%;
-        transform: scale(1, 1) translate(-50%);
-        transform-origin: 50% 50%;
-    }
-    .ripple:focus:not(:active)::after {
-        animation: ripple 1s ease-out;
-    }
-    @keyframes ripple {
-        0% { transform: scale(0, 0); opacity: 0.5; }
-        20% { transform: scale(25, 25); opacity: 0.3; }
-        100% { opacity: 0; transform: scale(40, 40); }
-    }
-</style>
-{% endblock %}
-
+{% block title %}Checkout · {{ challenge.name }}{% endblock %}
+{% block header_title %}Checkout{% endblock %}
+{% block header_subtitle %}Choose a payment method for {{ challenge.name }}{% endblock %}
 {% block content %}
-{% set currency_symbol = '$' if challenge.currency == 'USD' else '₹' %}
-{% macro dd_label(value) -%}{{ 'Static Balance Based' if value == 'static' else 'Equity Based' }}{%- endmacro %}
-<!-- Main Content Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-    <!-- Left Column: Challenge Details (2/3 on desktop) -->
-    <div class="lg:col-span-2 space-y-6">
-        <!-- Challenge Header -->
-        <div class="glass-card p-6 border dark:border-dark-border" data-aos="fade-up">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <a href="/user/challenges"
-                        class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium inline-flex items-center mb-2">
-                        <i class="fas fa-arrow-left mr-2"></i> Back to Challenges
-                    </a>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ challenge.name }}</h2>
-                    <div class="flex items-center mt-2 space-x-4">
-                        <div class="flex items-center">
-                            <i class="fas fa-wallet text-blue-600 dark:text-blue-400 mr-2"></i>
-                            <span class="text-gray-700 dark:text-gray-300">${{ "{:,}".format(challenge.account_size) }} Account</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-trophy text-yellow-600 dark:text-yellow-400 mr-2"></i>
-                            <span class="text-gray-700 dark:text-gray-300">
-                                {{ challenge.name }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="hidden lg:block">
-                    <div class="text-4xl font-bold text-gray-900 dark:text-white">{{ currency_symbol }}{{ challenge.price }}</div>
-                    <div class="text-gray-600 dark:text-gray-400 text-sm"></div>
-                </div>
-            </div>
+<div class="grid lg:grid-cols-3 gap-6">
+  <section class="lg:col-span-2 space-y-5">
+    <div class="glass-card p-6">
+      <h2 class="text-xl font-bold">Challenge rules</h2>
+      <p class="mt-2 text-2xl font-bold">{{ challenge.name }} · ${{ '%.2f'|format(challenge.price) }} USD</p>
+      {% if challenge.description %}<p class="mt-2 text-sm">{{ challenge.description }}</p>{% endif %}
+      {% set instant = challenge.challenge_type == 'instant' %}
+      {% set phases = [('Instant', 'instant')] if instant else [('Phase 1', 'phase1')] %}
+      {% if not instant and (challenge.challenge_type == 'two_phase' or challenge.phase == 2) %}{% set phases = phases + [('Phase 2', 'phase2')] %}{% endif %}
+      <div class="grid md:grid-cols-2 gap-4 mt-5">
+        {% for label, p in phases %}
+        <div class="rounded-xl border p-4">
+          <h3 class="font-semibold">{{ label }}</h3>
+          <dl class="mt-2 text-sm space-y-1">
+            <div class="flex justify-between"><dt>Profit target</dt><dd>{% if p == 'instant' %}Instant access{% else %}{{ challenge|attr(p ~ '_target') or 0 }}%{% endif %}</dd></div>
+            <div class="flex justify-between"><dt>Daily loss limit</dt><dd>{{ challenge|attr(p ~ '_daily_loss') or 0 }}%</dd></div>
+            <div class="flex justify-between"><dt>Overall loss limit</dt><dd>{{ challenge|attr(p ~ '_overall_loss') or 0 }}%</dd></div>
+            <div class="flex justify-between"><dt>Minimum trading days</dt><dd>{{ challenge|attr(p ~ '_min_days') or 'None' }}</dd></div>
+            <div class="flex justify-between"><dt>Duration</dt><dd>{{ 'No expiry' if challenge.no_expiry else (challenge|attr(p ~ '_duration') or 'Not specified') }}</dd></div>
+            <div class="flex justify-between"><dt>Daily loss mode</dt><dd>{{ challenge|attr(p ~ '_daily_dd_type')|default('equity', true)|title }}</dd></div>
+            <div class="flex justify-between"><dt>Overall loss mode</dt><dd>{{ challenge|attr(p ~ '_overall_dd_type')|default('equity', true)|title }}</dd></div>
+            <div class="flex justify-between"><dt>Leverage</dt><dd>{{ challenge|attr(p ~ '_leverage') or 'Not specified' }}</dd></div>
+          </dl>
+          {% if challenge|attr(p ~ '_rules') %}<p class="mt-3 text-sm whitespace-pre-wrap">{{ challenge|attr(p ~ '_rules') }}</p>{% endif %}
         </div>
-
-        <!-- Challenge Rules & Requirements -->
-        <div class="glass-card p-6 border dark:border-dark-border" data-aos="fade-up" data-aos-delay="100">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                <i class="fas fa-gavel text-orange-600 dark:text-orange-400 mr-2"></i>
-                Challenge Rules & Requirements
-            </h3>
-
-            {% if challenge.challenge_type == 'one_phase' %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-4">
-                    {% set phase1_target = (challenge.phase1_target or 0.0)|float %}
-                    {% set phase1_target_amount = challenge.account_size * (phase1_target / 100) %}
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-green-600 dark:text-green-400"><i class="fas fa-bullseye"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Profit Target</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ phase1_target }}% (${{ "{:,.0f}".format(phase1_target_amount) }})</p>
-                            <p class="text-sm text-gray-500">Must reach to pass the challenge</p>
-                        </div>
-                    </div>
-
-                    {% set phase1_daily = (challenge.phase1_daily_loss or 0.0)|float %}
-                    {% set phase1_daily_amount = challenge.account_size * (phase1_daily / 100) %}
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-red-600 dark:text-red-400"><i class="fas fa-shield-alt"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Maximum Daily Loss</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ phase1_daily }}% (${{ "{:,.0f}".format(phase1_daily_amount) }})</p>
-                            <p class="text-sm text-gray-500">{{ dd_label(challenge.phase1_daily_dd_type) }}</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-yellow-600 dark:text-yellow-400"><i class="fas fa-calendar"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Minimum Trading Days</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ challenge.phase1_min_days or 0 }} days</p>
-                            <p class="text-sm text-gray-500">Minimum days required before passing</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    {% set phase1_overall = (challenge.phase1_overall_loss or 0.0)|float %}
-                    {% set phase1_overall_amount = challenge.account_size * (phase1_overall / 100) %}
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-purple-600 dark:text-purple-400"><i class="fas fa-chart-line"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Maximum Overall Loss</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ phase1_overall }}% (${{ "{:,.0f}".format(phase1_overall_amount) }})</p>
-                            <p class="text-sm text-gray-500">{{ dd_label(challenge.phase1_overall_dd_type) }}</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-blue-600 dark:text-blue-400"><i class="fas fa-clock"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Time Limit</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ challenge.phase1_duration or 30 }} days</p>
-                            <p class="text-sm text-gray-500">Complete within this timeframe</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-indigo-600 dark:text-indigo-400"><i class="fas fa-percentage"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Profit Share</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ challenge.user_profit_share }}% for you, {{ 100 - challenge.user_profit_share }}% for firm</p>
-                            <p class="text-sm text-gray-500">Your profit split after passing</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% elif challenge.challenge_type == 'two_phase' %}
-            <div class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4 border dark:border-gray-800">
-                    <div class="space-y-4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 pb-4 md:pb-0 md:pr-6">
-                        <h4 class="font-bold text-center text-lg text-purple-600 dark:text-purple-400 border-b dark:border-gray-700 pb-2 flex items-center justify-center">
-                            <i class="fas fa-arrow-circle-right mr-2"></i> PHASE 1: EVALUATION
-                        </h4>
-                        {% set p1_target = (challenge.phase1_target or 0.0)|float %}
-                        {% set p1_target_amount = challenge.account_size * (p1_target / 100) %}
-                        {% set p1_daily = (challenge.phase1_daily_loss or 0.0)|float %}
-                        {% set p1_daily_amount = challenge.account_size * (p1_daily / 100) %}
-                        {% set p1_overall = (challenge.phase1_overall_loss or 0.0)|float %}
-                        {% set p1_overall_amount = challenge.account_size * (p1_overall / 100) %}
-
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Profit Target</span><span class="font-semibold text-green-600">{{ p1_target }}% (${{ "{:,.0f}".format(p1_target_amount) }})</span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Daily Drawdown</span><span class="font-semibold text-red-600 text-right">{{ p1_daily }}% (${{ "{:,.0f}".format(p1_daily_amount) }})<br><span class="text-xs text-gray-500">{{ dd_label(challenge.phase1_daily_dd_type) }}</span></span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Overall Drawdown</span><span class="font-semibold text-red-600 text-right">{{ p1_overall }}% (${{ "{:,.0f}".format(p1_overall_amount) }})<br><span class="text-xs text-gray-500">{{ dd_label(challenge.phase1_overall_dd_type) }}</span></span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Min Trading Days</span><span class="font-semibold">{{ challenge.phase1_min_days or 0 }} days</span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Time Duration</span><span class="font-semibold">{{ challenge.phase1_duration or 30 }} days</span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Leverage</span><span class="font-semibold">{{ challenge.phase1_leverage or "1:100" }}</span></div>
-                    </div>
-
-                    <div class="space-y-4 md:pl-6">
-                        <h4 class="font-bold text-center text-lg text-purple-600 dark:text-purple-400 border-b dark:border-gray-700 pb-2 flex items-center justify-center">
-                            <i class="fas fa-check-circle mr-2"></i> PHASE 2: VERIFICATION
-                        </h4>
-                        {% set p2_target = (challenge.phase2_target or 0.0)|float %}
-                        {% set p2_target_amount = challenge.account_size * (p2_target / 100) %}
-                        {% set p2_daily = (challenge.phase2_daily_loss or 0.0)|float %}
-                        {% set p2_daily_amount = challenge.account_size * (p2_daily / 100) %}
-                        {% set p2_overall = (challenge.phase2_overall_loss or 0.0)|float %}
-                        {% set p2_overall_amount = challenge.account_size * (p2_overall / 100) %}
-
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Profit Target</span><span class="font-semibold text-green-600">{{ p2_target }}% (${{ "{:,.0f}".format(p2_target_amount) }})</span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Daily Drawdown</span><span class="font-semibold text-red-600 text-right">{{ p2_daily }}% (${{ "{:,.0f}".format(p2_daily_amount) }})<br><span class="text-xs text-gray-500">{{ dd_label(challenge.phase2_daily_dd_type) }}</span></span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Overall Drawdown</span><span class="font-semibold text-red-600 text-right">{{ p2_overall }}% (${{ "{:,.0f}".format(p2_overall_amount) }})<br><span class="text-xs text-gray-500">{{ dd_label(challenge.phase2_overall_dd_type) }}</span></span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Min Trading Days</span><span class="font-semibold">{{ challenge.phase2_min_days or 0 }} days</span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Time Duration</span><span class="font-semibold">{{ challenge.phase2_duration or 30 }} days</span></div>
-                        <div class="flex justify-between py-1 text-sm"><span class="text-gray-600 dark:text-gray-400">Leverage</span><span class="font-semibold">{{ challenge.phase2_leverage or "1:100" }}</span></div>
-                    </div>
-                </div>
-
-                <div class="flex items-start px-2 py-1">
-                    <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-indigo-600 dark:text-indigo-400"><i class="fas fa-percentage"></i></div>
-                    <div>
-                        <h4 class="font-medium text-gray-900 dark:text-white">Profit Split (Funded Account)</h4>
-                        <p class="text-gray-600 dark:text-gray-400">{{ challenge.user_profit_share }}% for you, {{ 100 - challenge.user_profit_share }}% for firm</p>
-                        <p class="text-sm text-gray-500">Split automatically disbursed at payout cycles</p>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-4">
-                    {% set instant_daily = (challenge.instant_daily_loss or 0.0)|float %}
-                    {% set instant_daily_amount = challenge.account_size * (instant_daily / 100) %}
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-red-600 dark:text-red-400"><i class="fas fa-shield-alt"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Maximum Daily Loss</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ instant_daily }}% (${{ "{:,.0f}".format(instant_daily_amount) }})</p>
-                            <p class="text-sm text-gray-500">{{ dd_label(challenge.instant_daily_dd_type) }}</p>
-                        </div>
-                    </div>
-
-                    {% set instant_overall = (challenge.instant_overall_loss or 0.0)|float %}
-                    {% set instant_overall_amount = challenge.account_size * (instant_overall / 100) %}
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-purple-600 dark:text-purple-400"><i class="fas fa-chart-line"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Maximum Overall Loss</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ instant_overall }}% (${{ "{:,.0f}".format(instant_overall_amount) }})</p>
-                            <p class="text-sm text-gray-500">{{ dd_label(challenge.instant_overall_dd_type) }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-yellow-600 dark:text-yellow-400"><i class="fas fa-calendar"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Minimum Trading Days</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ challenge.instant_min_days or 0 }} days</p>
-                            <p class="text-sm text-gray-500">Minimum trading days before being eligible for withdrawals</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 mt-1 text-indigo-600 dark:text-indigo-400"><i class="fas fa-percentage"></i></div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">Profit Share</h4>
-                            <p class="text-gray-600 dark:text-gray-400">{{ challenge.user_profit_share }}% for you, {{ 100 - challenge.user_profit_share }}% for firm</p>
-                            <p class="text-sm text-gray-500">Disbursed instantly starting from Day 1</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- 🛡️ SAFETY RULES SECTION -->
-        {% if challenge.sl_mandatory_enabled or challenge.activity_rule_enabled or challenge.max_lot_size_enabled %}
-        <div class="glass-card p-6 border dark:border-dark-border" data-aos="fade-up" data-aos-delay="150">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                <i class="fas fa-shield-alt text-amber-500 mr-2"></i>
-                Trading Safety Rules
-            </h3>
-            
-            {% if challenge.sl_mandatory_enabled %}
-            <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-3">
-                <div class="flex items-start">
-                    <span class="text-2xl mr-3">🛡️</span>
-                    <div class="flex-1">
-                        <h4 class="font-bold text-amber-800 dark:text-amber-300">Mandatory Stop-Loss Rule</h4>
-                        <p class="text-sm text-amber-700 dark:text-amber-400 mt-1">Every trade must have a <strong>physical stop-loss</strong> set within <strong>{{ challenge.sl_grace_period_minutes }} minutes</strong> of opening. No mental stop-losses allowed.</p>
-                        <p class="text-sm text-amber-700 dark:text-amber-400 mt-1">Max risk per trade: <strong>{{ challenge.max_risk_per_trade_percent }}%</strong> of account equity.</p>
-                        <div class="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mt-3">
-                            <p class="text-xs text-red-700 dark:text-red-400 font-semibold">⚠️ Breach: Opening position without SL = HARD BREACH → Immediate disqualification, account frozen, no payout.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            
-            {% if challenge.activity_rule_enabled %}
-            <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-3">
-                <div class="flex items-start">
-                    <span class="text-2xl mr-3">⏱️</span>
-                    <div class="flex-1">
-                        <h4 class="font-bold text-blue-800 dark:text-blue-300">Trading Activity Rule</h4>
-                        <p class="text-sm text-blue-700 dark:text-blue-400 mt-1">Trader must place at least <strong>1 trade every {{ challenge.max_inactive_days }} days</strong>. No {{ challenge.max_inactive_days }}+ day gaps allowed.</p>
-                        <div class="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mt-3">
-                            <p class="text-xs text-red-700 dark:text-red-400 font-semibold">⚠️ Breach: {{ challenge.max_inactive_days }}+ consecutive days without trading = HARD BREACH → Account frozen, no payout.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if challenge.max_lot_size_enabled %}
-            <div class="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-                <div class="flex items-start">
-                    <span class="text-2xl mr-3">⚖️</span>
-                    <div class="flex-1">
-                        <h4 class="font-bold text-purple-800 dark:text-purple-300">Maximum Lot Size Rule</h4>
-                        <p class="text-sm text-purple-700 dark:text-purple-400 mt-1">Maximum lot size allowed per trade: <strong>{{ challenge.max_lot_size }} lots</strong>. Any trade exceeding this limit will trigger a violation.</p>
-                        <div class="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mt-3">
-                            <p class="text-xs text-red-700 dark:text-red-400 font-semibold">⚠️ Breach: Trading with lot size above {{ challenge.max_lot_size }} = {{ 'HARD BREACH → Immediate disqualification, account frozen, no payout.' if challenge.lot_size_violation_action == 'hard_breach' else 'Account flagged for admin review.' }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- Quick Stats -->
-        <div class="glass-card p-6 border dark:border-dark-border" data-aos="fade-up" data-aos-delay="200">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
-                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">35%</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Success Rate</div>
-                </div>
-                <div class="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-xl">
-                    <div class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">18 days</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Avg. Completion</div>
-                </div>
-                <div class="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl">
-                    <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">92%</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Satisfaction</div>
-                </div>
-                <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-xl">
-                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">24h</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Support Response</div>
-                </div>
-            </div>
-        </div>
+        {% endfor %}
+      </div>
+      <dl class="grid sm:grid-cols-2 gap-x-6 gap-y-2 mt-5 text-sm">
+        <div>Profit share: {{ challenge.user_profit_share or 'Not specified' }}%</div>
+        <div>Payout cycle: {{ challenge.payout_cycle or 'Not specified' }}</div>
+        <div>Weekend holding: {{ 'Allowed' if challenge.weekend_trading else 'Not allowed' }}</div>
+        <div>News trading: {{ 'Allowed' if challenge.news_trading_allowed else 'Not allowed' }}</div>
+        <div>Overnight holding: {{ 'Allowed' if challenge.overnight_trading_allowed else 'Not allowed' }}</div>
+        <div>Expert advisors: {{ 'Allowed' if challenge.ea_allowed else 'Not allowed' }}</div>
+        <div>Lot cap: {% if challenge.max_lot_size_enabled %}{{ challenge.max_lot_size }} ({{ challenge.lot_size_violation_action or 'violation' }}){% else %}None{% endif %}</div>
+        <div>Consistency rule: {% if challenge.consistency_enabled %}Max {{ challenge.max_single_day_profit_percent }}% in one day · {{ challenge.consistency_action or 'review' }}{% else %}Disabled{% endif %}</div>
+        <div>Stop loss required: {{ 'Yes' if challenge.sl_mandatory_enabled else 'No' }}{% if challenge.sl_mandatory_enabled %} · grace {{ challenge.sl_grace_period_minutes }} min{% endif %}</div>
+        <div>Risk per trade: {{ challenge.max_risk_per_trade_percent or 'Not specified' }}%</div>
+        <div>Activity rule: {% if challenge.activity_rule_enabled %}Trade at least once every {{ challenge.max_inactive_days }} days{% else %}Disabled{% endif %}</div>
+        <div>First withdrawal: {{ challenge.first_withdrawal_days or 'Not specified' }} days</div>
+        <div>Minimum payout: {{ challenge.min_payout_percent or 'Not specified' }}%</div>
+        <div>Fee refund: {{ 'Yes' if challenge.fee_refund_on_pass else 'No' }}</div>
+        <div>Refund policy: {{ challenge.refund_policy_text or 'See terms' }}</div>
+        <div>Banned practices: {{ challenge.banned_practices or 'See terms' }}</div>
+        <div>Max accounts per user: {{ challenge.max_accounts_per_user or 'Not specified' }}</div>
+        <div>Performance reward: {{ challenge.performance_reward_percent or 0 }}% ({{ challenge.performance_reward_mode or 'off' }})</div>
+      </dl>
     </div>
-
-    <!-- Right Column: Purchase Box (1/3 on desktop) - STICKY -->
-    <div class="lg:sticky lg:top-24 h-fit">
-        <div class="glass-card p-6 floating border dark:border-dark-border" data-aos="fade-left">
-            <div class="lg:hidden mb-6 text-center">
-                <div class="text-4xl font-bold text-gray-900 dark:text-white">{{ currency_symbol }}{{ challenge.price }}</div>
-                <div class="text-gray-600 dark:text-gray-400"></div>
-            </div>
-
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Purchase Summary</h3>
-
-            <div class="space-y-3 mb-6">
-                <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Challenge:</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ challenge.name }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Account Size:</span>
-                    <span class="font-medium text-gray-900 dark:text-white">${{ "{:,}".format(challenge.account_size) }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Duration:</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ 'No time limit' if challenge.no_expiry else challenge.duration_days ~ ' days' }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Your Profit Share:</span>
-                    <span class="font-medium text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Payout cycle:</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ challenge.payout_cycle|replace('_', ' ')|title }}</span>
-                </div>
-                {% if challenge.first_withdrawal_days is not none %}
-                <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">First withdrawal:</span><span class="font-medium">{{ challenge.first_withdrawal_days }} days after funding</span></div>
-                {% endif %}
-                {% if challenge.min_payout_percent is not none %}
-                <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Minimum payout:</span><span class="font-medium">{{ challenge.min_payout_percent }}%</span></div>
-                {% endif %}
-                {% if challenge.consistency_enabled %}
-                <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Consistency:</span><span class="font-medium">Max {{ challenge.max_single_day_profit_percent }}% in one day ({{ challenge.consistency_action|title }})</span></div>
-                {% endif %}
-                {% if challenge.no_expiry %}<div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Expiry:</span><span class="font-medium">No time limit</span></div>{% endif %}
-                {% if challenge.max_accounts_per_user is not none %}<div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Account limit:</span><span class="font-medium">{{ challenge.max_accounts_per_user }}</span></div>{% endif %}
-                <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">News trading:</span><span class="font-medium">{{ 'Allowed' if challenge.news_trading_allowed else 'Not allowed' }}</span></div>
-                <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Overnight holding:</span><span class="font-medium">{{ 'Allowed' if challenge.overnight_trading_allowed else 'Not allowed' }}</span></div>
-                <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">EA:</span><span class="font-medium">{{ 'Allowed' if challenge.ea_allowed else 'Not allowed' }}</span></div>
-                {% if challenge.banned_practices %}<div class="text-sm"><span class="text-gray-600 dark:text-gray-400">Banned practices:</span> {{ challenge.banned_practices[:4]|join(', ') }}</div>{% endif %}
-                {% if challenge.refund_policy_text %}<div class="text-sm"><span class="text-gray-600 dark:text-gray-400">Refund policy:</span> {{ challenge.refund_policy_text }}</div>{% endif %}
-                <div class="border-t dark:border-gray-700 pt-3 mt-3 space-y-2">
-                    <div class="flex justify-between text-sm" id="originalPriceRow">
-                        <span class="text-gray-600 dark:text-gray-400">Challenge Price:</span>
-                        <span class="font-medium text-gray-900 dark:text-white">{{ currency_symbol }}{{ challenge.price }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-orange-500">
-                        <span>Gateway Charge (2%):</span>
-                        <span>+{{ currency_symbol }}{{ '%.2f'|format(challenge.price * 0.02) }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-green-600 dark:text-green-400 hidden" id="discountRow">
-                        <span>Coupon Discount:</span>
-                        <span id="discountValueText">-{{ currency_symbol }}0.00</span>
-                    </div>
-                    <div class="flex justify-between text-lg border-t dark:border-gray-700 pt-2" id="totalPriceRow">
-                        <span class="font-semibold text-gray-900 dark:text-white">Total Payable:</span>
-                        <span class="font-bold text-gray-900 dark:text-white" id="finalPayableText">{{ currency_symbol }}{{ '%.2f'|format(challenge.price * 1.02) }}</span>
-                    </div>
-                </div>
-
-                <div class="mt-4 pt-3 border-t dark:border-gray-700">
-                    <label for="couponCodeInput" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Have a Coupon?</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="couponCodeInput" placeholder="Enter coupon code" class="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm uppercase font-semibold tracking-wider text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                        <button type="button" onclick="applyCoupon()" id="applyCouponBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition flex items-center justify-center min-w-[80px]">
-                            <span>Apply</span>
-                            <div id="couponLoader" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        </button>
-                    </div>
-                    <div id="couponMessage" class="text-xs mt-1.5 font-medium hidden"></div>
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <h4 class="font-medium text-gray-900 dark:text-white mb-3">Select Payment Method</h4>
-                <form id="paymentForm" onsubmit="handlePayment(event)">
-                    <input type="hidden" name="challenge_id" id="challenge_id" value="{{ challenge.id }}">
-                    <input type="hidden" name="account_size" value="{{ challenge.account_size }}">
-
-                    <div class="space-y-3 mb-6">
-                        <label class="payment-option flex items-center justify-between cursor-pointer" onclick="selectPaymentMethod(event, 'card')">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-credit-card text-blue-600 dark:text-blue-400"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900 dark:text-white">Credit/Debit Card</p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Visa, Mastercard, Rupay</p>
-                                </div>
-                            </div>
-                            <input type="radio" name="payment_method" value="card" class="hidden" required>
-                            <div class="payment-radio w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-500"></div>
-                        </label>
-
-                        <label class="payment-option flex items-center justify-between cursor-pointer" onclick="selectPaymentMethod(event, 'upi')">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-mobile-alt text-green-600 dark:text-green-400"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900 dark:text-white">UPI</p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Google Pay, PhonePe, Paytm</p>
-                                </div>
-                            </div>
-                            <input type="radio" name="payment_method" value="upi" class="hidden" required>
-                            <div class="payment-radio w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-500"></div>
-                        </label>
-
-                        <label class="payment-option flex items-center justify-between cursor-pointer" onclick="selectPaymentMethod(event, 'bank')">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-university text-purple-600 dark:text-purple-400"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900 dark:text-white">Bank Transfer</p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">NEFT, RTGS, IMPS</p>
-                                </div>
-                            </div>
-                            <input type="radio" name="payment_method" value="bank" class="hidden" required>
-                            <div class="payment-radio w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-500"></div>
-                        </label>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="flex items-start">
-                            <input type="checkbox" id="termsCheckbox" class="mt-1 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 focus:ring-blue-500" required>
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                                I agree to the <a href="/terms" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-700">Terms & Conditions</a> and <a href="/privacy" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-700">Privacy Policy</a>
-                            </span>
-                        </label>
-                        <label class="flex items-start mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                            <input type="checkbox" id="ruleAcknowledgement" class="mt-1 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 focus:ring-blue-500" required>
-                            <span class="ml-2 text-sm text-amber-900 dark:text-amber-200">
-                                I have read, understood, and accepted all the rules, terms, conditions, objectives, drawdown limits, and policies of my challenge.
-                            </span>
-                        </label>
-                    </div>
-
-                    <button type="button" onclick="initiateCashfreePayment()" id="purchaseBtn"
-                        class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-bold text-lg transition-all duration-300 ripple disabled:opacity-50 disabled:cursor-not-allowed"
->
-                        <span id="btnText">Proceed to Payment</span>
-                        <div id="btnLoader" class="hidden mx-auto loader"></div>
-                    </button>
-                </form>
-            </div>
-
-            <div class="border-t dark:border-gray-700 pt-4 mt-4">
-                <div class="flex justify-center space-x-4">
-                    <div class="text-center">
-                        <i class="fas fa-lock text-gray-400 dark:text-gray-500 mb-1 block"></i>
-                        <p class="text-xs text-gray-600 dark:text-gray-400">SSL Secure</p>
-                    </div>
-                    <div class="text-center">
-                        <i class="fas fa-shield-alt text-gray-400 dark:text-gray-500 mb-1 block"></i>
-                        <p class="text-xs text-gray-600 dark:text-gray-400">PCI DSS</p>
-                    </div>
-                    <div class="text-center">
-                        <i class="fas fa-money-bill-wave text-gray-400 dark:text-gray-500 mb-1 block"></i>
-                        <p class="text-xs text-gray-600 dark:text-gray-400">Refund Policy</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="glass-card p-6">
+      <h2 class="text-xl font-bold mb-3">Payment methods</h2>
+      <div class="border rounded-xl p-4 mb-3">
+      <h3 class="font-semibold">Crypto · NOWPayments</h3>
+      {% if nowpayments_enabled and (challenge.currency or 'USD')|upper == 'USD' %}
+      <form method="post" action="{{ url_for('user.crypto_payment_start') }}" class="mt-3">
+        <input type="hidden" name="challenge_id" value="{{ challenge.id }}">
+        <input type="hidden" name="coupon_code" class="coupon-value">
+        <label class="flex gap-2"><input type="checkbox" name="terms_acknowledgement" required> I accept the terms and challenge rules.</label>
+        <label class="flex gap-2 mt-2"><input type="checkbox" name="rule_acknowledgement" required> I understand the rules shown above.</label>
+        <button class="mt-3 rounded-lg bg-indigo-600 text-white px-4 py-2">Pay with crypto · USDT</button>
+      </form>
+      {% elif (challenge.currency or 'USD')|upper != 'USD' %}<p class="text-sm mt-2">Crypto checkout is currently available for USD priced challenges.</p>
+      {% else %}<p class="text-sm mt-2">Crypto checkout is temporarily unavailable while gateway configuration is pending.</p>{% endif %}
+      </div>
+      {% for method in payment_methods %}
+      <a class="manual-method block border rounded-xl p-4 mb-3 hover:border-indigo-500" data-base="{{ url_for('user.manual_payment', challenge_id=challenge.id, method_id=method.id) }}" href="{{ url_for('user.manual_payment', challenge_id=challenge.id, method_id=method.id) }}">
+        <div class="font-semibold">{{ method.name }} <span class="text-sm font-normal">({{ method.type|title }} · {{ method.currency }})</span></div>
+        <p class="text-sm mt-1">Submit payment proof for admin review. Challenge access begins after approval.</p>
+      </a>
+      {% else %}<p class="text-sm text-gray-500">No manual payment methods are currently available.</p>{% endfor %}
     </div>
+  </section>
+  <aside class="glass-card p-6 h-fit"><h2 class="font-bold">Order summary</h2><p class="mt-3">{{ challenge.name }}</p><label class="block mt-4 text-sm">Coupon code<input id="couponCode" class="block w-full rounded border p-2 mt-1" maxlength="64"></label><button id="applyCoupon" type="button" class="mt-2 border rounded px-3 py-1">Apply coupon</button><p id="couponResult" class="text-sm mt-2"></p><div class="flex justify-between mt-4 border-t pt-4"><span>Total</span><strong id="checkoutTotal">${{ '%.2f'|format(challenge.price) }} USD</strong></div><p class="text-xs mt-3">No checkout surcharge.</p></aside>
 </div>
-
-<div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center max-w-sm w-full mx-4 border dark:border-gray-700">
-        <div class="loader mx-auto mb-4"></div>
-        <p class="text-gray-700 dark:text-gray-200 font-medium">Creating Payment Order...</p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we prepare your payment</p>
-    </div>
-</div>
-
-{% endblock %}
-
-{% block scripts %}
 <script>
-    const currencySymbol = '{{ currency_symbol }}';
-    function selectPaymentMethod(event, method) {
-        document.querySelectorAll('.payment-option').forEach(option => {
-            option.classList.remove('selected');
-            option.querySelector('.payment-radio').style.backgroundColor = '';
-            option.querySelector('.payment-radio').style.borderColor = '';
-        });
-        const selectedOption = event.currentTarget;
-        selectedOption.classList.add('selected');
-        const radio = selectedOption.querySelector('.payment-radio');
-        radio.style.backgroundColor = '#3b82f6';
-        radio.style.borderColor = '#3b82f6';
-        selectedOption.querySelector('input[type="radio"]').checked = true;
-    }
-
-    function handlePayment(event) {
-        event.preventDefault();
-        return false;
-    }
-
-    const cashfree = Cashfree({ mode: "production" });
-
-    let currentPaymentSessionId = null;
-    let appliedCouponCode = null;
-
-    async function applyCoupon() {
-        const input = document.getElementById('couponCodeInput');
-        const code = input.value.trim();
-        const msgDiv = document.getElementById('couponMessage');
-        const applyBtn = document.getElementById('applyCouponBtn');
-        const loader = document.getElementById('couponLoader');
-        const challengeId = document.getElementById('challenge_id').value;
-
-        if (!code) {
-            msgDiv.textContent = 'Please enter a coupon code';
-            msgDiv.className = 'text-xs mt-1.5 font-medium text-red-600 dark:text-red-400 block';
-            return;
-        }
-
-        msgDiv.classList.add('hidden');
-        applyBtn.disabled = true;
-        loader.classList.remove('hidden');
-        applyBtn.querySelector('span').classList.add('hidden');
-
-        try {
-            const response = await fetch('/user/validate-coupon', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ 'coupon_code': code, 'challenge_id': challengeId })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                appliedCouponCode = code;
-                msgDiv.textContent = `Coupon applied: ${data.message || 'Discount applied!'}`;
-                msgDiv.className = 'text-xs mt-1.5 font-medium text-green-600 dark:text-green-400 block';
-                document.getElementById('discountRow').classList.remove('hidden');
-                document.getElementById('discountValueText').textContent = `-${currencySymbol}${parseFloat(data.discount_amount).toFixed(2)}`;
-                document.getElementById('finalPayableText').textContent = `${currencySymbol}${parseFloat(data.final_price).toFixed(2)}`;
-                input.readOnly = true;
-                input.className = 'flex-1 bg-green-50 dark:bg-green-900/10 border-green-500 rounded-xl px-3 py-2 text-sm uppercase font-semibold tracking-wider text-green-700 dark:text-green-400 focus:outline-none';
-                applyBtn.onclick = removeCoupon;
-                applyBtn.querySelector('span').textContent = 'Remove';
-                applyBtn.className = 'bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition flex items-center justify-center min-w-[80px]';
-            } else {
-                msgDiv.textContent = data.error || 'Failed to apply coupon';
-                msgDiv.className = 'text-xs mt-1.5 font-medium text-red-600 dark:text-red-400 block';
-                appliedCouponCode = null;
-            }
-        } catch (error) {
-            console.error('Error applying coupon:', error);
-            msgDiv.textContent = 'Network error. Please try again.';
-            msgDiv.className = 'text-xs mt-1.5 font-medium text-red-600 dark:text-red-400 block';
-            appliedCouponCode = null;
-        } finally {
-            applyBtn.disabled = false;
-            loader.classList.add('hidden');
-            applyBtn.querySelector('span').classList.remove('hidden');
-        }
-    }
-
-    function removeCoupon() {
-        appliedCouponCode = null;
-        const input = document.getElementById('couponCodeInput');
-        input.value = '';
-        input.readOnly = false;
-        input.className = 'flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm uppercase font-semibold tracking-wider text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition';
-        document.getElementById('couponMessage').classList.add('hidden');
-        document.getElementById('discountRow').classList.add('hidden');
-        document.getElementById('discountValueText').textContent = '-{{ currency_symbol }}0.00';
-        document.getElementById('finalPayableText').textContent = '{{ currency_symbol }}{{ '%.2f'|format(challenge.price * 1.02) }}';
-        const applyBtn = document.getElementById('applyCouponBtn');
-        applyBtn.onclick = applyCoupon;
-        applyBtn.querySelector('span').textContent = 'Apply';
-        applyBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition flex items-center justify-center min-w-[80px]';
-    }
-
-    async function initiateCashfreePayment() {
-        const challengeId = document.getElementById('challenge_id').value;
-        const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-        const terms = document.getElementById('termsCheckbox').checked;
-        const ruleAcknowledgement = document.getElementById('ruleAcknowledgement').checked;
-
-        if (!paymentMethod) { showPaymentStatus('Please select a payment method', 'warning'); return; }
-        if (!terms) { showPaymentStatus('Please accept the terms and conditions', 'warning'); return; }
-        if (!ruleAcknowledgement) { showPaymentStatus('Please confirm that you understand the drawdown calculation rules', 'warning'); return; }
-
-        const btn = document.getElementById('purchaseBtn');
-        const btnText = document.getElementById('btnText');
-        const btnLoader = document.getElementById('btnLoader');
-        btn.disabled = true;
-        btnText.classList.add('hidden');
-        btnLoader.classList.remove('hidden');
-        
-        try {
-            const bodyParams = { 'challenge_id': challengeId, 'rule_acknowledgement': 'on' };
-            if (appliedCouponCode) { bodyParams['coupon_code'] = appliedCouponCode; }
-            const response = await fetch('/create-cashfree-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams(bodyParams)
-            });
-            const data = await response.json();
-            if (!data.success) { throw new Error(data.error || 'Failed to create payment order'); }
-            currentPaymentSessionId = data.payment_session_id;
-            cashfree.checkout({ paymentSessionId: currentPaymentSessionId });
-            setTimeout(() => { btn.disabled = false; btnText.classList.remove('hidden'); btnLoader.classList.add('hidden'); }, 5000);
-        } catch (error) {
-            console.error('Payment initiation error:', error);
-            showPaymentStatus(error.message, 'error');
-            btn.disabled = false;
-            btnText.classList.remove('hidden');
-            btnLoader.classList.add('hidden');
-        }
-    }
-
-    function showPaymentStatus(message, type = 'info') {
-        const alert = document.createElement('div');
-        alert.className = `rounded-xl p-4 mb-6 ${type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-warning'}`;
-        alert.setAttribute('data-aos', 'fade-up');
-        alert.innerHTML = `<div class="flex items-center"><i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'} mr-3 ${type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-yellow-600'}"></i><span>${message}</span></div>`;
-        const main = document.querySelector('main');
-        main.insertBefore(alert, main.firstChild);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (type !== 'error') { setTimeout(() => { alert.remove(); }, 5000); }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const firstPaymentOption = document.querySelector('.payment-option');
-        if (firstPaymentOption) { firstPaymentOption.click(); }
-    });
-
-    window.addEventListener('online', function () { document.getElementById('loadingModal')?.classList.add('hidden'); });
-    window.addEventListener('offline', function () { document.getElementById('loadingModal')?.classList.remove('hidden'); showPaymentStatus('You are offline. Please check your internet connection.', 'error'); });
-
-    let isProcessingPayment = false;
-    window.addEventListener('beforeunload', function (e) {
-        const loadingModal = document.getElementById('loadingModal');
-        if (!loadingModal.classList.contains('hidden') || isProcessingPayment) {
-            e.preventDefault();
-            e.returnValue = 'Your payment is being processed. Are you sure you want to leave?';
-        }
-    });
+document.getElementById('applyCoupon').addEventListener('click', async () => {
+  const code = document.getElementById('couponCode').value.trim();
+  const result = document.getElementById('couponResult');
+  if (!code) { result.textContent = 'Enter a coupon code.'; return; }
+  const body = new URLSearchParams({coupon_code: code, challenge_id: '{{ challenge.id }}'});
+  const response = await fetch('{{ url_for("user.validate_coupon_api") }}', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
+  const data = await response.json();
+  if (!data.success) { result.textContent = data.error || 'Coupon could not be applied.'; return; }
+  result.textContent = data.message || 'Coupon applied.';
+  document.getElementById('checkoutTotal').textContent = '$' + Number(data.final_price).toFixed(2) + ' USD';
+  document.querySelectorAll('.coupon-value').forEach(input => input.value = code);
+  document.querySelectorAll('.manual-method').forEach(link => { const target = new URL(link.dataset.base, window.location.origin); target.searchParams.set('coupon_code', code); link.href = target.pathname + target.search; });
+});
 </script>
 {% endblock %}

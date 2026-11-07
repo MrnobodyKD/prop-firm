@@ -1,20 +1,247 @@
-from flask import render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file
+from flask import current_app, render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file, send_from_directory
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, extract, and_, or_
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, RuleLog
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, PaymentMethod, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, RuleLog
 from . import admin_bp, admin_required
 from notification_service import create_notification, notify_all_users
 import secrets
 import csv
 import io
 import json
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 from . import _admin_name, _notify_user, _notify_challenge_passed, _notify_challenge_breached, _activate_progression_stage, _payout_audit, _eligible_funded_count, _payout_stats
+
+PAYMENT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+PAYMENT_IMAGE_SIGNATURES = {
+    'png': b'\x89PNG\r\n\x1a\n',
+    'jpg': b'\xff\xd8\xff',
+    'gif': b'GIF8',
+    'webp': b'RIFF',
+}
+
+
+def _save_payment_method_image(upload):
+    if not upload or not upload.filename:
+        return None
+    data = upload.read(PAYMENT_IMAGE_MAX_BYTES + 1)
+    upload.stream.seek(0)
+    if len(data) > PAYMENT_IMAGE_MAX_BYTES:
+        raise ValueError('Image must be 5 MB or smaller.')
+    extension = secure_filename(upload.filename).rsplit('.', 1)[-1].lower() if '.' in upload.filename else ''
+    signature = next((ext for ext, header in PAYMENT_IMAGE_SIGNATURES.items()
+                      if data.startswith(header) and (ext != 'webp' or data[8:12] == b'WEBP')),
+                     None)
+    normalized_extension = 'jpg' if extension == 'jpeg' else extension
+    if signature is None or signature != normalized_extension:
+        raise ValueError('Upload a valid PNG, JPEG, GIF, or WebP image.')
+    filename = f'{uuid.uuid4().hex}.{signature}'
+    directory = os.path.join(current_app.instance_path, 'payment_method_assets')
+    os.makedirs(directory, exist_ok=True)
+    with open(os.path.join(directory, filename), 'wb') as image_file:
+        image_file.write(data)
+    return filename
+
+
+def _delete_payment_method_image(filename):
+    if filename and os.path.basename(filename) == filename:
+        path = os.path.join(current_app.instance_path, 'payment_method_assets', filename)
+        if os.path.isfile(path):
+            os.remove(path)
+
+
+def _save_method_form(method=None):
+    name = request.form.get('name', '').strip()
+    method_type = request.form.get('type', '').strip()
+    currency = request.form.get('currency', '').strip().upper()
+    details_text = request.form.get('details', '').strip()
+    if not name or not method_type or not currency:
+        flash('Name, type, and currency are required.', 'error')
+        return False
+    try:
+        details = json.loads(details_text) if details_text else {}
+        if not isinstance(details, dict):
+            raise ValueError('Details must be a JSON object.')
+        rate_text = request.form.get('exchange_rate_to_usd', '').strip()
+        rate = float(rate_text) if rate_text else None
+        if rate is not None and rate <= 0:
+            raise ValueError('Exchange rate must be greater than zero.')
+        sort_order = int(request.form.get('sort_order', 0))
+        uploaded = {}
+        for field in ('qr_image', 'help_image'):
+            if field in request.files and request.files[field].filename:
+                uploaded[field] = _save_payment_method_image(request.files[field])
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        flash(str(exc), 'error')
+        return False
+
+    if method is None:
+        method = PaymentMethod()
+        db.session.add(method)
+    old_images = []
+    for field, filename in uploaded.items():
+        old_name = getattr(method, field)
+        if old_name:
+            old_images.append(old_name)
+        setattr(method, field, filename)
+    for field in ('qr_image', 'help_image'):
+        if request.form.get(f'remove_{field}') == 'on':
+            old_name = getattr(method, field)
+            if old_name:
+                old_images.append(old_name)
+            setattr(method, field, None)
+    method.name = name
+    method.type = method_type
+    method.currency = currency
+    method.details = details
+    method.instructions = request.form.get('instructions', '').strip()
+    method.exchange_rate_to_usd = rate
+    method.sort_order = sort_order
+    method.is_active = request.form.get('is_active') == 'on'
+    db.session.commit()
+    for old_name in old_images:
+        _delete_payment_method_image(old_name)
+    flash('Payment method saved.', 'success')
+    return True
+
+
+@admin_bp.route('/payment-methods')
+@admin_required
+def admin_payment_methods():
+    methods = PaymentMethod.query.order_by(PaymentMethod.sort_order, PaymentMethod.name).all()
+    edit_id = request.args.get('edit', type=int)
+    edit_method = PaymentMethod.query.get(edit_id) if edit_id else None
+    return render_template('admin/payment_methods.html', methods=methods, edit_method=edit_method)
+
+
+@admin_bp.route('/payment-methods/new', methods=['POST'])
+@admin_required
+def admin_payment_method_create():
+    if _save_method_form():
+        return redirect(url_for('admin.admin_payment_methods'))
+    return redirect(url_for('admin.admin_payment_methods'))
+
+
+@admin_bp.route('/payment-methods/<int:method_id>/edit', methods=['POST'])
+@admin_required
+def admin_payment_method_edit(method_id):
+    method = PaymentMethod.query.get_or_404(method_id)
+    _save_method_form(method)
+    return redirect(url_for('admin.admin_payment_methods', edit=method.id))
+
+
+@admin_bp.route('/payment-methods/<int:method_id>/toggle', methods=['POST'])
+@admin_required
+def admin_payment_method_toggle(method_id):
+    method = PaymentMethod.query.get_or_404(method_id)
+    method.is_active = not method.is_active
+    db.session.commit()
+    flash('Payment method updated.', 'success')
+    return redirect(url_for('admin.admin_payment_methods'))
+
+
+@admin_bp.route('/payment-methods/<int:method_id>/delete', methods=['POST'])
+@admin_required
+def admin_payment_method_delete(method_id):
+    method = PaymentMethod.query.get_or_404(method_id)
+    if Payment.query.filter_by(payment_method_id=method.id).first():
+        flash('This payment method has payment history and cannot be deleted.', 'error')
+        return redirect(url_for('admin.admin_payment_methods'))
+    _delete_payment_method_image(method.qr_image)
+    _delete_payment_method_image(method.help_image)
+    db.session.delete(method)
+    db.session.commit()
+    flash('Payment method deleted.', 'success')
+    return redirect(url_for('admin.admin_payment_methods'))
+
+
+@admin_bp.route('/manual-claims')
+@admin_required
+def admin_manual_claims():
+    claims = Payment.query.filter(
+        Payment.payment_method_type == 'manual',
+        Payment.status.in_(['pending', 'paid', 'rejected'])
+    ).order_by(Payment.status != 'pending', Payment.created_at.desc()).all()
+    partial_crypto = Payment.query.filter_by(payment_method_type='nowpayments', status='pending', gateway_status='partially_paid').order_by(Payment.created_at.desc()).all()
+    return render_template('admin/manual_claims.html', claims=claims, partial_crypto=partial_crypto)
+
+
+def record_paid_coupon_usage(payment):
+    if not payment.coupon_id:
+        return
+    coupon = Coupon.query.with_for_update().get(payment.coupon_id)
+    if not coupon or CouponUsage.query.filter_by(coupon_id=coupon.id, user_id=payment.user_id).first():
+        return
+    coupon.used_count = (coupon.used_count or 0) + 1
+    if coupon.coupon_type == 'specific':
+        assignment = CouponAssignment.query.filter_by(coupon_id=coupon.id, user_id=payment.user_id, is_used=False).first()
+        if assignment:
+            assignment.is_used = True
+    original_price = float(payment.challenge_template.price) if payment.challenge_template else float(payment.amount)
+    db.session.add(CouponUsage(
+        coupon_id=coupon.id,
+        user_id=payment.user_id,
+        challenge_purchase_id=payment.challenge_purchase_id,
+        original_price=original_price,
+        discount_amount=max(0.0, original_price - float(payment.amount or 0)),
+        final_price=float(payment.amount or 0),
+        used_at=datetime.now(timezone.utc),
+    ))
+
+
+@admin_bp.route('/manual-claims/<int:payment_id>/<action>', methods=['POST'])
+@admin_required
+def admin_manual_claim_action(payment_id, action):
+    payment = Payment.query.with_for_update().get_or_404(payment_id)
+    if payment.payment_method_type != 'manual' or payment.status != 'pending':
+        flash('Only pending manual claims can be reviewed.', 'error')
+        return redirect(url_for('admin.admin_manual_claims'))
+    if action == 'approve':
+        from app import provision_challenge
+        user = User.query.get_or_404(payment.user_id)
+        success, result = provision_challenge(payment, user, payment.challenge_template_id)
+        if not success:
+            db.session.rollback()
+            flash(f'Challenge provisioning failed: {result}', 'error')
+            return redirect(url_for('admin.admin_manual_claims'))
+        payment.status = 'paid'
+        payment.paid_amount = payment.amount
+        payment.gateway_status = 'manual_approved'
+        record_paid_coupon_usage(payment)
+        _notify_user(payment.user_id, 'Payment Approved', 'Your payment was verified and your challenge is now available.')
+    elif action == 'reject':
+        payment.status = 'rejected'
+        payment.gateway_status = 'manual_rejected'
+        payment.gateway_message = request.form.get('reason', '').strip()
+        _notify_user(payment.user_id, 'Payment Not Approved', 'Your payment proof could not be approved. You may submit a new payment claim.')
+    else:
+        abort(404)
+    db.session.commit()
+    flash('Manual payment claim updated.', 'success')
+    return redirect(url_for('admin.admin_manual_claims'))
+
+
+@admin_bp.route('/payment-evidence/<int:payment_id>')
+@admin_required
+def admin_payment_evidence(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    if not payment.evidence_path or os.path.basename(payment.evidence_path) != payment.evidence_path:
+        abort(404)
+    return send_from_directory(os.path.join(current_app.instance_path, 'payment_evidence'), payment.evidence_path)
 
 @admin_bp.route('/payments')
 @admin_required
 def admin_payments():
     return render_template('admin/payments.html')
+
+
+@admin_bp.route('/payments/<int:payment_id>')
+@admin_required
+def admin_payment_detail(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    return render_template('admin/payment_detail.html', payment=payment)
 
 
 @admin_bp.route('/api/payments/analytics', methods=['POST'])
@@ -23,13 +250,14 @@ def admin_api_payments_analytics():
     data = request.get_json() or {}
     search = data.get('search', '').strip()
     status = data.get('status', 'all')
+    payment_type = data.get('payment_type', 'all')
     page = max(1, int(data.get('page', 1)))
     per_page = min(100, int(data.get('per_page', 50)))
     
     date_from = data.get('date_from')
     date_to = data.get('date_to')
     
-    query = Payment.query.join(User)
+    query = Payment.query.join(User, Payment.user_id == User.id)
     
     if search:
         query = query.filter(
@@ -39,8 +267,20 @@ def admin_api_payments_analytics():
             (Payment.payment_id.ilike(f'%{search}%'))
         )
     
-    if status != 'all':
+    if status == 'success':
+        query = query.filter(Payment.status.in_(['SUCCESS', 'success', 'paid']))
+    elif status == 'pending':
+        query = query.filter(Payment.status.in_(['pending', 'waiting']))
+    elif status != 'all':
         query = query.filter(Payment.status.ilike(status))
+    if payment_type == 'manual':
+        query = query.filter(Payment.payment_method_type == 'manual')
+    elif payment_type == 'crypto':
+        query = query.filter(Payment.payment_method_type == 'nowpayments')
+    elif payment_type == 'cashfree':
+        query = query.filter(or_(Payment.payment_method_type == 'cashfree', Payment.payment_method_type.is_(None), Payment.gateway == 'cashfree'))
+    elif payment_type == 'pending':
+        query = query.filter(or_(Payment.status.in_(['pending', 'waiting']), Payment.gateway_status == 'partially_paid'))
     
     if date_from and date_from != 'null' and date_from != 'undefined':
         try:
@@ -54,13 +294,13 @@ def admin_api_payments_analytics():
             pass
     
     # Stats
-    success_ids = [p.id for p in query.filter(Payment.status.in_(['SUCCESS', 'success'])).all()]
+    success_ids = [p.id for p in query.filter(Payment.status.in_(['SUCCESS', 'success', 'paid'])).all()]
     total_revenue = db.session.query(func.coalesce(func.sum(Payment.amount), 0)).filter(
         Payment.id.in_(success_ids)
     ).scalar() or 0 if success_ids else 0
     
-    total_successful = query.filter(Payment.status.in_(['SUCCESS', 'success'])).count()
-    total_pending = query.filter(Payment.status.ilike('pending')).count()
+    total_successful = query.filter(Payment.status.in_(['SUCCESS', 'success', 'paid'])).count()
+    total_pending = query.filter(Payment.status.in_(['pending', 'waiting'])).count()
     total_failed = query.filter(Payment.status.ilike('failed')).count()
     total_all = query.count()
     
@@ -89,7 +329,7 @@ def admin_api_payments_analytics():
         func.date(Payment.created_at).label('date'),
         func.coalesce(func.sum(Payment.amount), 0).label('total')
     ).filter(
-        Payment.status.in_(['SUCCESS', 'success']),
+        Payment.status.in_(['SUCCESS', 'success', 'paid']),
         Payment.created_at >= trend_start
     ).group_by(func.date(Payment.created_at)).order_by('date').all()
     
@@ -105,7 +345,7 @@ def admin_api_payments_analytics():
         func.coalesce(func.sum(Payment.amount), 0).label('total_spent'),
         func.max(Payment.created_at).label('last_purchase')
     ).join(Payment, Payment.user_id == User.id)\
-     .filter(Payment.status.in_(['SUCCESS', 'success']))\
+     .filter(Payment.status.in_(['SUCCESS', 'success', 'paid']))\
      .group_by(User.id)\
      .order_by(func.sum(Payment.amount).desc())\
      .limit(10).all()
@@ -132,7 +372,7 @@ def admin_api_payments_analytics():
     challenge_perf_data = []
     for c in challenge_perf:
         conv_success = Payment.query.filter(
-            Payment.status.in_(['SUCCESS', 'success']),
+            Payment.status.in_(['SUCCESS', 'success', 'paid']),
             Payment.challenge_template_id == c.id
         ).count()
         challenge_perf_data.append({
@@ -165,12 +405,19 @@ def admin_api_payments_analytics():
             challenge_price = float(p.challenge_template.price)
         
         payments_data.append({
+            'id': p.id,
             'order_id': p.payment_id,
             'user_name': p.user.get_full_name() if p.user else '--',
             'user_email': p.user.email if p.user else '',
             'challenge_name': challenge_name,
             'challenge_price': challenge_price,
             'final_amount': float(p.amount or 0),
+            'currency': p.currency or 'USD',
+            'local_amount': float(p.amount_local) if p.amount_local is not None else None,
+            'local_currency': p.local_currency,
+            'method': p.method_name or p.payment_method or p.gateway or 'Payment',
+            'reference': p.external_reference or p.gateway_id or p.payment_id,
+            'detail_url': url_for('admin.admin_payment_detail', payment_id=p.id),
             'coupon_code': coupon_code,
             'coupon_discount': coupon_discount,
             'status': p.status,
@@ -195,10 +442,11 @@ def admin_api_payments_analytics():
 def admin_api_payments_export():
     search = request.args.get('search', '').strip()
     status = request.args.get('status', 'all')
+    payment_type = request.args.get('payment_type', 'all')
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
     
-    query = Payment.query.join(User)
+    query = Payment.query.join(User, Payment.user_id == User.id)
     
     if search:
         query = query.filter(
@@ -208,8 +456,20 @@ def admin_api_payments_export():
             (Payment.payment_id.ilike(f'%{search}%'))
         )
     
-    if status != 'all':
+    if status == 'success':
+        query = query.filter(Payment.status.in_(['SUCCESS', 'success', 'paid']))
+    elif status == 'pending':
+        query = query.filter(Payment.status.in_(['pending', 'waiting']))
+    elif status != 'all':
         query = query.filter(Payment.status.ilike(status))
+    if payment_type == 'manual':
+        query = query.filter(Payment.payment_method_type == 'manual')
+    elif payment_type == 'crypto':
+        query = query.filter(Payment.payment_method_type == 'nowpayments')
+    elif payment_type == 'cashfree':
+        query = query.filter(or_(Payment.payment_method_type == 'cashfree', Payment.payment_method_type.is_(None), Payment.gateway == 'cashfree'))
+    elif payment_type == 'pending':
+        query = query.filter(or_(Payment.status.in_(['pending', 'waiting']), Payment.gateway_status == 'partially_paid'))
     
     if date_from and date_from != 'null' and date_from != 'undefined' and date_from != '':
         try:

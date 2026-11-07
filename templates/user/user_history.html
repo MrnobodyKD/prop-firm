@@ -248,6 +248,14 @@
     </div>
 </div>
 
+<div class="glass-card overflow-hidden mt-8">
+  <div class="p-5 flex justify-between items-center"><h2 class="text-lg font-bold">Payment status</h2></div>
+  <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr><th class="p-3 text-left">Order</th><th class="p-3 text-left">Method</th><th class="p-3 text-left">Amount</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Created</th><th class="p-3">Action</th></tr></thead><tbody>
+  {% for payment in payments %}<tr class="border-t"><td class="p-3">{{ payment.payment_id }}</td><td class="p-3">{{ payment.method_name or payment.payment_method or 'Payment' }}</td><td class="p-3">{{ payment.currency or 'USD' }} {{ '%.2f'|format(payment.amount or 0) }}</td><td class="p-3">{{ payment.status|title }}</td><td class="p-3">{{ payment.created_at.strftime('%Y-%m-%d %H:%M') if payment.created_at else '—' }}</td><td class="p-3">{% if payment.can_continue %}<a class="text-indigo-600" href="{{ payment.invoice_url }}">Continue payment</a>{% elif payment.status == 'expired' %}<span>Expired — create a new order</span>{% elif payment.status == 'pending' %}<a class="text-indigo-600" href="{{ url_for('user.payment_status_page', payment_id=payment.id) }}">View claim</a>{% endif %}</td></tr>
+  {% else %}<tr><td class="p-4 text-gray-500" colspan="6">No payment records yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('historySearch');

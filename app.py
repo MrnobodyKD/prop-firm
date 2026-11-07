@@ -443,7 +443,7 @@ def provision_challenge(payment, user, challenge_template_id):
         challenge_template_id=challenge.id,
         purchase_date=datetime.now(timezone.utc),
         amount=challenge.price,
-        payment_method='cashfree',
+        payment_method=payment.method_name or payment.payment_method or 'cashfree',
         status=initial_status,
         challenge_type=ctype,
         current_phase=initial_phase,
@@ -518,7 +518,7 @@ def provision_challenge(payment, user, challenge_template_id):
             'purchase_confirmation',
             user,
             challenge=purchase,
-            variables={'order_id': payment.cf_order_id or payment.order_id or payment.id}
+            variables={'order_id': payment.cf_order_id or payment.payment_id or payment.id}
         )
     except Exception as e:
         if DEV_MODE:
@@ -1130,7 +1130,75 @@ def cashfree_webhook():
     except Exception as e:
         print(f"Webhook processing error: {e}")
         return jsonify({'status': 'error'}), 500
-    
+
+
+@app.route('/nowpayments-webhook', methods=['POST'])
+def nowpayments_webhook():
+    from models import Payment, db
+    from crypto_gateway import get_payment_status, verify_ipn
+
+    payload = request.get_json(silent=True)
+    signature = request.headers.get('x-nowpayments-sig')
+    if not isinstance(payload, dict) or not verify_ipn(payload, signature):
+        return jsonify({'status': 'invalid signature'}), 401
+
+    order_id = str(payload.get('order_id') or '').strip()
+    provider_payment_id = str(payload.get('payment_id') or '').strip()
+    if not order_id or not provider_payment_id:
+        return jsonify({'status': 'missing payment reference'}), 400
+
+    try:
+        payment = Payment.query.filter_by(payment_id=order_id).with_for_update().first()
+        if not payment or payment.payment_method_type != 'nowpayments':
+            return jsonify({'status': 'payment not found'}), 404
+        if payment.status != 'waiting':
+            return jsonify({'status': 'already processed'}), 200
+
+        verified = get_payment_status(provider_payment_id)
+        if str(verified.get('payment_id', '')) != provider_payment_id or str(verified.get('order_id', '')) != payment.payment_id:
+            db.session.rollback()
+            return jsonify({'status': 'provider reference mismatch'}), 400
+
+        provider_status = str(verified.get('payment_status', '')).lower()
+        payment.gateway_status = provider_status
+        payment.gateway_id = provider_payment_id
+        payment.external_reference = provider_payment_id
+        payment.receipt_url = verified.get('receipt_url') or verified.get('payment_url') or payment.receipt_url or payment.invoice_url
+        payment.gateway_response = json.dumps(verified)
+
+        if provider_status == 'finished':
+            try:
+                paid_price = float(verified.get('price_amount'))
+            except (TypeError, ValueError):
+                paid_price = -1
+            if abs(paid_price - float(payment.amount)) > 0.01 or str(verified.get('price_currency', '')).upper() != 'USD':
+                payment.status = 'failed'
+                payment.gateway_message = 'Verified invoice amount or currency did not match the order.'
+            else:
+                user = User.query.get(payment.user_id)
+                success, result = provision_challenge(payment, user, payment.challenge_template_id)
+                if not success:
+                    db.session.rollback()
+                    return jsonify({'status': 'provisioning failed'}), 500
+                payment.status = 'paid'
+                payment.paid_amount = payment.amount
+                from admin_routes.admin_finance import record_paid_coupon_usage
+                record_paid_coupon_usage(payment)
+        elif provider_status == 'partially_paid':
+            payment.status = 'pending'
+            payment.gateway_message = 'Partial payment requires manual review.'
+        elif provider_status == 'expired':
+            payment.status = 'expired'
+        elif provider_status in ('failed', 'refunded'):
+            payment.status = 'failed'
+
+        db.session.commit()
+        return jsonify({'status': payment.status}), 200
+    except Exception as exc:
+        db.session.rollback()
+        print(f"NOWPayments webhook processing error: {exc}")
+        return jsonify({'status': 'error'}), 500
+
 @app.route('/api/coupons/new-count')
 @login_required
 def api_coupon_new_count():

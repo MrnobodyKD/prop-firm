@@ -1,0 +1,25 @@
+{% extends "user/base.html" %}
+{% block title %}Submit payment proof{% endblock %}
+{% block header_title %}Submit payment proof{% endblock %}
+{% block header_subtitle %}{{ challenge.name }} · {{ method.name }}{% endblock %}
+{% block content %}
+<div class="glass-card max-w-3xl mx-auto p-6">
+  <h2 class="text-xl font-bold">Transfer instructions</h2>
+  <p class="mt-2">Challenge price: <strong>${{ '%.2f'|format(amount) }} USD</strong></p>
+  {% if amount_local is not none %}<p>Estimated transfer: <strong>{{ '%.2f'|format(amount_local) }} {{ method.currency }}</strong> at the configured rate. Confirm the final amount with your payment provider.</p>{% endif %}
+  <div class="my-4 rounded-xl bg-gray-50 dark:bg-gray-900 p-4 whitespace-pre-wrap">{{ method.instructions or '' }}
+{% for key, value in (method.details or {}).items() %}{{ key|replace('_',' ')|title }}: {{ value }}
+{% endfor %}</div>
+  {% if method.qr_image %}<img class="max-h-64 rounded-lg mb-4" src="{{ url_for('user.payment_method_image', method_id=method.id, image_kind='qr') }}" alt="Payment QR code">{% endif %}
+  {% if method.help_image %}<img class="max-h-64 rounded-lg mb-4" src="{{ url_for('user.payment_method_image', method_id=method.id, image_kind='help') }}" alt="Payment instructions">{% endif %}
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
+    <input type="hidden" name="coupon_code" value="{{ coupon_code }}">
+    <label class="block">Transaction reference<input name="transaction_id" maxlength="160" required class="block w-full rounded-lg border p-2 mt-1"></label>
+    <label class="block">Payment screenshot (PNG, JPEG, GIF, or WebP; max 5 MB)<input type="file" name="evidence" accept="image/png,image/jpeg,image/gif,image/webp" required class="block w-full mt-1"></label>
+    <label class="block">Message (optional)<textarea name="message" maxlength="1000" class="block w-full rounded-lg border p-2 mt-1"></textarea></label>
+    <label class="flex gap-2"><input type="checkbox" name="terms_acknowledgement" required> I accept the terms and challenge rules.</label>
+    <label class="flex gap-2"><input type="checkbox" name="rule_acknowledgement" required> I understand that a challenge is created only after payment approval.</label>
+    <button class="rounded-lg bg-indigo-600 text-white px-5 py-2">Submit for review</button>
+  </form>
+</div>
+{% endblock %}

@@ -36,6 +36,7 @@
     <a href="{{ url_for('user.user_history') }}" class="back-btn inline-flex items-center gap-2">
         <i class="fas fa-arrow-left"></i> Back to History
     </a>
+    <a href="{{ url_for('user.payments') }}" class="back-btn inline-flex items-center gap-2 ml-2">Payment History</a>
 </div>
 
 <div class="detail-card">
@@ -202,4 +203,9 @@
     </div>
 </div>
 {% endif %}
+
+<div class="detail-card p-5">
+    <div class="flex justify-between items-center"><h2 class="text-lg font-bold">Payment evidence</h2></div>
+    {% for payment in payments %}<div class="border-t mt-3 pt-3 flex flex-wrap justify-between gap-2 text-sm"><span>{{ payment.method_name or payment.payment_method }} · {{ payment.currency or 'USD' }} {{ '%.2f'|format(payment.amount or 0) }}{% if payment.amount_local %} ({{ '%.2f'|format(payment.amount_local) }} {{ payment.local_currency }}){% endif %} · {{ payment.external_reference or payment.payment_id }}</span><span>{{ payment.status|title }} · {{ payment.created_at.strftime('%Y-%m-%d') if payment.created_at else '' }}</span>{% if payment.receipt_url %}<a class="text-indigo-600" href="{{ payment.receipt_url }}" target="_blank" rel="noopener">View receipt</a>{% endif %}{% if payment.evidence_path %}<a class="text-indigo-600" href="{{ url_for('user.payment_evidence', payment_id=payment.id) }}">View evidence</a>{% endif %}</div>{% else %}<p class="text-sm text-gray-500 mt-3">No payment record linked to this challenge.</p>{% endfor %}
+</div>
 {% endblock %}

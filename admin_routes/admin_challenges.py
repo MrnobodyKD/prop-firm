@@ -870,10 +870,12 @@ def api_challenge_violations(challenge_id):
 def api_clear_flag(challenge_id):
     from models import ChallengePurchase
     challenge = ChallengePurchase.query.get_or_404(challenge_id)
-    challenge.monitoring_status = 'active'
+    restored_status = 'funded' if challenge.current_phase == 3 else 'active'
+    challenge.monitoring_status = restored_status
     challenge.review_required = False
-    challenge.status = 'active'
+    challenge.status = restored_status
     challenge.violation_reason = None
+    challenge.risk_score = 0
     challenge.manipulation_check_baseline = challenge.current_balance
     challenge.manipulation_baseline_set_at = datetime.now(timezone.utc)
     db.session.commit()
@@ -894,9 +896,10 @@ def api_challenge_action():
         ch.review_required = True
         ch.status = 'under_review'
     elif action == 'clear':
-        ch.monitoring_status = 'active'
+        restored_status = 'funded' if ch.current_phase == 3 else 'active'
+        ch.monitoring_status = restored_status
         ch.review_required = False
-        ch.status = 'active'
+        ch.status = restored_status
         ch.violation_reason = None
         ch.risk_score = 0
         ch.manipulation_check_baseline = ch.current_balance
