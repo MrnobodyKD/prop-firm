@@ -142,6 +142,13 @@ Your transaction could not be completed
                 {% if payment and payment.evidence_path %}<a class="text-indigo-600" href="{{ url_for('user.payment_evidence', payment_id=payment.id) }}">View submitted payment evidence</a>{% endif %}
                 {% if payment and payment.receipt_url %}<a class="text-indigo-600 ml-3" href="{{ payment.receipt_url }}" target="_blank" rel="noopener">View payment receipt</a>{% endif %}
 
+                {% if payment and payment.status == 'rejected' and payment.gateway_message %}
+                <div class="mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <p class="text-sm font-medium text-red-800 dark:text-red-300">Why it was rejected</p>
+                    <p class="text-sm text-red-700 dark:text-red-200 mt-1">{{ payment.gateway_message }}</p>
+                </div>
+                {% endif %}
+
                 {% if payment and payment.rule_acceptance_timestamp %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t dark:border-gray-700">
                     <div>

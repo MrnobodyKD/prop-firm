@@ -1,25 +1,791 @@
 {% extends "user/base.html" %}
-{% block title %}Submit payment proof{% endblock %}
-{% block header_title %}Submit payment proof{% endblock %}
+{% block title %}Submit payment proof · {{ challenge.name }}{% endblock %}
+{% block header_title %}Submit Payment Proof{% endblock %}
 {% block header_subtitle %}{{ challenge.name }} · {{ method.name }}{% endblock %}
+
 {% block content %}
-<div class="glass-card max-w-3xl mx-auto p-6">
-  <h2 class="text-xl font-bold">Transfer instructions</h2>
-  <p class="mt-2">Challenge price: <strong>${{ '%.2f'|format(amount) }} USD</strong></p>
-  {% if amount_local is not none %}<p>Estimated transfer: <strong>{{ '%.2f'|format(amount_local) }} {{ method.currency }}</strong> at the configured rate. Confirm the final amount with your payment provider.</p>{% endif %}
-  <div class="my-4 rounded-xl bg-gray-50 dark:bg-gray-900 p-4 whitespace-pre-wrap">{{ method.instructions or '' }}
-{% for key, value in (method.details or {}).items() %}{{ key|replace('_',' ')|title }}: {{ value }}
-{% endfor %}</div>
-  {% if method.qr_image %}<img class="max-h-64 rounded-lg mb-4" src="{{ url_for('user.payment_method_image', method_id=method.id, image_kind='qr') }}" alt="Payment QR code">{% endif %}
-  {% if method.help_image %}<img class="max-h-64 rounded-lg mb-4" src="{{ url_for('user.payment_method_image', method_id=method.id, image_kind='help') }}" alt="Payment instructions">{% endif %}
-  <form method="post" enctype="multipart/form-data" class="space-y-4">
-    <input type="hidden" name="coupon_code" value="{{ coupon_code }}">
-    <label class="block">Transaction reference<input name="transaction_id" maxlength="160" required class="block w-full rounded-lg border p-2 mt-1"></label>
-    <label class="block">Payment screenshot (PNG, JPEG, GIF, or WebP; max 5 MB)<input type="file" name="evidence" accept="image/png,image/jpeg,image/gif,image/webp" required class="block w-full mt-1"></label>
-    <label class="block">Message (optional)<textarea name="message" maxlength="1000" class="block w-full rounded-lg border p-2 mt-1"></textarea></label>
-    <label class="flex gap-2"><input type="checkbox" name="terms_acknowledgement" required> I accept the terms and challenge rules.</label>
-    <label class="flex gap-2"><input type="checkbox" name="rule_acknowledgement" required> I understand that a challenge is created only after payment approval.</label>
-    <button class="rounded-lg bg-indigo-600 text-white px-5 py-2">Submit for review</button>
-  </form>
+<style>
+  /* ============ THEME TOKENS ============ */
+  .proof-root {
+    --brand: #8b5cf6;
+    --brand-2: #6366f1;
+    --brand-glow: rgba(139, 92, 246, .35);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --surface-3: #f3f4f6;
+    --text: #0f172a;
+    --text-soft: #475569;
+    --muted: #64748b;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,.06);
+    --shadow-md: 0 8px 24px -8px rgba(15,23,42,.12);
+    --shadow-lg: 0 20px 50px -20px rgba(99,102,241,.35);
+    --check-bg: #eef2ff;
+    --check-border: #c7d2fe;
+    --input-bg: #ffffff;
+    --drop-bg: #f9fafb;
+  }
+
+  html.dark .proof-root,
+  body.dark .proof-root,
+  [data-theme="dark"] .proof-root,
+  .dark .proof-root {
+    --bg: #0b1020;
+    --surface: #131a2e;
+    --surface-2: #0f1526;
+    --surface-3: #1a2236;
+    --text: #f1f5f9;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+    --border: #1f2a44;
+    --border-strong: #2b3a5c;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 24px -8px rgba(0,0,0,.6);
+    --shadow-lg: 0 20px 50px -20px rgba(139,92,246,.4);
+    --check-bg: rgba(99,102,241,.1);
+    --check-border: rgba(99,102,241,.35);
+    --input-bg: #0f1526;
+    --drop-bg: #0f1526;
+    --brand-glow: rgba(139,92,246,.5);
+  }
+
+  .proof-root {
+    background: transparent;
+    color: var(--text);
+    padding: 1.5rem 1rem 4rem;
+    min-height: 70vh;
+  }
+  .proof-inner { max-width: 820px; margin: 0 auto; }
+
+  /* ============ TOP BAR ============ */
+  .proof-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .75rem; flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .6rem 1rem;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: .7rem;
+    color: var(--text);
+    font-weight: 700;
+    font-size: .85rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .18s;
+    box-shadow: var(--shadow-sm);
+  }
+  .back-btn:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    transform: translateX(-2px);
+    box-shadow: 0 4px 14px -4px var(--brand-glow);
+  }
+  .back-btn .arrow { font-size: 1rem; transition: transform .18s; }
+  .back-btn:hover .arrow { transform: translateX(-2px); }
+
+  .step-pill {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .5rem .9rem;
+    background: var(--check-bg);
+    border: 1px solid var(--check-border);
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .step-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px var(--brand-glow); }
+    50% { box-shadow: 0 0 0 6px rgba(139,92,246,.15); }
+  }
+
+  /* ============ HERO ============ */
+  .proof-hero {
+    background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(139,92,246,.12));
+    border: 1px solid var(--check-border);
+    border-radius: 1.1rem;
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .proof-hero::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, var(--brand-glow), transparent 70%);
+    opacity: .5;
+    pointer-events: none;
+  }
+  .proof-hero .hero-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+    position: relative; z-index: 1;
+  }
+  .proof-hero .hero-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--brand-2), var(--brand));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.4rem;
+    box-shadow: 0 8px 24px -8px var(--brand-glow);
+    flex-shrink: 0;
+  }
+  .proof-hero .hero-text { flex: 1; min-width: 0; }
+  .proof-hero .hero-label {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--brand); margin-bottom: .2rem;
+  }
+  .proof-hero .hero-challenge {
+    font-size: 1.15rem; font-weight: 800; color: var(--text);
+    letter-spacing: -.01em; line-height: 1.2;
+  }
+  .proof-hero .hero-method {
+    font-size: .82rem; color: var(--muted); margin-top: .25rem;
+  }
+  .proof-hero .hero-price {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .proof-hero .hero-price .amount {
+    font-size: 1.4rem; font-weight: 800; color: var(--text);
+    letter-spacing: -.02em;
+  }
+  .proof-hero .hero-price .amount small {
+    font-size: .8rem; font-weight: 600; color: var(--muted);
+    margin-left: .25rem;
+  }
+  .proof-hero .hero-price .local {
+    font-size: .78rem; color: var(--muted); margin-top: .2rem;
+  }
+
+  /* ============ CARD ============ */
+  .proof-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0 0 .85rem;
+    color: var(--text);
+    display: flex; align-items: center; gap: .6rem;
+    letter-spacing: -.01em;
+  }
+  .card-title .ico {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--brand-2), var(--brand));
+    color: #fff;
+    border-radius: 9px;
+    font-size: .95rem;
+    box-shadow: 0 4px 14px -4px var(--brand-glow);
+    flex-shrink: 0;
+  }
+  .card-subtitle {
+    font-size: .82rem; color: var(--muted);
+    margin: -.4rem 0 1rem; line-height: 1.5;
+  }
+
+  /* ============ INSTRUCTIONS ============ */
+  .instructions-box {
+    background: var(--drop-bg);
+    border: 1px solid var(--border);
+    border-radius: .85rem;
+    padding: 1.1rem 1.2rem;
+    white-space: pre-wrap;
+    font-size: .86rem;
+    color: var(--text-soft);
+    line-height: 1.65;
+    font-family: inherit;
+  }
+  .details-list {
+    margin-top: .9rem;
+    display: flex; flex-direction: column; gap: .4rem;
+  }
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: .75rem;
+    padding: .55rem .7rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .55rem;
+    font-size: .82rem;
+    transition: border-color .15s;
+  }
+  .detail-row:hover { border-color: var(--brand); }
+  .detail-row dt { color: var(--muted); font-weight: 600; }
+  .detail-row dd {
+    margin: 0; font-weight: 700; color: var(--text);
+    text-align: right; word-break: break-all;
+    display: inline-flex; align-items: center; gap: .5rem;
+  }
+  .copy-btn {
+    background: transparent; border: none;
+    color: var(--brand); cursor: pointer;
+    font-size: .75rem; font-weight: 700;
+    padding: .15rem .4rem; border-radius: .35rem;
+    transition: background .15s;
+  }
+  .copy-btn:hover { background: var(--check-bg); }
+
+  /* ============ MEDIA ============ */
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: .9rem;
+    margin-top: 1rem;
+  }
+  .media-box {
+    background: var(--drop-bg);
+    border: 1px solid var(--border);
+    border-radius: .85rem;
+    padding: .75rem;
+    text-align: center;
+    transition: border-color .15s, transform .15s;
+  }
+  .media-box:hover { border-color: var(--brand); transform: translateY(-1px); }
+  .media-box img {
+    max-height: 220px; max-width: 100%;
+    border-radius: .55rem;
+    display: block; margin: 0 auto;
+    background: #fff;
+    cursor: zoom-in;
+  }
+  .media-box .media-label {
+    font-size: .74rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin-top: .55rem;
+  }
+
+  /* ============ FORM ============ */
+  .field-group { margin-bottom: 1.1rem; }
+  .field-label {
+    display: block;
+    font-size: .82rem; font-weight: 700; color: var(--text);
+    margin-bottom: .45rem;
+  }
+  .field-label .req { color: var(--danger); margin-left: .15rem; }
+  .field-label .opt { color: var(--muted); font-weight: 500; font-size: .76rem; margin-left: .3rem; }
+  .field-input, .field-textarea {
+    width: 100%;
+    padding: .75rem .9rem;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: .65rem;
+    color: var(--text);
+    font-size: .88rem;
+    font-family: inherit;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  .field-input::placeholder, .field-textarea::placeholder { color: var(--muted); }
+  .field-input:focus, .field-textarea:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+  .field-textarea {
+    resize: vertical; min-height: 90px;
+    line-height: 1.55;
+  }
+
+  /* ============ DROP ZONE ============ */
+  .drop-zone {
+    position: relative;
+    display: block;
+    background: var(--drop-bg);
+    border: 2px dashed var(--border-strong);
+    border-radius: .85rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--brand);
+    background: var(--check-bg);
+  }
+  .drop-zone.has-file {
+    border-style: solid;
+    border-color: var(--success);
+    background: rgba(16,185,129,.06);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+  }
+  .drop-icon {
+    font-size: 1.8rem; margin-bottom: .4rem; display: block;
+    transition: transform .2s;
+  }
+  .drop-zone:hover .drop-icon { transform: scale(1.1); }
+  .drop-title {
+    font-size: .88rem; font-weight: 700; color: var(--text);
+    margin-bottom: .2rem;
+  }
+  .drop-hint { font-size: .76rem; color: var(--muted); }
+  .drop-file-name {
+    display: none;
+    margin-top: .65rem;
+    padding: .5rem .75rem;
+    background: var(--surface);
+    border: 1px solid var(--success);
+    border-radius: .5rem;
+    font-size: .8rem; font-weight: 600;
+    color: var(--success);
+    word-break: break-all;
+  }
+  .drop-zone.has-file .drop-file-name { display: inline-block; }
+  .drop-zone.has-file .drop-title::before { content: '✅ '; }
+
+  .image-preview {
+    display: none;
+    margin-top: .85rem;
+    text-align: center;
+  }
+  .image-preview img {
+    max-height: 220px; max-width: 100%;
+    border-radius: .65rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  .image-preview.active { display: block; }
+
+  /* ============ CHECK ROWS ============ */
+  .check-row {
+    display: flex; align-items: flex-start; gap: .65rem;
+    font-size: .82rem; color: var(--text);
+    margin-top: .65rem;
+    padding: .7rem .85rem;
+    background: var(--check-bg);
+    border: 1px solid var(--check-border);
+    border-radius: .6rem;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    line-height: 1.5;
+  }
+  .check-row:hover { border-color: var(--brand); }
+  .check-row input[type="checkbox"] {
+    width: 18px; height: 18px; margin-top: 1px;
+    accent-color: var(--brand);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .check-row a { color: var(--brand); font-weight: 700; text-decoration: underline; }
+  .check-row a:hover { opacity: .8; }
+
+  /* ============ BUTTONS ============ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    font-weight: 800; font-size: .95rem;
+    padding: .9rem 1.35rem;
+    border-radius: .7rem;
+    border: none;
+    cursor: pointer;
+    transition: all .18s ease;
+    text-decoration: none;
+    width: 100%;
+    letter-spacing: -.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand-2), var(--brand));
+    color: #fff;
+    box-shadow: 0 6px 20px -6px var(--brand-glow);
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px -6px var(--brand-glow);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-primary:disabled {
+    opacity: .45; cursor: not-allowed;
+    background: var(--border-strong);
+    box-shadow: none;
+  }
+
+  .form-actions {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .form-hint {
+    font-size: .74rem; color: var(--muted);
+    text-align: center; margin-top: .6rem;
+    line-height: 1.5;
+  }
+
+  /* ============ ALERT ============ */
+  .alert {
+    display: flex; align-items: flex-start; gap: .6rem;
+    padding: .85rem 1rem;
+    border-radius: .7rem;
+    font-size: .82rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    border: 1px solid;
+  }
+  .alert-info {
+    background: var(--check-bg);
+    border-color: var(--check-border);
+    color: var(--text-soft);
+  }
+  .alert-info .alert-icon { color: var(--brand); font-size: 1rem; flex-shrink: 0; }
+
+  /* ============ TOAST ============ */
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: #1f2937; color: #fff;
+    padding: .85rem 1.25rem; border-radius: .7rem;
+    font-size: .85rem; font-weight: 700;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    opacity: 0; transform: translateY(20px);
+    transition: all .25s; z-index: 9999; pointer-events: none;
+    max-width: calc(100vw - 3rem);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok { background: var(--success); }
+  .toast.err { background: var(--danger); }
+
+  /* ============ LIGHTBOX ============ */
+  .lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.85);
+    display: none; align-items: center; justify-content: center;
+    z-index: 10000; padding: 2rem;
+    cursor: zoom-out;
+    backdrop-filter: blur(4px);
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img {
+    max-width: 95vw; max-height: 92vh;
+    border-radius: .75rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 640px) {
+    .proof-root { padding: 1rem .75rem 3rem; }
+    .proof-card { padding: 1.15rem; border-radius: .95rem; }
+    .proof-hero { padding: 1.1rem; border-radius: .95rem; }
+    .proof-hero .hero-row { flex-direction: column; align-items: flex-start; }
+    .proof-hero .hero-price { text-align: left; width: 100%; padding-top: .75rem; border-top: 1px solid var(--check-border); }
+    .proof-topbar { gap: .5rem; }
+    .back-btn { padding: .5rem .85rem; font-size: .8rem; }
+    .step-pill { font-size: .72rem; padding: .4rem .75rem; }
+    .detail-row { flex-direction: column; align-items: flex-start; gap: .3rem; }
+    .detail-row dd { text-align: left; }
+    .media-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="proof-root">
+<div class="proof-inner">
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="proof-topbar">
+    {# Robust back-link: try each known endpoint, fall back to a literal URL #}
+    {% set back_url = url_for('user.buy_challenge', challenge_id=challenge.id) %}
+    <a href="{{ back_url }}" class="back-btn">
+      <span class="arrow">←</span> Back to checkout
+    </a>
+    <span class="step-pill"><span class="dot"></span> Step 2 of 2 · Payment proof</span>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <div class="proof-hero">
+    <div class="hero-row">
+      <div class="hero-icon">🧾</div>
+      <div class="hero-text">
+        <div class="hero-label">Manual payment</div>
+        <div class="hero-challenge">{{ challenge.name }}</div>
+        <div class="hero-method">{{ method.name }} · {{ method.type|title }} · {{ method.currency }}</div>
+      </div>
+      <div class="hero-price">
+        <div class="amount">${{ '%.2f'|format(amount) }}<small>USD</small></div>
+        {% if amount_local is not none %}
+          <div class="local">≈ {{ '%.2f'|format(amount_local) }} {{ method.currency }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if amount_local is not none %}
+  <div class="alert alert-info">
+    <span class="alert-icon">ℹ️</span>
+    <span>Estimated transfer amount is <strong>{{ '%.2f'|format(amount_local) }} {{ method.currency }}</strong> at the configured rate. Please confirm the final amount with your payment provider before sending.</span>
+  </div>
+  {% endif %}
+
+  <!-- ============ TRANSFER INSTRUCTIONS ============ -->
+  <div class="proof-card">
+    <h2 class="card-title"><span class="ico">📋</span> Transfer Instructions</h2>
+    <p class="card-subtitle">Follow the details below to complete your payment, then submit proof below.</p>
+
+    {% if method.instructions %}
+      <div class="instructions-box">{{ method.instructions }}</div>
+    {% endif %}
+
+    {% if method.details %}
+      <dl class="details-list">
+        {% for key, value in method.details.items() %}
+        <div class="detail-row">
+          <dt>{{ key|replace('_',' ')|title }}</dt>
+          <dd>
+            <span class="detail-value">{{ value }}</span>
+            <button type="button" class="copy-btn" data-copy="{{ value }}" title="Copy">Copy</button>
+          </dd>
+        </div>
+        {% endfor %}
+      </dl>
+    {% endif %}
+
+    {% if method.qr_image or method.help_image %}
+      <div class="media-grid">
+        {% if method.qr_image %}
+        <div class="media-box">
+          <img src="{{ url_for('user.payment_method_image', method_id=method.id, image_kind='qr') }}"
+               alt="Payment QR code"
+               class="zoomable">
+          <div class="media-label">QR Code</div>
+        </div>
+        {% endif %}
+        {% if method.help_image %}
+        <div class="media-box">
+          <img src="{{ url_for('user.payment_method_image', method_id=method.id, image_kind='help') }}"
+               alt="Payment instructions"
+               class="zoomable">
+          <div class="media-label">Instructions</div>
+        </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ============ SUBMIT FORM ============ -->
+  <div class="proof-card">
+    <h2 class="card-title"><span class="ico">📤</span> Submit Payment Proof</h2>
+    <p class="card-subtitle">Upload a clear screenshot of your transaction. Our team reviews it within 24 hours.</p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4" id="proofForm" novalidate>
+      <input type="hidden" name="coupon_code" value="{{ coupon_code }}">
+
+      <div class="field-group">
+        <label class="field-label" for="transaction_id">
+          Transaction reference <span class="req">*</span>
+        </label>
+        <input id="transaction_id" name="transaction_id" maxlength="160" required
+               class="field-input"
+               placeholder="e.g. TXN123456789 or bank reference"
+               autocomplete="off">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">
+          Payment screenshot <span class="req">*</span>
+          <span class="opt">PNG, JPEG, GIF, WebP · max 5 MB</span>
+        </label>
+        <label class="drop-zone" id="dropZone">
+          <input type="file" name="evidence" id="evidenceInput"
+                 accept="image/png,image/jpeg,image/gif,image/webp" required>
+          <span class="drop-icon">📎</span>
+          <div class="drop-title">Click to upload or drag &amp; drop</div>
+          <div class="drop-hint">A clear screenshot helps us approve faster</div>
+          <div class="drop-file-name" id="fileName"></div>
+        </label>
+        <div class="image-preview" id="imagePreview">
+          <img id="previewImg" alt="Screenshot preview">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="message">
+          Message <span class="opt">(optional)</span>
+        </label>
+        <textarea id="message" name="message" maxlength="1000"
+                  class="field-textarea"
+                  placeholder="Anything we should know about this payment? (optional)"></textarea>
+      </div>
+
+      <label class="check-row">
+        <input type="checkbox" name="terms_acknowledgement" required>
+        <span>I accept the <a href="{{ url_for('user.terms') if 'user.terms' in url_for.__globals__ else '/terms' }}" target="_blank" rel="noopener">terms &amp; conditions</a> and challenge rules.</span>
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" name="rule_acknowledgement" required>
+        <span>I understand that a challenge is created <strong>only after payment approval</strong>.</span>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          🔒 Submit for review
+        </button>
+        <p class="form-hint">You'll receive an email once our team verifies your payment.</p>
+      </div>
+    </form>
+  </div>
+
 </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lightboxImg" alt="Preview">
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const form = document.getElementById('proofForm');
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('evidenceInput');
+  const fileName = document.getElementById('fileName');
+  const imagePreview = document.getElementById('imagePreview');
+  const previewImg = document.getElementById('previewImg');
+  const submitBtn = document.getElementById('submitBtn');
+  const toast = document.getElementById('toast');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+
+  function showToast(msg, type) {
+    toast.textContent = msg;
+    toast.className = 'toast show ' + (type || '');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => { toast.className = 'toast'; }, 3000);
+  }
+
+  const MAX_SIZE = 5 * 1024 * 1024;
+  const ALLOWED = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!ALLOWED.includes(file.type)) {
+      showToast('Please upload a PNG, JPEG, GIF, or WebP image.', 'err');
+      fileInput.value = '';
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      showToast('File is too large. Max 5 MB.', 'err');
+      fileInput.value = '';
+      return;
+    }
+    dropZone.classList.add('has-file');
+    fileName.textContent = file.name + ' · ' + formatSize(file.size);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      imagePreview.classList.add('active');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
+  });
+  dropZone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer.files;
+    if (files && files.length) {
+      fileInput.files = files;
+      handleFile(files[0]);
+    }
+  });
+
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.dataset.copy || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        showToast('Copied to clipboard', 'ok');
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      } catch (err) {
+        showToast('Could not copy', 'err');
+      }
+    });
+  });
+
+  document.querySelectorAll('.zoomable').forEach(img => {
+    img.addEventListener('click', () => {
+      lightboxImg.src = img.src;
+      lightbox.classList.add('active');
+    });
+  });
+  lightbox.addEventListener('click', () => lightbox.classList.remove('active'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') lightbox.classList.remove('active');
+  });
+
+  form.addEventListener('submit', (e) => {
+    const txId = form.querySelector('[name="transaction_id"]').value.trim();
+    const terms = form.querySelector('[name="terms_acknowledgement"]');
+    const rules = form.querySelector('[name="rule_acknowledgement"]');
+
+    if (!txId) {
+      e.preventDefault();
+      showToast('Please enter your transaction reference.', 'err');
+      form.querySelector('[name="transaction_id"]').focus();
+      return;
+    }
+    if (!fileInput.files.length) {
+      e.preventDefault();
+      showToast('Please upload a payment screenshot.', 'err');
+      dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!terms.checked) {
+      e.preventDefault();
+      showToast('Please accept the terms and challenge rules.', 'err');
+      terms.focus();
+      return;
+    }
+    if (!rules.checked) {
+      e.preventDefault();
+      showToast('Please confirm you understand the approval process.', 'err');
+      rules.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Submitting…';
+  });
+
+})();
+</script>
 {% endblock %}

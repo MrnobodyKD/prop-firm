@@ -160,12 +160,19 @@ def admin_payment_method_delete(method_id):
 @admin_bp.route('/manual-claims')
 @admin_required
 def admin_manual_claims():
+    status_filter = request.args.get('status', 'pending')
+    if status_filter not in ('pending', 'paid', 'rejected'):
+        status_filter = 'pending'
     claims = Payment.query.filter(
         Payment.payment_method_type == 'manual',
-        Payment.status.in_(['pending', 'paid', 'rejected'])
-    ).order_by(Payment.status != 'pending', Payment.created_at.desc()).all()
+        Payment.status == status_filter
+    ).order_by(Payment.created_at.desc()).all()
+    counts = {
+        s: Payment.query.filter_by(payment_method_type='manual', status=s).count()
+        for s in ('pending', 'paid', 'rejected')
+    }
     partial_crypto = Payment.query.filter_by(payment_method_type='nowpayments', status='pending', gateway_status='partially_paid').order_by(Payment.created_at.desc()).all()
-    return render_template('admin/manual_claims.html', claims=claims, partial_crypto=partial_crypto)
+    return render_template('admin/manual_claims.html', claims=claims, partial_crypto=partial_crypto, status_filter=status_filter, counts=counts)
 
 
 def record_paid_coupon_usage(payment):

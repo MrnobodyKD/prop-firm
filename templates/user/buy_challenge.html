@@ -2,93 +2,955 @@
 {% block title %}Checkout · {{ challenge.name }}{% endblock %}
 {% block header_title %}Checkout{% endblock %}
 {% block header_subtitle %}Choose a payment method for {{ challenge.name }}{% endblock %}
+
 {% block content %}
-<div class="grid lg:grid-cols-3 gap-6">
-  <section class="lg:col-span-2 space-y-5">
-    <div class="glass-card p-6">
-      <h2 class="text-xl font-bold">Challenge rules</h2>
-      <p class="mt-2 text-2xl font-bold">{{ challenge.name }} · ${{ '%.2f'|format(challenge.price) }} USD</p>
-      {% if challenge.description %}<p class="mt-2 text-sm">{{ challenge.description }}</p>{% endif %}
-      {% set instant = challenge.challenge_type == 'instant' %}
-      {% set phases = [('Instant', 'instant')] if instant else [('Phase 1', 'phase1')] %}
-      {% if not instant and (challenge.challenge_type == 'two_phase' or challenge.phase == 2) %}{% set phases = phases + [('Phase 2', 'phase2')] %}{% endif %}
-      <div class="grid md:grid-cols-2 gap-4 mt-5">
-        {% for label, p in phases %}
-        <div class="rounded-xl border p-4">
-          <h3 class="font-semibold">{{ label }}</h3>
-          <dl class="mt-2 text-sm space-y-1">
-            <div class="flex justify-between"><dt>Profit target</dt><dd>{% if p == 'instant' %}Instant access{% else %}{{ challenge|attr(p ~ '_target') or 0 }}%{% endif %}</dd></div>
-            <div class="flex justify-between"><dt>Daily loss limit</dt><dd>{{ challenge|attr(p ~ '_daily_loss') or 0 }}%</dd></div>
-            <div class="flex justify-between"><dt>Overall loss limit</dt><dd>{{ challenge|attr(p ~ '_overall_loss') or 0 }}%</dd></div>
-            <div class="flex justify-between"><dt>Minimum trading days</dt><dd>{{ challenge|attr(p ~ '_min_days') or 'None' }}</dd></div>
-            <div class="flex justify-between"><dt>Duration</dt><dd>{{ 'No expiry' if challenge.no_expiry else (challenge|attr(p ~ '_duration') or 'Not specified') }}</dd></div>
-            <div class="flex justify-between"><dt>Daily loss mode</dt><dd>{{ challenge|attr(p ~ '_daily_dd_type')|default('equity', true)|title }}</dd></div>
-            <div class="flex justify-between"><dt>Overall loss mode</dt><dd>{{ challenge|attr(p ~ '_overall_dd_type')|default('equity', true)|title }}</dd></div>
-            <div class="flex justify-between"><dt>Leverage</dt><dd>{{ challenge|attr(p ~ '_leverage') or 'Not specified' }}</dd></div>
-          </dl>
-          {% if challenge|attr(p ~ '_rules') %}<p class="mt-3 text-sm whitespace-pre-wrap">{{ challenge|attr(p ~ '_rules') }}</p>{% endif %}
+<style>
+  /* ============ THEME TOKENS ============ */
+  .checkout-root {
+    --brand: #8b5cf6;
+    --brand-2: #6366f1;
+    --brand-glow: rgba(139, 92, 246, .35);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --surface-3: #f3f4f6;
+    --text: #0f172a;
+    --text-soft: #475569;
+    --muted: #64748b;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,.06);
+    --shadow-md: 0 8px 24px -8px rgba(15,23,42,.12);
+    --shadow-lg: 0 20px 50px -20px rgba(99,102,241,.35);
+    --check-bg: #eef2ff;
+    --check-border: #c7d2fe;
+    --phase-bg: #f9fafb;
+  }
+
+  html.dark .checkout-root,
+  body.dark .checkout-root,
+  [data-theme="dark"] .checkout-root,
+  .dark .checkout-root {
+    --bg: #0b1020;
+    --surface: #131a2e;
+    --surface-2: #0f1526;
+    --surface-3: #1a2236;
+    --text: #f1f5f9;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+    --border: #1f2a44;
+    --border-strong: #2b3a5c;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 24px -8px rgba(0,0,0,.6);
+    --shadow-lg: 0 20px 50px -20px rgba(139,92,246,.4);
+    --check-bg: rgba(99,102,241,.1);
+    --check-border: rgba(99,102,241,.35);
+    --phase-bg: #0f1526;
+    --brand-glow: rgba(139,92,246,.5);
+  }
+
+  .checkout-root {
+    background: transparent;
+    color: var(--text);
+    padding: 1.5rem 1rem 4rem;
+    min-height: 70vh;
+  }
+  .checkout-inner { max-width: 1280px; margin: 0 auto; }
+
+  /* ============ MAIN LAYOUT ============ */
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  /* Section order on mobile: rules(1) -> summary(2) -> methods(3) */
+  .section-rules    { order: 1; }
+  .sidebar          { order: 2; }
+  .section-methods  { order: 3; }
+
+  @media (min-width: 1024px) {
+    .checkout-grid {
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .section-rules   { order: 1; grid-column: 1; }
+    .section-methods { order: 2; grid-column: 1; }
+    .sidebar         { order: 1; grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 1.5rem; }
+  }
+
+  /* ============ CARDS ============ */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.25rem;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); }
+  .card:last-child { margin-bottom: 0; }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin: 0 0 1rem;
+    color: var(--text);
+    display: flex; align-items: center; gap: .6rem;
+    letter-spacing: -.01em;
+  }
+  .card-title .ico {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--brand-2), var(--brand));
+    color: #fff;
+    border-radius: 10px;
+    font-size: 1rem;
+    box-shadow: 0 4px 14px -4px var(--brand-glow);
+    flex-shrink: 0;
+  }
+  .section-subtitle {
+    font-size: .82rem;
+    color: var(--muted);
+    margin: -.4rem 0 1.1rem;
+    line-height: 1.5;
+  }
+
+  /* ============ CHALLENGE HEADER ============ */
+  .challenge-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+    margin-bottom: .25rem;
+  }
+  .challenge-header h2 {
+    font-size: 1.35rem; font-weight: 800; margin: 0;
+    color: var(--text); letter-spacing: -.02em;
+  }
+  .challenge-price-tag {
+    display: inline-flex; align-items: baseline; gap: .35rem;
+    background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(139,92,246,.15));
+    border: 1px solid var(--check-border);
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    font-weight: 800;
+    color: var(--text);
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+  .challenge-price-tag small { font-size: .72rem; font-weight: 600; color: var(--muted); }
+
+  /* ============ PHASE GRID ============ */
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: .9rem;
+    margin-top: 1rem;
+  }
+  .phase-card {
+    border: 1px solid var(--border);
+    border-radius: .85rem;
+    padding: 1rem 1.1rem;
+    background: var(--phase-bg);
+    transition: border-color .2s, transform .2s;
+  }
+  .phase-card:hover { border-color: var(--brand); transform: translateY(-1px); }
+  .phase-card h3 {
+    font-size: .78rem; font-weight: 800;
+    margin: 0 0 .65rem;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .phase-card dl { margin: 0; display: flex; flex-direction: column; gap: .38rem; }
+  .phase-card dl > div {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: .8rem;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: .32rem;
+    gap: .5rem;
+  }
+  .phase-card dl > div:last-child { border-bottom: none; padding-bottom: 0; }
+  .phase-card dt { color: var(--muted); font-weight: 500; }
+  .phase-card dd { margin: 0; font-weight: 700; color: var(--text); text-align: right; }
+  .phase-card .rules {
+    margin-top: .7rem; font-size: .76rem; color: var(--text-soft);
+    white-space: pre-wrap;
+    background: var(--surface); border-radius: .5rem;
+    padding: .55rem .7rem; border-left: 3px solid var(--brand);
+  }
+
+  /* ============ RULES LIST ============ */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .55rem;
+    margin-top: .9rem;
+  }
+  .rule-row {
+    display: flex; align-items: center; gap: .55rem;
+    font-size: .8rem;
+    padding: .5rem .65rem;
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    border-radius: .55rem;
+    transition: all .15s;
+  }
+  .rule-row:hover { border-color: var(--border); background: var(--surface); }
+  .rule-row .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
+  .rule-row .label { color: var(--muted); flex: 1; }
+  .rule-row .value { font-weight: 700; color: var(--text); text-align: right; }
+  .badge-ok { color: var(--success); }
+  .badge-no { color: var(--danger); }
+  .badge-warn { color: var(--warning); }
+
+  details.rules-details {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border);
+    padding-top: .75rem;
+  }
+  details.rules-details summary {
+    cursor: pointer; font-size: .84rem; font-weight: 700;
+    color: var(--brand);
+    list-style: none; display: flex; align-items: center; gap: .4rem;
+    user-select: none;
+  }
+  details.rules-details summary::-webkit-details-marker { display: none; }
+  details.rules-details summary::before { content: '▸'; transition: transform .2s; display: inline-block; }
+  details.rules-details[open] summary::before { transform: rotate(90deg); }
+
+  /* ============ PAYMENT METHODS ============ */
+  .methods-list { display: flex; flex-direction: column; gap: .75rem; margin-top: .5rem; }
+
+  .method-option {
+    position: relative;
+    display: block;
+    border: 1.5px solid var(--border);
+    border-radius: .95rem;
+    padding: 1rem 1.1rem;
+    background: var(--surface);
+    cursor: pointer;
+    transition: all .22s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
+  }
+  .method-option::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(99,102,241,.06), rgba(139,92,246,.08));
+    opacity: 0;
+    transition: opacity .22s;
+    pointer-events: none;
+  }
+  .method-option:hover {
+    border-color: var(--brand);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -6px var(--brand-glow);
+  }
+  .method-option:hover::before { opacity: 1; }
+  .method-option.selected {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow), 0 8px 24px -8px var(--brand-glow);
+  }
+  .method-option.selected::before { opacity: 1; }
+
+  .method-head { display: flex; align-items: center; gap: .75rem; position: relative; z-index: 1; }
+  .method-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; flex-shrink: 0;
+    transition: transform .22s;
+  }
+  .method-option:hover .method-icon { transform: scale(1.06); }
+  .method-icon.crypto {
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    color: #fff;
+    box-shadow: 0 4px 14px -4px rgba(245,158,11,.55);
+  }
+  .method-icon.manual {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    box-shadow: 0 4px 14px -4px rgba(16,185,129,.55);
+  }
+  .method-body { flex: 1; min-width: 0; }
+  .method-name { font-weight: 800; font-size: .95rem; color: var(--text); letter-spacing: -.01em; }
+  .method-meta { font-size: .76rem; color: var(--muted); margin-top: .15rem; }
+  .method-desc { font-size: .8rem; color: var(--text-soft); margin-top: .6rem; line-height: 1.5; position: relative; z-index: 1; }
+
+  .method-radio {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .2s;
+    background: var(--surface);
+  }
+  .method-radio::after {
+    content: '';
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--brand);
+    transform: scale(0);
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .method-option.selected .method-radio { border-color: var(--brand); }
+  .method-option.selected .method-radio::after { transform: scale(1); }
+
+  .method-option.unavailable { opacity: .55; cursor: not-allowed; pointer-events: none; }
+
+  /* ============ CHECK ROWS ============ */
+  .check-row {
+    display: flex; align-items: flex-start; gap: .65rem;
+    font-size: .82rem; color: var(--text);
+    margin-top: .65rem;
+    padding: .65rem .8rem;
+    background: var(--check-bg);
+    border: 1px solid var(--check-border);
+    border-radius: .6rem;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    line-height: 1.5;
+  }
+  .check-row:hover { border-color: var(--brand); }
+  .check-row input[type="checkbox"] {
+    width: 18px; height: 18px; margin-top: 1px;
+    accent-color: var(--brand);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .check-row a { color: var(--brand); font-weight: 700; text-decoration: underline; }
+  .check-row a:hover { opacity: .8; }
+
+  /* ============ SELECTION PANEL ============ */
+  .selection-panel {
+    margin-top: 1rem;
+    padding: 1.1rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: .85rem;
+    animation: slideDown .3s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .selection-panel .panel-title {
+    font-size: .85rem; font-weight: 800; color: var(--text);
+    margin: 0 0 .75rem; display: flex; align-items: center; gap: .5rem;
+  }
+  .selection-panel .panel-title .check-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--success); color: #fff; font-size: .7rem; font-weight: 800;
+  }
+
+  /* ============ BUTTONS ============ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    font-weight: 800; font-size: .92rem;
+    padding: .85rem 1.25rem;
+    border-radius: .7rem;
+    border: none;
+    cursor: pointer;
+    transition: all .18s ease;
+    text-decoration: none;
+    width: 100%;
+    letter-spacing: -.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand-2), var(--brand));
+    color: #fff;
+    box-shadow: 0 6px 20px -6px var(--brand-glow);
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 26px -6px var(--brand-glow); }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-primary:disabled {
+    opacity: .45; cursor: not-allowed;
+    background: var(--border-strong);
+    box-shadow: none;
+  }
+
+  /* ============ SIDEBAR / SUMMARY ============ */
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+  }
+  .summary-title {
+    font-size: 1.05rem; font-weight: 800; margin: 0 0 1rem;
+    display: flex; align-items: center; gap: .5rem;
+    color: var(--text);
+  }
+  .summary-challenge {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .85rem; background: var(--check-bg);
+    border: 1px solid var(--check-border);
+    border-radius: .75rem;
+    margin-bottom: 1rem;
+  }
+  .sc-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand-2), var(--brand));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.2rem; flex-shrink: 0;
+    box-shadow: 0 4px 14px -4px var(--brand-glow);
+  }
+  .sc-name { font-weight: 800; font-size: .9rem; line-height: 1.2; color: var(--text); }
+  .sc-sub { font-size: .74rem; color: var(--muted); margin-top: .2rem; }
+
+  .coupon-wrap { margin-bottom: 1rem; }
+  .coupon-wrap label {
+    font-size: .78rem; font-weight: 700; color: var(--muted);
+    display: block; margin-bottom: .4rem;
+  }
+  .coupon-input-row { display: flex; gap: .5rem; }
+  .coupon-input-row input {
+    flex: 1; padding: .65rem .8rem;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: .6rem; font-size: .86rem;
+    transition: border-color .15s, box-shadow .15s;
+    min-width: 0;
+  }
+  .coupon-input-row input::placeholder { color: var(--muted); }
+  .coupon-input-row input:focus {
+    outline: none; border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+  .coupon-input-row button {
+    padding: .65rem 1rem; border-radius: .6rem;
+    border: 1.5px solid var(--brand);
+    background: transparent; color: var(--brand);
+    font-weight: 800; font-size: .84rem;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+    flex-shrink: 0;
+  }
+  .coupon-input-row button:hover:not(:disabled) { background: var(--check-bg); }
+  .coupon-input-row button:disabled { opacity: .5; cursor: not-allowed; }
+  #couponResult { font-size: .78rem; margin-top: .5rem; min-height: 1.1rem; }
+  #couponResult.ok { color: var(--success); font-weight: 700; }
+  #couponResult.err { color: var(--danger); font-weight: 700; }
+
+  .totals { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+  .total-row {
+    display: flex; justify-content: space-between;
+    font-size: .86rem; color: var(--muted);
+    margin-bottom: .5rem;
+  }
+  .total-row.grand {
+    font-size: 1.2rem; font-weight: 800; color: var(--text);
+    margin-top: .5rem;
+  }
+  .total-row.grand .amount { color: var(--brand); }
+  .total-row.discount { color: var(--success); font-weight: 700; }
+  .total-row.discount .amount { color: var(--success); }
+  .no-surcharge {
+    font-size: .72rem; color: var(--muted); text-align: center;
+    margin-top: .9rem; padding: .55rem;
+    background: var(--surface-2); border-radius: .55rem;
+    display: flex; align-items: center; justify-content: center; gap: .35rem;
+  }
+  .trust-badges {
+    display: flex; justify-content: center; gap: 1rem;
+    margin-top: 1rem; flex-wrap: wrap;
+  }
+  .trust-badge {
+    font-size: .68rem; color: var(--muted);
+    display: flex; align-items: center; gap: .3rem;
+  }
+
+  .proceed-bar {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .proceed-hint {
+    font-size: .74rem; color: var(--muted);
+    text-align: center; margin-top: .55rem;
+    line-height: 1.4;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: #1f2937; color: #fff;
+    padding: .85rem 1.25rem; border-radius: .7rem;
+    font-size: .85rem; font-weight: 700;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    opacity: 0; transform: translateY(20px);
+    transition: all .25s; z-index: 9999; pointer-events: none;
+    max-width: calc(100vw - 3rem);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok { background: var(--success); }
+  .toast.err { background: var(--danger); }
+
+  /* Mobile tweaks */
+  @media (max-width: 1023px) {
+    .checkout-root { padding: 1rem .75rem 3rem; }
+    .card { padding: 1.15rem; border-radius: .95rem; }
+    .summary-card { padding: 1.15rem; border-radius: .95rem; }
+    .challenge-header h2 { font-size: 1.15rem; }
+    .challenge-price-tag { font-size: .9rem; padding: .35rem .75rem; }
+    .phase-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="checkout-root">
+<div class="checkout-inner">
+
+  <div class="checkout-grid">
+
+    <!-- ================= RULES (top) ================= -->
+    <section class="section-rules">
+      <div class="card">
+        <div class="challenge-header">
+          <h2>{{ challenge.name }}</h2>
+          <span class="challenge-price-tag">
+            ${{ '%.2f'|format(challenge.price) }} <small>{{ challenge.currency or 'USD' }}</small>
+          </span>
         </div>
-        {% endfor %}
+        {% if challenge.description %}
+          <p class="section-subtitle" style="margin-top:.4rem;">{{ challenge.description }}</p>
+        {% endif %}
+
+        {% set instant = challenge.challenge_type == 'instant' %}
+        {% set phases = [('Instant', 'instant')] if instant else [('Phase 1', 'phase1')] %}
+        {% if not instant and (challenge.challenge_type == 'two_phase' or challenge.phase == 2) %}
+          {% set phases = phases + [('Phase 2', 'phase2')] %}
+        {% endif %}
+
+        <div class="phase-grid">
+          {% for label, p in phases %}
+          <div class="phase-card">
+            <h3>{{ label }}</h3>
+            <dl>
+              <div><dt>Profit target</dt><dd>{% if p == 'instant' %}Instant access{% else %}{{ challenge|attr(p ~ '_target') or 0 }}%{% endif %}</dd></div>
+              <div><dt>Daily loss limit</dt><dd>{{ challenge|attr(p ~ '_daily_loss') or 0 }}%</dd></div>
+              <div><dt>Overall loss limit</dt><dd>{{ challenge|attr(p ~ '_overall_loss') or 0 }}%</dd></div>
+              <div><dt>Min trading days</dt><dd>{{ challenge|attr(p ~ '_min_days') or 'None' }}</dd></div>
+              <div><dt>Duration</dt><dd>{{ 'No expiry' if challenge.no_expiry else (challenge|attr(p ~ '_duration') or 'Not specified') }}</dd></div>
+              <div><dt>Daily loss mode</dt><dd>{{ challenge|attr(p ~ '_daily_dd_type')|default('equity', true)|title }}</dd></div>
+              <div><dt>Overall loss mode</dt><dd>{{ challenge|attr(p ~ '_overall_dd_type')|default('equity', true)|title }}</dd></div>
+              <div><dt>Leverage</dt><dd>{{ challenge|attr(p ~ '_leverage') or 'Not specified' }}</dd></div>
+            </dl>
+            {% if challenge|attr(p ~ '_rules') %}
+              <div class="rules">{{ challenge|attr(p ~ '_rules') }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <details class="rules-details">
+          <summary>View all account rules &amp; policies</summary>
+          <div class="rules-grid">
+            <div class="rule-row"><span class="dot"></span><span class="label">Profit share</span><span class="value">{{ challenge.user_profit_share or '—' }}{% if challenge.user_profit_share %}%{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Payout cycle</span><span class="value">{{ challenge.payout_cycle or '—' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Weekend holding</span><span class="value {{ 'badge-ok' if challenge.weekend_trading else 'badge-no' }}">{{ 'Allowed' if challenge.weekend_trading else 'Not allowed' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">News trading</span><span class="value {{ 'badge-ok' if challenge.news_trading_allowed else 'badge-no' }}">{{ 'Allowed' if challenge.news_trading_allowed else 'Not allowed' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Overnight holding</span><span class="value {{ 'badge-ok' if challenge.overnight_trading_allowed else 'badge-no' }}">{{ 'Allowed' if challenge.overnight_trading_allowed else 'Not allowed' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Expert advisors</span><span class="value {{ 'badge-ok' if challenge.ea_allowed else 'badge-no' }}">{{ 'Allowed' if challenge.ea_allowed else 'Not allowed' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Lot cap</span><span class="value">{% if challenge.max_lot_size_enabled %}{{ challenge.max_lot_size }} ({{ challenge.lot_size_violation_action or 'violation' }}){% else %}None{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Consistency rule</span><span class="value">{% if challenge.consistency_enabled %}Max {{ challenge.max_single_day_profit_percent }}%/day · {{ challenge.consistency_action or 'review' }}{% else %}Disabled{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Stop loss required</span><span class="value {{ 'badge-warn' if challenge.sl_mandatory_enabled else 'badge-no' }}">{{ 'Yes' if challenge.sl_mandatory_enabled else 'No' }}{% if challenge.sl_mandatory_enabled %} · grace {{ challenge.sl_grace_period_minutes }}m{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Risk per trade</span><span class="value">{{ challenge.max_risk_per_trade_percent or '—' }}{% if challenge.max_risk_per_trade_percent %}%{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Activity rule</span><span class="value">{% if challenge.activity_rule_enabled %}Trade every {{ challenge.max_inactive_days }}d{% else %}Disabled{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">First withdrawal</span><span class="value">{{ challenge.first_withdrawal_days or '—' }}{% if challenge.first_withdrawal_days %} days{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Minimum payout</span><span class="value">{{ challenge.min_payout_percent or '—' }}{% if challenge.min_payout_percent %}%{% endif %}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Fee refund</span><span class="value {{ 'badge-ok' if challenge.fee_refund_on_pass else 'badge-no' }}">{{ 'Yes' if challenge.fee_refund_on_pass else 'No' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Refund policy</span><span class="value">{{ challenge.refund_policy_text or 'See terms' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Banned practices</span><span class="value">{{ challenge.banned_practices or 'See terms' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Max accounts / user</span><span class="value">{{ challenge.max_accounts_per_user or '—' }}</span></div>
+            <div class="rule-row"><span class="dot"></span><span class="label">Performance reward</span><span class="value">{{ challenge.performance_reward_percent or 0 }}% ({{ challenge.performance_reward_mode or 'off' }})</span></div>
+          </div>
+        </details>
       </div>
-      <dl class="grid sm:grid-cols-2 gap-x-6 gap-y-2 mt-5 text-sm">
-        <div>Profit share: {{ challenge.user_profit_share or 'Not specified' }}%</div>
-        <div>Payout cycle: {{ challenge.payout_cycle or 'Not specified' }}</div>
-        <div>Weekend holding: {{ 'Allowed' if challenge.weekend_trading else 'Not allowed' }}</div>
-        <div>News trading: {{ 'Allowed' if challenge.news_trading_allowed else 'Not allowed' }}</div>
-        <div>Overnight holding: {{ 'Allowed' if challenge.overnight_trading_allowed else 'Not allowed' }}</div>
-        <div>Expert advisors: {{ 'Allowed' if challenge.ea_allowed else 'Not allowed' }}</div>
-        <div>Lot cap: {% if challenge.max_lot_size_enabled %}{{ challenge.max_lot_size }} ({{ challenge.lot_size_violation_action or 'violation' }}){% else %}None{% endif %}</div>
-        <div>Consistency rule: {% if challenge.consistency_enabled %}Max {{ challenge.max_single_day_profit_percent }}% in one day · {{ challenge.consistency_action or 'review' }}{% else %}Disabled{% endif %}</div>
-        <div>Stop loss required: {{ 'Yes' if challenge.sl_mandatory_enabled else 'No' }}{% if challenge.sl_mandatory_enabled %} · grace {{ challenge.sl_grace_period_minutes }} min{% endif %}</div>
-        <div>Risk per trade: {{ challenge.max_risk_per_trade_percent or 'Not specified' }}%</div>
-        <div>Activity rule: {% if challenge.activity_rule_enabled %}Trade at least once every {{ challenge.max_inactive_days }} days{% else %}Disabled{% endif %}</div>
-        <div>First withdrawal: {{ challenge.first_withdrawal_days or 'Not specified' }} days</div>
-        <div>Minimum payout: {{ challenge.min_payout_percent or 'Not specified' }}%</div>
-        <div>Fee refund: {{ 'Yes' if challenge.fee_refund_on_pass else 'No' }}</div>
-        <div>Refund policy: {{ challenge.refund_policy_text or 'See terms' }}</div>
-        <div>Banned practices: {{ challenge.banned_practices or 'See terms' }}</div>
-        <div>Max accounts per user: {{ challenge.max_accounts_per_user or 'Not specified' }}</div>
-        <div>Performance reward: {{ challenge.performance_reward_percent or 0 }}% ({{ challenge.performance_reward_mode or 'off' }})</div>
-      </dl>
-    </div>
-    <div class="glass-card p-6">
-      <h2 class="text-xl font-bold mb-3">Payment methods</h2>
-      <div class="border rounded-xl p-4 mb-3">
-      <h3 class="font-semibold">Crypto · NOWPayments</h3>
-      {% if nowpayments_enabled and (challenge.currency or 'USD')|upper == 'USD' %}
-      <form method="post" action="{{ url_for('user.crypto_payment_start') }}" class="mt-3">
-        <input type="hidden" name="challenge_id" value="{{ challenge.id }}">
-        <input type="hidden" name="coupon_code" class="coupon-value">
-        <label class="flex gap-2"><input type="checkbox" name="terms_acknowledgement" required> I accept the terms and challenge rules.</label>
-        <label class="flex gap-2 mt-2"><input type="checkbox" name="rule_acknowledgement" required> I understand the rules shown above.</label>
-        <button class="mt-3 rounded-lg bg-indigo-600 text-white px-4 py-2">Pay with crypto · USDT</button>
-      </form>
-      {% elif (challenge.currency or 'USD')|upper != 'USD' %}<p class="text-sm mt-2">Crypto checkout is currently available for USD priced challenges.</p>
-      {% else %}<p class="text-sm mt-2">Crypto checkout is temporarily unavailable while gateway configuration is pending.</p>{% endif %}
+    </section>
+
+    <!-- ================= SIDEBAR / SUMMARY (moves above methods on mobile) ================= -->
+    <aside class="sidebar">
+      <div class="summary-card">
+        <h2 class="summary-title">🧾 Order Summary</h2>
+
+        <div class="summary-challenge">
+          <div class="sc-icon">🎯</div>
+          <div>
+            <div class="sc-name">{{ challenge.name }}</div>
+            <div class="sc-sub">{{ challenge.challenge_type|replace('_', ' ')|title }} · {{ challenge.currency or 'USD' }}</div>
+          </div>
+        </div>
+
+        <!-- COUPON -->
+        <div class="coupon-wrap">
+          <label for="couponCode">Have a coupon?</label>
+          <div class="coupon-input-row">
+            <input id="couponCode" type="text" maxlength="64" placeholder="Enter code" autocomplete="off">
+            <button id="applyCoupon" type="button">Apply</button>
+          </div>
+          <p id="couponResult"></p>
+        </div>
+
+        <!-- TOTALS -->
+        <div class="totals">
+          <div class="total-row"><span>Subtotal</span><span>$<span id="subtotalAmount">{{ '%.2f'|format(challenge.price) }}</span></span></div>
+          <div class="total-row discount" id="discountRow" style="display:none;">
+            <span>Discount</span><span class="amount">−$<span id="discountAmount">0.00</span></span>
+          </div>
+          <div class="total-row grand">
+            <span>Total</span>
+            <span class="amount" id="checkoutTotal">${{ '%.2f'|format(challenge.price) }} {{ challenge.currency or 'USD' }}</span>
+          </div>
+        </div>
+
+        <div class="proceed-bar">
+          <button type="button" class="btn btn-primary" id="proceedBtn" disabled>
+            Select a payment method
+          </button>
+          <p class="proceed-hint" id="proceedHint">Choose a payment option above to continue.</p>
+        </div>
+
+        <div class="no-surcharge">✅ No hidden fees · No checkout surcharge</div>
+
+        <div class="trust-badges">
+          <span class="trust-badge">🔒 SSL Secured</span>
+          <span class="trust-badge">⚡ Instant Access</span>
+          <span class="trust-badge">💬 24/7 Support</span>
+        </div>
       </div>
-      {% for method in payment_methods %}
-      <a class="manual-method block border rounded-xl p-4 mb-3 hover:border-indigo-500" data-base="{{ url_for('user.manual_payment', challenge_id=challenge.id, method_id=method.id) }}" href="{{ url_for('user.manual_payment', challenge_id=challenge.id, method_id=method.id) }}">
-        <div class="font-semibold">{{ method.name }} <span class="text-sm font-normal">({{ method.type|title }} · {{ method.currency }})</span></div>
-        <p class="text-sm mt-1">Submit payment proof for admin review. Challenge access begins after approval.</p>
-      </a>
-      {% else %}<p class="text-sm text-gray-500">No manual payment methods are currently available.</p>{% endfor %}
-    </div>
-  </section>
-  <aside class="glass-card p-6 h-fit"><h2 class="font-bold">Order summary</h2><p class="mt-3">{{ challenge.name }}</p><label class="block mt-4 text-sm">Coupon code<input id="couponCode" class="block w-full rounded border p-2 mt-1" maxlength="64"></label><button id="applyCoupon" type="button" class="mt-2 border rounded px-3 py-1">Apply coupon</button><p id="couponResult" class="text-sm mt-2"></p><div class="flex justify-between mt-4 border-t pt-4"><span>Total</span><strong id="checkoutTotal">${{ '%.2f'|format(challenge.price) }} USD</strong></div><p class="text-xs mt-3">No checkout surcharge.</p></aside>
+    </aside>
+
+    <!-- ================= PAYMENT METHODS (bottom) ================= -->
+    <section class="section-methods">
+      <div class="card">
+        <h2 class="card-title"><span class="ico">💳</span> Choose Payment Method</h2>
+        <p class="section-subtitle">Select a method below. You'll review everything, then proceed to payment.</p>
+
+        <div class="methods-list" id="methodsList">
+
+          <!-- CRYPTO -->
+          {% if nowpayments_enabled and (challenge.currency or 'USD')|upper == 'USD' %}
+          <div class="method-option" data-method="crypto" role="button" tabindex="0" aria-pressed="false">
+            <div class="method-head">
+              <div class="method-icon crypto">₿</div>
+              <div class="method-body">
+                <div class="method-name">Crypto · NOWPayments</div>
+                <div class="method-meta">USDT, BTC, ETH &amp; more · Instant confirmation</div>
+              </div>
+              <div class="method-radio"></div>
+            </div>
+            <p class="method-desc">Pay with your favourite cryptocurrency. Fast, secure, and confirmed automatically.</p>
+          </div>
+          {% elif (challenge.currency or 'USD')|upper != 'USD' %}
+          <div class="method-option unavailable">
+            <div class="method-head">
+              <div class="method-icon crypto">₿</div>
+              <div class="method-body">
+                <div class="method-name">Crypto · NOWPayments</div>
+                <div class="method-meta">Unavailable for {{ challenge.currency or 'this' }} pricing</div>
+              </div>
+              <div class="method-radio"></div>
+            </div>
+            <p class="method-desc">Crypto checkout is currently available for USD-priced challenges only.</p>
+          </div>
+          {% else %}
+          <div class="method-option unavailable">
+            <div class="method-head">
+              <div class="method-icon crypto">₿</div>
+              <div class="method-body">
+                <div class="method-name">Crypto · NOWPayments</div>
+                <div class="method-meta">Temporarily unavailable</div>
+              </div>
+              <div class="method-radio"></div>
+            </div>
+            <p class="method-desc">Crypto checkout is temporarily unavailable while gateway configuration is pending.</p>
+          </div>
+          {% endif %}
+
+          <!-- MANUAL -->
+          {% for method in payment_methods %}
+          <div class="method-option" data-method="manual" data-method-id="{{ method.id }}" role="button" tabindex="0" aria-pressed="false">
+            <div class="method-head">
+              <div class="method-icon manual">🏦</div>
+              <div class="method-body">
+                <div class="method-name">{{ method.name }}</div>
+                <div class="method-meta">{{ method.type|title }} · {{ method.currency }} · Manual review</div>
+              </div>
+              <div class="method-radio"></div>
+            </div>
+            <p class="method-desc">Submit payment proof for admin review. Challenge access begins after approval.</p>
+          </div>
+          {% else %}
+          <p class="method-desc" style="color:var(--muted);padding:.75rem 0;">No manual payment methods are currently available.</p>
+          {% endfor %}
+        </div>
+
+        <!-- SELECTED METHOD PANEL -->
+        <div id="selectionPanel" style="display:none;"></div>
+
+        <!-- GLOBAL POLICY NOTE -->
+        <div class="check-row" style="margin-top:1rem;">
+          <span style="font-size:.78rem;color:var(--muted);line-height:1.55;">
+            🔒 Payments are encrypted. By proceeding you also acknowledge our
+            <a href="{{ url_for('user.privacy') if 'user.privacy' in url_for.__globals__ else '/privacy' }}" target="_blank" rel="noopener">Privacy Policy</a>.
+            Your data is processed securely and never sold.
+          </span>
+        </div>
+      </div>
+    </section>
+
+  </div>
 </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-document.getElementById('applyCoupon').addEventListener('click', async () => {
-  const code = document.getElementById('couponCode').value.trim();
-  const result = document.getElementById('couponResult');
-  if (!code) { result.textContent = 'Enter a coupon code.'; return; }
-  const body = new URLSearchParams({coupon_code: code, challenge_id: '{{ challenge.id }}'});
-  const response = await fetch('{{ url_for("user.validate_coupon_api") }}', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
-  const data = await response.json();
-  if (!data.success) { result.textContent = data.error || 'Coupon could not be applied.'; return; }
-  result.textContent = data.message || 'Coupon applied.';
-  document.getElementById('checkoutTotal').textContent = '$' + Number(data.final_price).toFixed(2) + ' USD';
-  document.querySelectorAll('.coupon-value').forEach(input => input.value = code);
-  document.querySelectorAll('.manual-method').forEach(link => { const target = new URL(link.dataset.base, window.location.origin); target.searchParams.set('coupon_code', code); link.href = target.pathname + target.search; });
-});
+(function () {
+  'use strict';
+
+  const couponInput = document.getElementById('couponCode');
+  const applyBtn = document.getElementById('applyCoupon');
+  const resultEl = document.getElementById('couponResult');
+  const totalEl = document.getElementById('checkoutTotal');
+  const subtotalEl = document.getElementById('subtotalAmount');
+  const discountRow = document.getElementById('discountRow');
+  const discountEl = document.getElementById('discountAmount');
+  const toast = document.getElementById('toast');
+  const methodsList = document.getElementById('methodsList');
+  const selectionPanel = document.getElementById('selectionPanel');
+  const proceedBtn = document.getElementById('proceedBtn');
+  const proceedHint = document.getElementById('proceedHint');
+
+  const CHECKOUT_CURRENCY = '{{ challenge.currency or "USD" }}';
+  const CHALLENGE_ID = '{{ challenge.id }}';
+  const ORIGINAL_PRICE = parseFloat('{{ "%.2f"|format(challenge.price) }}') || 0;
+  const CRYPTO_URL = '{{ url_for("user.crypto_payment_start") }}';
+  const VALIDATE_URL = '{{ url_for("user.validate_coupon_api") }}';
+  const MANUAL_BASE_TEMPLATE = "{{ url_for('user.manual_payment', challenge_id=challenge.id, method_id=0) }}";
+
+  let currentCoupon = '';
+  let selectedMethod = null;
+
+  function showToast(msg, type) {
+    toast.textContent = msg;
+    toast.className = 'toast show ' + (type || '');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2800);
+  }
+
+  function setResult(msg, ok) {
+    resultEl.textContent = msg;
+    resultEl.className = ok ? 'ok' : 'err';
+  }
+  const fmt = (n) => Number(n).toFixed(2);
+
+  function updateTotals(finalPrice) {
+    const price = Number(finalPrice);
+    const discount = Math.max(0, ORIGINAL_PRICE - price);
+    subtotalEl.textContent = fmt(ORIGINAL_PRICE);
+    if (discount > 0.001) {
+      discountRow.style.display = 'flex';
+      discountEl.textContent = fmt(discount);
+    } else {
+      discountRow.style.display = 'none';
+    }
+    totalEl.textContent = '$' + fmt(price) + ' ' + CHECKOUT_CURRENCY;
+  }
+
+  async function validateCoupon() {
+    const code = (couponInput.value || '').trim();
+    if (!code) { setResult('Please enter a coupon code.', false); return; }
+
+    applyBtn.disabled = true;
+    const originalText = applyBtn.textContent;
+    applyBtn.textContent = '...';
+
+    try {
+      const body = new URLSearchParams({ coupon_code: code, challenge_id: CHALLENGE_ID });
+      const response = await fetch(VALIDATE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        setResult(data.error || 'Coupon could not be applied.', false);
+        if (currentCoupon) { currentCoupon = ''; updateTotals(ORIGINAL_PRICE); }
+        showToast(data.error || 'Invalid coupon', 'err');
+        refreshSelectionPanel();
+        return;
+      }
+
+      currentCoupon = code;
+      setResult(data.message || 'Coupon applied successfully! 🎉', true);
+      updateTotals(data.final_price);
+      showToast('Coupon applied!', 'ok');
+      refreshSelectionPanel();
+
+    } catch (err) {
+      setResult('Could not validate coupon. Try again.', false);
+      showToast('Network error', 'err');
+    } finally {
+      applyBtn.disabled = false;
+      applyBtn.textContent = originalText;
+    }
+  }
+
+  applyBtn.addEventListener('click', validateCoupon);
+  couponInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); validateCoupon(); }
+  });
+
+  function buildManualUrl(methodId) {
+    return MANUAL_BASE_TEMPLATE.replace(/\/0(\/|$|\?)/, '/' + methodId + '$1');
+  }
+
+  function clearSelection() {
+    document.querySelectorAll('.method-option.selected').forEach(el => {
+      el.classList.remove('selected');
+      el.setAttribute('aria-pressed', 'false');
+    });
+    selectedMethod = null;
+    selectionPanel.style.display = 'none';
+    selectionPanel.innerHTML = '';
+    proceedBtn.disabled = true;
+    proceedBtn.textContent = 'Select a payment method';
+    proceedHint.textContent = 'Choose a payment option above to continue.';
+  }
+
+  function selectMethod(el) {
+    if (el.classList.contains('unavailable')) return;
+
+    document.querySelectorAll('.method-option').forEach(o => {
+      o.classList.remove('selected');
+      o.setAttribute('aria-pressed', 'false');
+    });
+    el.classList.add('selected');
+    el.setAttribute('aria-pressed', 'true');
+
+    const type = el.dataset.method;
+    const methodId = el.dataset.methodId ? Number(el.dataset.methodId) : null;
+    selectedMethod = { type, id: methodId, el };
+
+    renderSelectionPanel();
+    proceedBtn.disabled = false;
+    proceedBtn.textContent = 'Proceed to Payment →';
+    proceedHint.textContent = 'Review the acknowledgement above, then click proceed.';
+
+    // On mobile, scroll to selection panel so user sees the acknowledgement
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      setTimeout(() => {
+        selectionPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 120);
+    }
+  }
+
+  function renderSelectionPanel() {
+    if (!selectedMethod) return;
+    const { type } = selectedMethod;
+    selectionPanel.style.display = 'block';
+
+    if (type === 'crypto') {
+      selectionPanel.innerHTML = `
+        <div class="panel-title"><span class="check-badge">✓</span> Crypto payment selected</div>
+        <form method="post" action="${CRYPTO_URL}" id="cryptoForm">
+          <input type="hidden" name="challenge_id" value="${CHALLENGE_ID}">
+          <input type="hidden" name="coupon_code" class="coupon-value" value="${escapeHtml(currentCoupon)}">
+          <label class="check-row">
+            <input type="checkbox" name="terms_acknowledgement" required>
+            <span>I have read and agree to the <a href="${termsUrl()}" target="_blank" rel="noopener">Terms &amp; Conditions</a> and challenge rules.</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" name="rule_acknowledgement" required>
+            <span>I understand the trading rules, drawdown limits, and payout conditions shown above.</span>
+          </label>
+        </form>
+      `;
+    } else {
+      const base = buildManualUrl(selectedMethod.id);
+      const url = base + (currentCoupon ? (base.includes('?') ? '&' : '?') + 'coupon_code=' + encodeURIComponent(currentCoupon) : '');
+      selectionPanel.innerHTML = `
+        <div class="panel-title"><span class="check-badge">✓</span> Manual payment selected</div>
+        <label class="check-row">
+          <input type="checkbox" id="manualTermsAck">
+          <span>I have read and agree to the <a href="${termsUrl()}" target="_blank" rel="noopener">Terms &amp; Conditions</a>, challenge rules, and understand that access begins only after admin approval.</span>
+        </label>
+        <a href="${url}" class="btn btn-primary" id="manualProceedBtn" style="margin-top:.75rem; pointer-events:none; opacity:.45;">
+          Proceed to Payment →
+        </a>
+      `;
+      const ack = document.getElementById('manualTermsAck');
+      const proceedLink = document.getElementById('manualProceedBtn');
+      ack.addEventListener('change', () => {
+        const ok = ack.checked;
+        proceedLink.style.pointerEvents = ok ? 'auto' : 'none';
+        proceedLink.style.opacity = ok ? '1' : '.45';
+      });
+    }
+  }
+
+  function refreshSelectionPanel() {
+    if (selectedMethod) renderSelectionPanel();
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, (c) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function termsUrl() {
+    {% if 'user.terms' in url_for.__globals__ %}
+      return "{{ url_for('user.terms') }}";
+    {% else %}
+      return "/terms";
+    {% endif %}
+  }
+
+  methodsList.addEventListener('click', (e) => {
+    const opt = e.target.closest('.method-option');
+    if (!opt) return;
+    selectMethod(opt);
+  });
+  methodsList.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const opt = e.target.closest('.method-option');
+    if (!opt) return;
+    e.preventDefault();
+    selectMethod(opt);
+  });
+
+  proceedBtn.addEventListener('click', () => {
+    if (!selectedMethod) { showToast('Please select a payment method first.', 'err'); return; }
+
+    if (selectedMethod.type === 'crypto') {
+      const form = document.getElementById('cryptoForm');
+      if (!form) return;
+      const terms = form.querySelector('input[name="terms_acknowledgement"]');
+      const rules = form.querySelector('input[name="rule_acknowledgement"]');
+      if (!terms.checked || !rules.checked) {
+        showToast('Please accept the terms and confirm you understand the rules.', 'err');
+        if (!terms.checked) terms.focus(); else rules.focus();
+        return;
+      }
+      form.submit();
+    } else {
+      const ack = document.getElementById('manualTermsAck');
+      if (!ack || !ack.checked) {
+        showToast('Please accept the terms to continue.', 'err');
+        return;
+      }
+      const link = document.getElementById('manualProceedBtn');
+      if (link) window.location.href = link.href;
+    }
+  });
+
+  updateTotals(ORIGINAL_PRICE);
+})();
 </script>
 {% endblock %}

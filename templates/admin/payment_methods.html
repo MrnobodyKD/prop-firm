@@ -1,13 +1,149 @@
 {% extends "admin/base.html" %}
-{% block title %}Payment methods{% endblock %}
+
+{% block title %}Payment Methods - Tragene Admin{% endblock %}
+
+{% block header_title %}💳 Payment Methods{% endblock %}
+{% block header_subtitle %}Bank accounts, mobile money and wallets your traders pay to · {{ methods|length }} method{{ 's' if methods|length != 1 else '' }}{% endblock %}
+
 {% block content %}
-<div class="max-w-5xl mx-auto p-6"><h1 class="text-2xl font-bold mb-5">Payment methods</h1>
-{% set editing = edit_method %}<form method="post" enctype="multipart/form-data" action="{{ url_for('admin.admin_payment_method_edit', method_id=editing.id) if editing else url_for('admin.admin_payment_method_create') }}" class="grid md:grid-cols-2 gap-3 border rounded-xl p-5 mb-8">
-<input name="name" required placeholder="Name" value="{{ editing.name if editing else '' }}" class="p-2 border rounded"><input name="type" required placeholder="Type (bank, wallet, etc.)" value="{{ editing.type if editing else '' }}" class="p-2 border rounded">
-<input name="currency" required placeholder="Local currency" value="{{ editing.currency if editing else '' }}" class="p-2 border rounded"><input name="exchange_rate_to_usd" type="number" step="any" min="0" placeholder="USD per 1 local currency unit" value="{{ editing.exchange_rate_to_usd if editing else '' }}" class="p-2 border rounded">
-<input name="sort_order" type="number" value="{{ editing.sort_order if editing else 0 }}" placeholder="Sort order" class="p-2 border rounded"><label><input type="checkbox" name="is_active" {% if not editing or editing.is_active %}checked{% endif %}> Active</label>
-<textarea name="details" placeholder='Details as JSON object, e.g. {"account_name":"..."}' class="p-2 border rounded">{{ editing.details|tojson if editing and editing.details else '{}' }}</textarea><textarea name="instructions" placeholder="Instructions" class="p-2 border rounded">{{ editing.instructions if editing else '' }}</textarea>
-<label>QR image <input type="file" name="qr_image" accept="image/png,image/jpeg,image/gif,image/webp"></label><label>Help image <input type="file" name="help_image" accept="image/png,image/jpeg,image/gif,image/webp"></label>
-<button class="bg-indigo-600 text-white rounded px-4 py-2">{{ 'Save changes' if editing else 'Add method' }}</button>{% if editing %}<a class="p-2" href="{{ url_for('admin.admin_payment_methods') }}">Cancel</a>{% endif %}</form>
-<div class="space-y-3">{% for method in methods %}<div class="border rounded-xl p-4 flex justify-between gap-4"><div><strong>{{ method.name }}</strong> · {{ method.type }} · {{ method.currency }} · rate {{ method.exchange_rate_to_usd or '—' }} · {{ 'Active' if method.is_active else 'Inactive' }}<p>{{ method.instructions or '' }}</p></div><div class="flex gap-2"><a href="{{ url_for('admin.admin_payment_methods', edit=method.id) }}">Edit</a><form method="post" action="{{ url_for('admin.admin_payment_method_toggle', method_id=method.id) }}"><button>Toggle</button></form><form method="post" action="{{ url_for('admin.admin_payment_method_delete', method_id=method.id) }}"><button {% if method.payments.count() %}disabled{% endif %}>Delete</button></form></div></div>{% endfor %}</div></div>
+{% set editing = edit_method %}
+{% set input_cls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" %}
+{% set label_cls = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5" %}
+{% set hint_cls = "text-xs text-gray-500 dark:text-gray-400 mt-1.5" %}
+{% set file_cls = "block w-full text-sm text-gray-600 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/40 dark:file:text-indigo-300 dark:hover:file:bg-indigo-900/60 file:cursor-pointer cursor-pointer" %}
+
+<!-- Add / Edit form -->
+<div class="glass-card p-6 mb-6">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+            <i class="fas fa-credit-card"></i>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ 'Edit payment method' if editing else 'Add a payment method' }}</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Traders see these at checkout and pay to the details you enter here.</p>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.admin_payment_method_edit', method_id=editing.id) if editing else url_for('admin.admin_payment_method_create') }}">
+        <div class="grid md:grid-cols-2 gap-5">
+            <div>
+                <label class="{{ label_cls }}">Method name</label>
+                <input name="name" required placeholder="e.g. CRDB Bank Transfer" value="{{ editing.name if editing else '' }}" class="{{ input_cls }}">
+            </div>
+            <div>
+                <label class="{{ label_cls }}">Type</label>
+                <input name="type" required placeholder="bank, mobile_money, wallet, crypto…" value="{{ editing.type if editing else '' }}" class="{{ input_cls }}">
+                <p class="{{ hint_cls }}">Kind of method — bank, mobile_money, wallet or crypto.</p>
+            </div>
+            <div>
+                <label class="{{ label_cls }}">Local currency</label>
+                <input name="currency" required placeholder="TZS" value="{{ editing.currency if editing else '' }}" class="{{ input_cls }}">
+                <p class="{{ hint_cls }}">Currency the trader pays in, e.g. TZS, KES, ZMW.</p>
+            </div>
+            <div>
+                <label class="{{ label_cls }}">Exchange rate (USD per 1 local unit)</label>
+                <input name="exchange_rate_to_usd" type="number" step="any" min="0" placeholder="0.00038" value="{{ editing.exchange_rate_to_usd if editing else '' }}" class="{{ input_cls }}">
+                <p class="{{ hint_cls }}">USD per 1 unit of the local currency. Example: 0.00038 for TZS (≈ 1 USD = 2,600 TZS).</p>
+            </div>
+            <div>
+                <label class="{{ label_cls }}">Sort order</label>
+                <input name="sort_order" type="number" value="{{ editing.sort_order if editing else 0 }}" placeholder="Sort order" class="{{ input_cls }}">
+                <p class="{{ hint_cls }}">Lower shows first at checkout.</p>
+            </div>
+            <div class="flex items-end pb-1">
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                    <input type="checkbox" name="is_active" class="peer sr-only" {% if not editing or editing.is_active %}checked{% endif %}>
+                    <span class="relative w-11 h-6 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600 transition-colors peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"></span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Active <span class="font-normal text-gray-500 dark:text-gray-400">— show this method at checkout</span></span>
+                </label>
+            </div>
+            <div class="md:col-span-2">
+                <label class="{{ label_cls }}">Account details (JSON)</label>
+                <textarea name="details" rows="4" placeholder='{"account_name": "...", "account_number": "..."}' class="{{ input_cls }} font-mono text-sm">{{ editing.details|tojson if editing and editing.details else '{}' }}</textarea>
+                <p class="{{ hint_cls }}">Must be a valid JSON object. These are the account details the trader pays to.</p>
+            </div>
+            <div class="md:col-span-2">
+                <label class="{{ label_cls }}">Instructions for traders</label>
+                <textarea name="instructions" rows="3" placeholder="Tell the trader exactly what to do…" class="{{ input_cls }}">{{ editing.instructions if editing else '' }}</textarea>
+                <p class="{{ hint_cls }}">Shown on the checkout page under this method.</p>
+            </div>
+            <div>
+                <label class="{{ label_cls }}">QR image</label>
+                <input type="file" name="qr_image" accept="image/png,image/jpeg,image/gif,image/webp" class="{{ file_cls }}">
+                <p class="{{ hint_cls }}">Optional. Shown on the checkout page. PNG, JPG, GIF or WebP, max 5 MB.</p>
+            </div>
+            <div>
+                <label class="{{ label_cls }}">Help image</label>
+                <input type="file" name="help_image" accept="image/png,image/jpeg,image/gif,image/webp" class="{{ file_cls }}">
+                <p class="{{ hint_cls }}">Optional. Extra help image shown on the checkout page.</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+            <button class="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-indigo-700 transition shadow-sm">
+                <i class="fas fa-check mr-2"></i>{{ 'Save changes' if editing else 'Add method' }}
+            </button>
+            {% if editing %}
+            <a href="{{ url_for('admin.admin_payment_methods') }}" class="px-5 py-2.5 rounded-lg font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition">Cancel</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Methods list -->
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Your methods</h2>
+    <span class="text-sm text-gray-500 dark:text-gray-400">{{ methods|length }} total</span>
+</div>
+
+{% if methods %}
+<div class="space-y-4">
+    {% for method in methods %}
+    {% set type_cls = 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' if method.type == 'bank' else 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' if method.type == 'mobile_money' else 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400' if method.type == 'crypto' else 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400' if method.type == 'wallet' else 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' %}
+    <div class="glass-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ method.name }}</h3>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ type_cls }}">{{ method.type }}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{{ method.currency }}</span>
+                    {% if method.is_active %}
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">● Active</span>
+                    {% else %}
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">○ Inactive</span>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1.5">Rate: {{ method.exchange_rate_to_usd or '—' }} USD per 1 {{ method.currency }} · Sort: {{ method.sort_order }}</p>
+                {% if method.instructions %}
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">{{ method.instructions }}</p>
+                {% endif %}
+                {% if method.details %}
+                <details class="mt-3">
+                    <summary class="text-sm font-medium text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline">Account details</summary>
+                    <pre class="mt-2 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 overflow-x-auto text-gray-700 dark:text-gray-300">{{ method.details|tojson(indent=2) }}</pre>
+                </details>
+                {% endif %}
+            </div>
+            <div class="flex flex-wrap gap-2 shrink-0">
+                <a href="{{ url_for('admin.admin_payment_methods', edit=method.id) }}" class="px-3.5 py-2 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition">Edit</a>
+                <form method="post" action="{{ url_for('admin.admin_payment_method_toggle', method_id=method.id) }}">
+                    <button class="px-3.5 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition">{{ 'Deactivate' if method.is_active else 'Activate' }}</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.admin_payment_method_delete', method_id=method.id) }}">
+                    <button {% if method.payments.count() %}disabled{% endif %} title="{% if method.payments.count() %}Cannot delete — payments already use this method{% endif %}" class="px-3.5 py-2 rounded-lg text-sm font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50 dark:disabled:hover:bg-red-900/30">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="glass-card p-8 text-center">
+    <div class="w-12 h-12 mx-auto rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
+        <i class="fas fa-wallet"></i>
+    </div>
+    <h3 class="mt-3 font-bold text-gray-900 dark:text-white">No payment methods yet</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Add your first one above — a bank account or a mobile money number — and it will show up at checkout.</p>
+</div>
+{% endif %}
 {% endblock %}
