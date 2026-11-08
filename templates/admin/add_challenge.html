@@ -51,7 +51,7 @@
     .dark .text-gray-700 {
         color: #d1d5db !important;
     }
-    
+
     .toggle-switch {
         position: relative;
         display: inline-block;
@@ -94,7 +94,7 @@
     input:checked + .toggle-slider:before {
         transform: translateX(22px);
     }
-    
+
     .safety-rule-card {
         border: 2px solid #e5e7eb;
         border-radius: 16px;
@@ -139,8 +139,8 @@
 
 {% block content %}
 <!-- Challenges List -->
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8" data-aos="fade-up">
-    
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8" data-aos="fade-up">
+
     <!-- One Phase Challenges -->
     <div class="glass-card p-6 h-full border border-blue-100 dark:border-blue-900/20">
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
@@ -154,13 +154,13 @@
         </div>
         <div class="space-y-4">
             {% for c in one_phase_challenges %}
-            <div class="border rounded-xl p-4 transition-all hover:shadow-md 
+            <div class="border rounded-xl p-4 transition-all hover:shadow-md
                 {% if c.is_active %}border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-900/30
                 {% else %}border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/30{% endif %}">
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ '$' if c.currency == 'USD' else '₹' }}{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -214,13 +214,13 @@
         </div>
         <div class="space-y-4">
             {% for c in two_phase_challenges %}
-            <div class="border rounded-xl p-4 transition-all hover:shadow-md 
+            <div class="border rounded-xl p-4 transition-all hover:shadow-md
                 {% if c.is_active %}border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-900/30
                 {% else %}border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/30{% endif %}">
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ '$' if c.currency == 'USD' else '₹' }}{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -272,6 +272,86 @@
         </div>
     </div>
 
+    <!-- Three-Phase Challenges -->
+    <div class="glass-card p-6 h-full border border-amber-100 dark:border-amber-900/20">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+            <h2 class="text-xl font-bold text-amber-600 dark:text-amber-400 flex items-center">
+                <i class="fas fa-flag-checkered mr-3 text-amber-500"></i>
+                Three-Phase Challenges
+            </h2>
+            <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-3 py-1 rounded-full text-sm font-semibold border border-amber-200 dark:border-amber-800">
+                {{ two_phase_challenges|length }} Challenges
+            </span>
+        </div>
+        <div class="space-y-4">
+            {% for c in two_phase_challenges %}
+            <div class="border rounded-xl p-4 transition-all hover:shadow-md
+                {% if c.is_active %}border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-900/30
+                {% else %}border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/30{% endif %}">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
+                        {% if c.activity_rule_enabled %}<span class="text-xs" title="Activity Rule Active">⏱️</span>{% endif %}
+                        {% if c.max_lot_size_enabled %}<span class="text-xs" title="Max Lot Size: {{ c.max_lot_size }}">⚖️</span>{% endif %}
+                        <span class="px-2 py-1 text-xs rounded-full font-medium {% if c.is_active %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400{% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400{% endif %}">
+                            {{ 'Active' if c.is_active else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 text-xs mb-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                    <div class="space-y-2 border-r pr-2 border-amber-200 dark:border-amber-800">
+                        <div class="text-center font-bold text-amber-600 dark:text-amber-400 border-b pb-1 mb-1">PHASE 1</div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Target:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_target }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_daily_loss }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_overall_loss }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_min_days }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_leverage }}</span></div>
+                    </div>
+                    <div class="space-y-2 border-r pr-2 border-amber-200 dark:border-amber-800">
+                        <div class="text-center font-bold text-amber-600 dark:text-amber-400 border-b pb-1 mb-1">PHASE 2</div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Target:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_target }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_daily_loss }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_overall_loss }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_min_days }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_leverage }}</span></div>
+                    </div>
+                    <div class="space-y-2 pl-2">
+                        <div class="text-center font-bold text-amber-600 dark:text-amber-400 border-b pb-1 mb-1">PHASE 3</div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Target:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_target }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_daily_loss }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_overall_loss }}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_min_days }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_leverage }}</span></div>
+                    </div>
+                    <div class="col-span-3 flex justify-between pt-2 border-t mt-1"><span class="text-gray-500 dark:text-gray-400">Profit Split:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.user_profit_share }}%</span></div>
+                    {% if c.sl_mandatory_enabled or c.activity_rule_enabled or c.max_lot_size_enabled %}
+                    <div class="col-span-3 flex flex-wrap gap-1 pt-1 border-t mt-1">
+                        {% if c.sl_mandatory_enabled %}<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">🛡️ SL Mandatory</span>{% endif %}
+                        {% if c.activity_rule_enabled %}<span class="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded-full">⏱️ Activity Rule</span>{% endif %}
+                        {% if c.max_lot_size_enabled %}<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">⚖️ Max {{ c.max_lot_size }} Lot</span>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700/50 pt-3">
+                    <button onclick="editChallenge({{ c|to_dict|tojson|forceescape }}, {{ {'phase3_target': c.phase3_target, 'phase3_daily_loss': c.phase3_daily_loss, 'phase3_daily_dd_type': c.phase3_daily_dd_type, 'phase3_overall_loss': c.phase3_overall_loss, 'phase3_overall_dd_type': c.phase3_overall_dd_type, 'phase3_min_days': c.phase3_min_days, 'phase3_duration': c.phase3_duration, 'phase3_leverage': c.phase3_leverage, 'phase3_rules': c.phase3_rules}|tojson|forceescape }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium flex items-center transition-colors">
+                        <i class="fas fa-edit mr-1.5"></i> Edit
+                    </button>
+                    <button onclick="openDeleteModal({{ c.id }}, {{ c.name|tojson|forceescape }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium flex items-center transition-colors">
+                        <i class="fas fa-trash mr-1.5"></i> Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
     <!-- Instant Funded Accounts -->
     <div class="glass-card p-6 h-full border border-emerald-100 dark:border-emerald-900/20">
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
@@ -285,13 +365,13 @@
         </div>
         <div class="space-y-4">
             {% for c in instant_challenges %}
-            <div class="border rounded-xl p-4 transition-all hover:shadow-md 
+            <div class="border rounded-xl p-4 transition-all hover:shadow-md
                 {% if c.is_active %}border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-900/30
                 {% else %}border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/30{% endif %}">
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ '$' if c.currency == 'USD' else '₹' }}{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -374,6 +454,9 @@
                             <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Two Phase</span>
                         </label>
                         <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="challenge_type" value="three_phase" class="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Three Phase</span>
+                        </label>                        <label class="inline-flex items-center cursor-pointer">
                             <input type="radio" name="challenge_type" value="instant" class="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
                             <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Instant</span>
                         </label>
@@ -383,7 +466,7 @@
 
             <div class="border-t dark:border-gray-700 pt-6">
                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Trading Rules</h4>
-                
+
                 <div id="phase1Inputs" class="space-y-4 mb-6 border-l-4 border-blue-500 pl-4">
                     <h5 class="font-bold text-blue-600 dark:text-blue-400">PHASE 1</h5>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -412,6 +495,20 @@
                     </div>
                 </div>
 
+                <div id="phase3Inputs" class="space-y-4 mb-6 border-l-4 border-amber-500 pl-4 hidden">
+                    <h5 class="font-bold text-amber-600 dark:text-amber-400">PHASE 3</h5>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Target (%)</label><input type="number" step="0.1" id="phase3_target" name="phase3_target" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Loss (%)</label><input type="number" step="0.1" id="phase3_daily_loss" name="phase3_daily_loss" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Drawdown Type</label><select id="phase3_daily_dd_type" name="phase3_daily_dd_type" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="equity">Equity Based</option><option value="static">Static Balance Based</option></select></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Overall Loss (%)</label><input type="number" step="0.1" id="phase3_overall_loss" name="phase3_overall_loss" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Overall Drawdown Type</label><select id="phase3_overall_dd_type" name="phase3_overall_dd_type" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="equity">Equity Based</option><option value="static">Static Balance Based</option></select></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Min Days</label><input type="number" id="phase3_min_days" name="phase3_min_days" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Duration (Days)</label><input type="number" id="phase3_duration" name="phase3_duration" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"></div>
+                        <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Leverage</label><input type="text" id="phase3_leverage" name="phase3_leverage" placeholder="1:100" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></div>
+                    </div>
+                </div>
+
                 <div id="instantInputs" class="space-y-4 mb-6 border-l-4 border-emerald-500 pl-4 hidden">
                     <h5 class="font-bold text-emerald-600 dark:text-emerald-400">INSTANT FUNDED</h5>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -430,7 +527,7 @@
                     <i class="fas fa-shield-alt text-amber-500 mr-2"></i>
                     Trading Safety Rules
                 </h4>
-                
+
                 <!-- Stop-Loss Rule Card -->
                 <div id="slRuleCard" class="safety-rule-card mb-4">
                     <div class="flex items-center justify-between mb-3">
@@ -536,7 +633,7 @@
             <!-- Dynamic Rules Textareas -->
             <div class="border-t dark:border-gray-700 pt-6">
                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rule Blueprints & Detailed Guidelines</h4>
-                
+
                 <div id="phase1RulesGroup" class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phase 1 Rules Text</label>
                     <textarea id="phase1Rules" name="phase1_rules_text" rows="3" placeholder="Enter rules for Phase 1 (e.g. daily drawdown, targets...)" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></textarea>
@@ -547,6 +644,11 @@
                     <textarea id="phase2Rules" name="phase2_rules_text" rows="3" placeholder="Enter rules for Phase 2..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></textarea>
                 </div>
 
+                <div id="phase3RulesGroup" class="space-y-2 mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phase 3 Rules Text</label>
+                    <textarea id="phase3Rules" name="phase3_rules_text" rows="3" placeholder="Enter rules for Phase 3..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></textarea>
+                </div>
+
                 <div id="instantRulesGroup" class="space-y-2 mt-4 hidden">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Instant Rules Text</label>
                     <textarea id="instantRules" name="instant_rules_text" rows="3" placeholder="Enter rules for Instant Funded Account..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"></textarea>
@@ -555,7 +657,7 @@
 
             <div class="border-t dark:border-gray-700 pt-6">
                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Challenge Policy & Currency</h4>
-                <p class="text-xs text-amber-700 dark:text-amber-300 mb-4">Kisiki challenges: leave Stop-Loss mandatory and Lot cap OFF.</p>
+                <p class="text-xs text-amber-700 dark:text-amber-300 mb-4">Mega Funded challenges: leave Stop-Loss mandatory and Lot cap OFF.</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Currency</label><select id="currency" name="currency" class="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"><option value="USD" selected>USD</option><option value="INR">INR</option></select></div>
                     <div class="flex items-center gap-2"><input type="checkbox" id="noExpiry" name="no_expiry" class="w-4 h-4"><label for="noExpiry" class="text-sm">No expiry</label></div>
@@ -695,25 +797,36 @@
     function handleTypeSelection(type) {
         const p1Group = document.getElementById('phase1RulesGroup');
         const p2Group = document.getElementById('phase2RulesGroup');
+        const p3Group = document.getElementById('phase3RulesGroup');
         const instantGroup = document.getElementById('instantRulesGroup');
         const p1Inputs = document.getElementById('phase1Inputs');
         const p2Inputs = document.getElementById('phase2Inputs');
+        const p3Inputs = document.getElementById('phase3Inputs');
         const instantInputs = document.getElementById('instantInputs');
 
         if (type === 'one_phase') {
-            p1Group.classList.remove('hidden'); p2Group.classList.add('hidden'); instantGroup.classList.add('hidden');
-            if(p1Inputs) p1Inputs.classList.remove('hidden'); 
-            if(p2Inputs) p2Inputs.classList.add('hidden'); 
+            p1Group.classList.remove('hidden'); p2Group.classList.add('hidden'); p3Group.classList.add('hidden'); instantGroup.classList.add('hidden');
+            if(p1Inputs) p1Inputs.classList.remove('hidden');
+            if(p2Inputs) p2Inputs.classList.add('hidden');
+            if(p3Inputs) p3Inputs.classList.add('hidden');
             if(instantInputs) instantInputs.classList.add('hidden');
         } else if (type === 'two_phase') {
-            p1Group.classList.remove('hidden'); p2Group.classList.remove('hidden'); instantGroup.classList.add('hidden');
-            if(p1Inputs) p1Inputs.classList.remove('hidden'); 
-            if(p2Inputs) p2Inputs.classList.remove('hidden'); 
+            p1Group.classList.remove('hidden'); p2Group.classList.remove('hidden'); p3Group.classList.add('hidden'); instantGroup.classList.add('hidden');
+            if(p1Inputs) p1Inputs.classList.remove('hidden');
+            if(p2Inputs) p2Inputs.classList.remove('hidden');
+            if(p3Inputs) p3Inputs.classList.add('hidden');
+            if(instantInputs) instantInputs.classList.add('hidden');
+        } else if (type === 'three_phase') {
+            p1Group.classList.remove('hidden'); p2Group.classList.remove('hidden'); p3Group.classList.remove('hidden'); instantGroup.classList.add('hidden');
+            if(p1Inputs) p1Inputs.classList.remove('hidden');
+            if(p2Inputs) p2Inputs.classList.remove('hidden');
+            if(p3Inputs) p3Inputs.classList.remove('hidden');
             if(instantInputs) instantInputs.classList.add('hidden');
         } else if (type === 'instant') {
-            p1Group.classList.add('hidden'); p2Group.classList.add('hidden'); instantGroup.classList.remove('hidden');
-            if(p1Inputs) p1Inputs.classList.add('hidden'); 
-            if(p2Inputs) p2Inputs.classList.add('hidden'); 
+            p1Group.classList.add('hidden'); p2Group.classList.add('hidden'); p3Group.classList.add('hidden'); instantGroup.classList.remove('hidden');
+            if(p1Inputs) p1Inputs.classList.add('hidden');
+            if(p2Inputs) p2Inputs.classList.add('hidden');
+            if(p3Inputs) p3Inputs.classList.add('hidden');
             if(instantInputs) instantInputs.classList.remove('hidden');
         }
     }
@@ -723,7 +836,7 @@
         document.getElementById('challengeForm').reset();
         document.getElementById('challengeId').value = '';
         document.getElementById('isActive').checked = true;
-        
+
         // Reset all safety toggles
         document.getElementById('slMandatoryEnabled').checked = false;
         document.getElementById('activityRuleEnabled').checked = false;
@@ -731,29 +844,29 @@
         toggleSLCard();
         toggleActivityCard();
         toggleLotSizeCard();
-        
+
         const onePhaseRadio = document.querySelector('input[name="challenge_type"][value="one_phase"]');
         if (onePhaseRadio) {
             onePhaseRadio.checked = true;
             handleTypeSelection('one_phase');
         }
-        
+
         document.getElementById('challengeModal').classList.remove('hidden');
     }
 
-    function editChallenge(c) {
+    function editChallenge(c, phase3 = {}) {
         document.getElementById('modalTitle').textContent = 'Edit Challenge';
         document.getElementById('challengeId').value = c.id;
         document.getElementById('challengeName').value = c.name;
         document.getElementById('challengePrice').value = c.price;
         document.getElementById('accountSize').value = c.account_size;
-        
+
         const typeVal = c.challenge_type || 'one_phase';
         const typeRadio = document.querySelector(`input[name="challenge_type"][value="${typeVal}"]`);
         if (typeRadio) {
             typeRadio.checked = true;
         }
-        
+
         handleTypeSelection(typeVal);
 
         if(c.phase1_target) document.getElementById('phase1_target').value = c.phase1_target;
@@ -774,6 +887,14 @@
         if(c.phase2_duration !== null) document.getElementById('phase2_duration').value = c.phase2_duration;
         if(c.phase2_leverage) document.getElementById('phase2_leverage').value = c.phase2_leverage;
 
+        if(phase3.phase3_target !== null && phase3.phase3_target !== undefined) document.getElementById('phase3_target').value = phase3.phase3_target;
+        if(phase3.phase3_daily_loss !== null && phase3.phase3_daily_loss !== undefined) document.getElementById('phase3_daily_loss').value = phase3.phase3_daily_loss;
+        document.getElementById('phase3_daily_dd_type').value = phase3.phase3_daily_dd_type || 'equity';
+        if(phase3.phase3_overall_loss !== null && phase3.phase3_overall_loss !== undefined) document.getElementById('phase3_overall_loss').value = phase3.phase3_overall_loss;
+        document.getElementById('phase3_overall_dd_type').value = phase3.phase3_overall_dd_type || 'equity';
+        if(phase3.phase3_min_days !== null && phase3.phase3_min_days !== undefined) document.getElementById('phase3_min_days').value = phase3.phase3_min_days;
+        if(phase3.phase3_duration !== null && phase3.phase3_duration !== undefined) document.getElementById('phase3_duration').value = phase3.phase3_duration;
+        if(phase3.phase3_leverage) document.getElementById('phase3_leverage').value = phase3.phase3_leverage;
         if(c.instant_daily_loss) document.getElementById('instant_daily_loss').value = c.instant_daily_loss;
         document.getElementById('instant_daily_dd_type').value = c.instant_daily_dd_type || 'equity';
         if(c.instant_overall_loss) document.getElementById('instant_overall_loss').value = c.instant_overall_loss;
@@ -804,12 +925,12 @@
         document.getElementById('maxRiskPerTrade').value = c.max_risk_per_trade_percent || 1.5;
         document.getElementById('activityRuleEnabled').checked = c.activity_rule_enabled || false;
         document.getElementById('maxInactiveDays').value = c.max_inactive_days || 4;
-        
+
         // ⚖️ Lot size rules
         document.getElementById('lotSizeEnabled').checked = c.max_lot_size_enabled || false;
         document.getElementById('maxLotSize').value = c.max_lot_size || 0.02;
         document.getElementById('lotSizeViolationAction').value = c.lot_size_violation_action || 'flag';
-        
+
         toggleSLCard();
         toggleActivityCard();
         toggleLotSizeCard();
@@ -820,9 +941,10 @@
         document.getElementById('weekendTrading').checked = c.weekend_trading;
         document.getElementById('isActive').checked = c.is_active;
         document.getElementById('description').value = c.description || '';
-        
+
         document.getElementById('phase1Rules').value = c.phase1_rules || '';
         document.getElementById('phase2Rules').value = c.phase2_rules || '';
+        document.getElementById('phase3Rules').value = phase3.phase3_rules || '';
         document.getElementById('instantRules').value = c.instant_rules || '';
 
         document.getElementById('challengeModal').classList.remove('hidden');

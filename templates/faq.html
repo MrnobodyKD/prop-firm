@@ -3,16 +3,17 @@
 
 <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8SBBXX72M7"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-        gtag('config', 'G-8SBBXX72M7');
+
+        gtag('config', 'G-XXXXXXXXXX');
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ – Kisiki Capital</title>
+    <title>FAQ – Mega Funded</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/logo.png">
@@ -20,37 +21,37 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/logo.png">
 
     <!-- Primary SEO -->
-    <meta name="description" content="Trade with Kisiki Capital, a premier prop firm. Evaluation challenges, transparent rules, fast payouts, trusted support, and funding opportunities designed for global traders.">
-    <meta name="keywords" content="prop firm, funded trading account, trading challenge, instant funding, trader funding, Kisiki Capital">
-    <meta name="author" content="Kisiki Capital">
+    <meta name="description" content="Frequently asked questions about Mega Funded prop firm challenges, evaluation rules, payouts, and funding opportunities for global traders.">
+    <meta name="keywords" content="prop firm, funded trading account, trading challenge, instant funding, trader funding, Mega Funded FAQ">
+    <meta name="author" content="Mega Funded">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#0f172a">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Kisiki Capital | FAQ">
+    <meta property="og:title" content="Mega Funded | FAQ">
     <meta property="og:description" content="Evaluation challenges, trader-friendly rules, fast and transparent payouts. Built for global traders.">
-    <meta property="og:url" content="https://kisikicapital.com">
-    <meta property="og:site_name" content="Kisiki Capital">
-    <meta property="og:image" content="https://kisikicapital.com/static/images/banner.png">
+    <meta property="og:url" content="https://megafunded.online">
+    <meta property="og:site_name" content="Mega Funded">
+    <meta property="og:image" content="https://megafunded.online/static/images/banner.png">
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Kisiki Capital | FAQ">
+    <meta name="twitter:title" content="Mega Funded | FAQ">
     <meta name="twitter:description" content="Evaluation challenges. Trader friendly. Built for global traders.">
-    <meta name="twitter:image" content="https://kisikicapital.com/static/images/banner.png">
+    <meta name="twitter:image" content="https://megafunded.online/static/images/banner.png">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://kisikicapital.com">
+    <link rel="canonical" href="https://megafunded.online">
 
     <!-- Organization Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Kisiki Capital",
-      "url": "https://kisikicapital.com",
-      "logo": "https://kisikicapital.com/static/images/logo.png"
+      "name": "Mega Funded",
+      "url": "https://megafunded.online",
+      "logo": "https://megafunded.online/static/images/logo.png"
     }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -114,13 +115,13 @@
         .faq-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            transition: max-height 0.4s ease-out, padding 0.3s ease;
             color: #9ca3af;
             line-height: 1.6;
         }
 
         .faq-item.active .faq-content {
-            max-height: 500px;
+            max-height: 800px;
             padding-bottom: 24px;
         }
 
@@ -171,7 +172,7 @@
                 <div class="bg-green-500/10 p-2 rounded-lg group-hover:bg-green-500/20 transition">
                     <i class="fas fa-chart-line text-green-400"></i>
                 </div>
-                <span class="text-white font-bold text-xl tracking-tight">Kisiki Capital</span>
+                <span class="text-white font-bold text-xl tracking-tight">Mega Funded</span>
             </a>
             <div class="flex items-center gap-6">
                 <a href="/login" class="text-sm text-gray-400 hover:text-white transition">Login</a>
@@ -189,7 +190,7 @@
                 Frequently Asked <span class="text-gradient">Questions</span>
             </h1>
             <p class="text-gray-400 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
-                Everything you need to know about Kisiki Capital challenges, rules, and payouts. Can't find what you're looking for? <a href="/contact" class="text-green-400 hover:underline">Contact us</a>.
+                Everything you need to know about Mega Funded challenges, rules, and payouts. Can't find what you're looking for? <a href="/contact" class="text-green-400 hover:underline">Contact us</a>.
             </p>
         </div>
     </header>
@@ -200,47 +201,423 @@
             
             <!-- Category Filter -->
             <div class="flex flex-wrap justify-center gap-3 mb-12">
-                <button class="category-pill active" onclick="filterCategory('all')">All Questions</button>
-                {% for category in categories.keys() %}
-                <button class="category-pill" onclick="filterCategory('{{ category }}')">{{ category }}</button>
-                {% endfor %}
+                <button class="category-pill active" onclick="filterCategory('all', this)">All Questions</button>
+                <button class="category-pill" onclick="filterCategory('basics', this)">Basics</button>
+                <button class="category-pill" onclick="filterCategory('evaluation', this)">Evaluation</button>
+                <button class="category-pill" onclick="filterCategory('rules', this)">Risk Rules</button>
+                <button class="category-pill" onclick="filterCategory('payouts', this)">Funded & Payouts</button>
+                <button class="category-pill" onclick="filterCategory('payments', this)">Payments</button>
+                <button class="category-pill" onclick="filterCategory('account', this)">Account Rules</button>
+                <button class="category-pill" onclick="filterCategory('kyc', this)">KYC</button>
+                <button class="category-pill" onclick="filterCategory('support', this)">Support</button>
+                <button class="category-pill" onclick="filterCategory('disclaimers', this)">Disclaimers</button>
             </div>
 
             <!-- FAQ List -->
             <div class="glass-card p-2 md:p-8">
-                {% for category, faqs in categories.items() %}
-                <div class="category-section" data-category="{{ category }}">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">{{ category }}</h3>
+
+                <!-- ===== BASICS ===== -->
+                <div class="category-section" data-category="basics">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Basics</h3>
                     <div class="px-6">
-                        {% for faq in faqs %}
                         <div class="faq-item">
                             <button class="faq-trigger" onclick="toggleFaq(this)">
-                                <span class="text-lg font-semibold text-white pr-8">{{ faq.question }}</span>
+                                <span class="text-lg font-semibold text-white pr-8">What is Mega Funded?</span>
                                 <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
                             </button>
                             <div class="faq-content">
-                                {{ faq.answer|safe }}
+                                Mega Funded is a proprietary trading evaluation platform. We provide simulated trading accounts to traders who want to prove their skill and discipline. If you pass our evaluation, you become eligible for a simulated funded account where you keep a share of the profits you generate. We are not a broker, we do not accept deposits, and all trading is done in a simulated environment.
                             </div>
                         </div>
-                        {% endfor %}
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Is Mega Funded a broker or a real prop firm?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Neither, in the traditional sense. Mega Funded operates as an evaluation and capital-allocation platform. We do not execute trades on live markets, and we do not manage client funds. Traders pay an evaluation fee, trade a simulated account under our rules, and earn payouts based on simulated performance. This is the standard model for modern online prop firms.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Is the trading real money?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                No. All evaluation and funded accounts at Mega Funded are simulated. The market data reflects live conditions, but your positions, profits, and losses are virtual. Payouts to funded traders are real, but the trading itself is not conducted on live markets. We state this clearly because transparency matters.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Do I need prior trading experience?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                No, but it helps. Our evaluation is designed to test whether you can follow rules and manage risk, not just whether you can pick winning trades. Traders who understand concepts like daily loss limits, maximum drawdown, and position sizing are significantly more likely to pass.
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
-                
-                {% if not categories %}
-                <div class="p-12 text-center">
-                    <div class="bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-search text-2xl text-gray-500"></i>
+
+                <!-- ===== EVALUATION ===== -->
+                <div class="category-section" data-category="evaluation">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Evaluation</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">How does the evaluation work?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                You choose an account size and pay a one-time evaluation fee. You then trade a simulated account and must reach a profit target without breaching any of our risk rules. If you succeed, you move to a simulated funded account. If you breach a rule, the evaluation ends and you can try again by purchasing a new one.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What are the profit targets?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Profit targets vary by challenge type. Each challenge page on your dashboard displays its exact profit target, loss limits, and payout percentage. Always review the specific challenge details before purchasing — the numbers are shown clearly for every plan.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">How long do I have to pass?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                There is no time limit on standard evaluations. You can take as long as you need to reach the target, provided you do not breach a drawdown rule. Minimum trading days apply — usually 5 days — to prevent traders from passing through a single reckless trade.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I use Expert Advisors (EAs) or automated trading?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Yes, EAs are permitted as long as they do not employ prohibited strategies such as high-frequency trading (HFT), latency arbitrage, or tick scalping. You must also maintain strategy consistency: you cannot switch from manual trading to an EA mid-phase. If you start with an EA, you must finish with an EA.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What happens if I fail?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                If you breach a daily loss limit, exceed maximum drawdown, or violate a trading rule, your evaluation ends. You do not receive a refund, but you can purchase a new evaluation and try again. Check your dashboard for any available reset offers.
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-gray-400">No FAQs found at the moment. Please check back later or contact support.</p>
                 </div>
-                {% endif %}
+
+                <!-- ===== RISK RULES ===== -->
+                <div class="category-section" data-category="rules">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Risk Rules</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What is the daily loss limit?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                The daily loss limit caps how much you can lose in a single trading day. The exact percentage is displayed on each challenge page in your dashboard. If your equity drops below this threshold at any point during the day, your account is closed. This rule ends more evaluations than any other — most traders who fail do so because they breach the daily limit, not because they miss the profit target.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What is maximum drawdown?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Maximum drawdown is the total loss you are allowed to incur from your starting balance. The exact percentage is shown on each challenge page. This is separate from the daily loss limit. You can breach one without breaching the other, but both must be respected.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Is the drawdown static or trailing?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Drawdown type is specified per challenge on your dashboard. Some challenges use static drawdown (fixed at your starting balance) and others may use trailing drawdown (which rises with your equity). Always confirm which type applies to your specific plan before purchasing.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I hold trades overnight and over the weekend?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Yes. Mega Funded permits overnight and weekend holding on all accounts. There are no restrictions on when you can open or close positions, provided you remain within the loss limits.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Is there a maximum lot size?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                There are no arbitrary lot size restrictions, but you must respect margin requirements and the risk rules. Trading excessively large positions is the fastest way to breach a daily loss limit.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== FUNDED & PAYOUTS ===== -->
+                <div class="category-section" data-category="payouts">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Funded & Payouts</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What happens after I pass?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                You are moved to a simulated funded account. The profit target disappears, but the daily loss limit and maximum drawdown remain in place. You now trade with the goal of generating consistent profits that you can withdraw.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What is the profit split?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                The profit split varies by challenge type and is displayed on each challenge page in your dashboard. Some challenges offer higher splits than others, and consistent traders may qualify for scaling. Your exact profit split is shown clearly before you purchase, and your dashboard tracks what you are eligible for.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">How often can I request a payout?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Payout eligibility varies by challenge and is shown on your challenge page and in your dashboard. Once you meet the eligibility criteria for your account type, you can request a withdrawal through your Client Section. First withdrawal timelines are displayed per challenge.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">How long do payouts take?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Payouts are processed within 1 to 5 business days after approval. We pay via bank transfer or cryptocurrency. All fees are denominated in USD.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Is there a minimum payout amount?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Yes. The minimum withdrawal amount is stated in your Client Section and varies by payment method. Check the payout page before requesting to avoid processing delays.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I lose my funded account after passing?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Yes. Passing the evaluation does not guarantee a permanent funded account. If you breach the daily loss limit or maximum drawdown on your funded account, it will be closed, just as it would during the evaluation. Many traders who pass evaluations fail on funded accounts because they relax their risk management after the pressure of the target is removed.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== PAYMENTS ===== -->
+                <div class="category-section" data-category="payments">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Payments</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What payment methods do you accept?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                We accept major credit and debit cards (Visa, Mastercard) and supported cryptocurrencies. All fees are charged in USD.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Are evaluation fees refundable?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Evaluation fees are non-refundable. You are paying for immediate access to a simulated trading environment and the resources required to run it. This is standard across the industry — most prop firms do not refund evaluation fees, though some offer free resets under specific conditions.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What happens if I initiate a chargeback?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Initiating a chargeback or payment dispute is a breach of our Terms. Your account will be suspended immediately, any pending payouts will be forfeited, and you will be permanently banned from Mega Funded. We provide clear terms before purchase; chargebacks are treated as fraud.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== ACCOUNT RULES ===== -->
+                <div class="category-section" data-category="account">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Account Rules</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I have more than one account?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                No. Each trader is limited to one Client Section. Registering multiple accounts using different emails, identities, or IP addresses is prohibited. If we detect duplicate accounts, all linked accounts will be terminated and fees will not be refunded.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I share my account with someone else?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                No. Account sharing, credential sharing, and device sharing are strictly prohibited. Your account is for your use only. If someone else trades on your account, it will be terminated.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What is copy trading and is it allowed?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Copy trading between different registered users or across unconnected accounts is prohibited. You may not copy trades from another trader into your Mega Funded account, and you may not allow others to copy your trades.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What is strategy switching?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Strategy switching is changing your core trading approach mid-evaluation — for example, starting with manual discretionary trading and then switching to an EA, or vice versa. You must maintain the same strategy throughout each phase. This rule exists to prevent traders from gaming the evaluation with inconsistent methods.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What is HFT and why is it prohibited?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                High-frequency trading (HFT) involves executing a very large number of orders at extremely high speeds to exploit tiny price movements. It is prohibited because it can overload our servers and does not reflect the kind of disciplined, sustainable trading we are evaluating. Tick scalping and latency arbitrage are also prohibited.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I trade during news events?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Yes. News trading is permitted, provided you remain within your daily loss and maximum drawdown limits.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== KYC ===== -->
+                <div class="category-section" data-category="kyc">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">KYC & Verification</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Do I need to complete KYC?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Yes. Before receiving a funded account or requesting a payout, you must complete identity verification. This requires a government-issued photo ID and proof of address. KYC is a legal requirement for processing payouts and preventing fraud.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What happens if I refuse KYC?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                If you do not complete KYC, you cannot receive a funded account or any payouts. Your evaluation can still be completed, but the funded stage requires verification. Failure to provide accurate documentation will result in account termination.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SUPPORT ===== -->
+                <div class="category-section" data-category="support">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Support & Contact</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">How do I contact support?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                The fastest way is through the Client Section / Live Chat in your dashboard. You can also email <a href="mailto:support@megafunded.online" class="text-green-400 hover:underline">support@megafunded.online</a>. Email responses typically take 24 to 48 hours.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What information should I include in a support request?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Include your registered email address, your account ID (if you have one), and a clear description of the issue. For payment issues, include the transaction ID. For technical issues, include screenshots and the time the issue occurred.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Can I get a refund if I change my mind?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                No. Evaluation fees are non-refundable. Please review the rules and account details carefully before purchasing.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== DISCLAIMERS ===== -->
+                <div class="category-section" data-category="disclaimers">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 px-6 pt-6">Honest Disclaimers</h3>
+                    <div class="px-6">
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What percentage of traders pass and get paid?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Passing an evaluation and receiving a payout is not guaranteed. Every challenge has its own profit targets, risk limits, and payout eligibility criteria — all shown on the challenge page in your dashboard before you buy. We do not promise that you will pass or get paid. What we promise is a transparent set of rules and a fair evaluation of your performance against those rules. Your dashboard tracks your progress, eligibility, and payout status for your specific challenge in real time.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">Is this a way to get rich quickly?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                No. Prop firm evaluations are a skill assessment, not an income guarantee. Most traders who fail do so because they take excessive risk, breach a daily loss limit, or treat the evaluation as a gamble rather than a disciplined process. If you are looking for guaranteed income or a shortcut, this is not the right path.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-trigger" onclick="toggleFaq(this)">
+                                <span class="text-lg font-semibold text-white pr-8">What if I disagree with a rule enforcement decision?</span>
+                                <i class="fas fa-chevron-down faq-icon text-gray-500 text-sm"></i>
+                            </button>
+                            <div class="faq-content">
+                                Contact support through the Client Section. We will review your case and respond with the specific rule and data that led to the decision. All enforcement decisions are based on platform logs and are final.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- CTA -->
             <div class="mt-16 glass-card p-8 text-center border-dashed border-white/10">
                 <h3 class="text-xl font-bold text-white mb-2">Still have questions?</h3>
-                <p class="text-gray-400 mb-6">Our dedicated support team is available to assist you 24–48 hours via email at enquiries@kisikicapital.com or through Client Section / Live Chat.</p>
+                <p class="text-gray-400 mb-6">Our dedicated support team is available to assist you. Email us at <a href="mailto:support@megafunded.online" class="text-green-400 hover:underline">support@megafunded.online</a> or reach us through Client Section / Live Chat.</p>
                 <div class="flex flex-wrap justify-center gap-4">
                     <a href="/contact" class="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-3 rounded-xl transition">
                         Contact Support
@@ -265,7 +642,7 @@
                 <a href="{{ url_for('privacy') }}" class="text-gray-400 hover:text-white transition">Privacy</a>
                 <a href="{{ url_for('refund_policy') }}" class="text-gray-400 hover:text-white transition">Refund Policy</a>
             </div>
-            <p class="text-gray-500 text-xs tracking-widest uppercase">&copy; 2026 Kisiki Capital. All rights reserved.</p>
+            <p class="text-gray-500 text-xs tracking-widest uppercase">&copy; 2026 Mega Funded. All rights reserved.</p>
         </div>
     </footer>
 
@@ -282,14 +659,12 @@
             }
         }
 
-        function filterCategory(category) {
+        function filterCategory(category, btn) {
             // Update pills
             document.querySelectorAll('.category-pill').forEach(pill => {
                 pill.classList.remove('active');
-                if (pill.textContent.trim() === category || (category === 'all' && pill.textContent.trim() === 'All Questions')) {
-                    pill.classList.add('active');
-                }
             });
+            btn.classList.add('active');
 
             // Show/hide sections
             document.querySelectorAll('.category-section').forEach(section => {

@@ -520,8 +520,11 @@
 
         {% set instant = challenge.challenge_type == 'instant' %}
         {% set phases = [('Instant', 'instant')] if instant else [('Phase 1', 'phase1')] %}
-        {% if not instant and (challenge.challenge_type == 'two_phase' or challenge.phase == 2) %}
+        {% if not instant and (challenge.challenge_type in ('two_phase', 'three_phase') or challenge.phase == 2) %}
           {% set phases = phases + [('Phase 2', 'phase2')] %}
+        {% endif %}
+        {% if challenge.challenge_type == 'three_phase' %}
+          {% set phases = phases + [('Phase 3', 'phase3')] %}
         {% endif %}
 
         <div class="phase-grid">

@@ -1,6 +1,6 @@
 {% extends "user/base.html" %}
 
-{% block title %}Tragene Funded - Dashboard{% endblock %}
+{% block title %}Mega Funded - Dashboard{% endblock %}
 
 {% block header_title %}Dashboard{% endblock %}
 {% block header_subtitle %}Welcome back, {{ user.first_name }}{% endblock %}
@@ -88,8 +88,9 @@
 
     {% set eligible_phase1 = progression_eligible_challenges|selectattr('current_phase', 'equalto', 1)|list %}
     {% set eligible_phase2 = progression_eligible_challenges|selectattr('current_phase', 'equalto', 2)|list %}
+    {% set eligible_phase3 = progression_eligible_challenges|selectattr('current_phase', 'equalto', 3)|list %}
 
-    {% if eligible_phase1 or eligible_phase2 or progression_requests %}
+    {% if eligible_phase1 or eligible_phase2 or eligible_phase3 or progression_requests %}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {% for challenge in eligible_phase1 %}
         <div class="glass-card p-3 border dark:border-dark-border">
@@ -115,6 +116,25 @@
         <div class="glass-card p-3 border dark:border-dark-border">
             <p class="text-xs font-bold text-gray-900 dark:text-white">Congratulations!</p>
             <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">You have successfully passed Phase 2.</p>
+            {% if challenge.challenge_type == 'three_phase' %}
+            <form method="POST" action="{{ url_for('user.request_progression', challenge_id=challenge.id, request_type='phase3') }}" class="mt-3">
+                <button class="w-full bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-xs font-semibold transition" type="submit">
+                    Request Phase 3 Account
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('user.request_progression', challenge_id=challenge.id, request_type='funded') }}" class="mt-3">
+                <button class="w-full bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-xs font-semibold transition" type="submit">
+                    Request Funded Account
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% for challenge in eligible_phase3 %}
+        <div class="glass-card p-3 border dark:border-dark-border">
+            <p class="text-xs font-bold text-gray-900 dark:text-white">Congratulations!</p>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">You have successfully passed Phase 3.</p>
             <form method="POST" action="{{ url_for('user.request_progression', challenge_id=challenge.id, request_type='funded') }}" class="mt-3">
                 <button class="w-full bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-xs font-semibold transition" type="submit">
                     Request Funded Account
@@ -418,8 +438,8 @@
 <footer class="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
     <div class="flex flex-col md:flex-row items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tragene Funded" class="h-6 w-6 rounded-full">
-            <span class="text-[10px] text-gray-500 dark:text-gray-400">&copy; 2026 Tragene Funded.</span>
+            <span class="font-black tracking-wide bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">MEGA FUNDED</span>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">&copy; 2026 Mega Funded.</span>
         </div>
         <div class="flex gap-4 text-[10px]">
             <a href="{{ url_for('privacy') }}" class="text-gray-500 dark:text-gray-400 hover:text-blue-600">Privacy</a>

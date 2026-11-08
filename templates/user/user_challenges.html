@@ -1,66 +1,124 @@
 {% extends "user/base.html" %}
 
-{% block title %}Tragene Funded - Trading Challenges{% endblock %}
+{% block title %}Mega Funded - Trading Challenges{% endblock %}
 
 {% block header_title %}Trading Challenges{% endblock %}
 {% block header_subtitle %}Choose your path to funded trading{% endblock %}
 
 {% block head %}
 <style>
-    /* Filter Tabs */
+    /* Filter Tabs - same pill style as the homepage picker */
     .filter-tab {
+        position: relative;
         padding: 0.625rem 1.5rem;
         border-radius: 9999px;
         font-weight: 600;
         font-size: 0.875rem;
         cursor: pointer;
-        transition: all 0.3s ease;
-        border: 2px solid #e5e7eb;
-        background: white;
-        color: #6b7280;
+        transition: all 0.18s ease;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: rgba(255, 255, 255, 0.7);
+        color: #4b5563;
         white-space: nowrap;
-    }
-    
-    .dark .filter-tab {
-        border-color: #374151;
-        background: #1f2937;
-        color: #9ca3af;
-    }
-    
-    .filter-tab:hover {
-        border-color: #3b82f6;
-        color: #3b82f6;
-    }
-    
-    .dark .filter-tab:hover {
-        border-color: #60a5fa;
-        color: #60a5fa;
-    }
-    
-    .filter-tab.active {
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        color: white;
-        border-color: #3b82f6;
-    }
-    
-    .dark .filter-tab.active {
-        background: linear-gradient(135deg, #2563eb, #1e40af);
-        border-color: #60a5fa;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
     }
 
-    /* Hide/Show */
+    .dark .filter-tab {
+        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+        color: #d1d5db;
+    }
+
+    .filter-tab:hover:not(.active) {
+        border-color: rgba(34, 197, 94, 0.55);
+        transform: translateY(-1px);
+    }
+
+    .filter-tab.active {
+        background: linear-gradient(135deg, #16a34a, #059669);
+        border-color: rgba(74, 222, 128, 0.7);
+        color: #fff;
+        box-shadow: 0 6px 22px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Challenge Cards */
     .challenge-card-wrapper {
         transition: all 0.3s ease;
     }
-    
+
     .challenge-card-wrapper.hidden {
         display: none;
     }
-    
+
+    .challenge-card {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .challenge-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .card-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        border-radius: 1.5rem 1.5rem 0 0;
+        z-index: 1;
+    }
+
+    .accent-one_phase { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+    .accent-two_phase { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+    .accent-three_phase { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .accent-exclusive { background: linear-gradient(90deg, #d946ef, #f0abfc); }
+    .accent-instant { background: linear-gradient(90deg, #059669, #34d399); }
+
     .badge-one-phase { background-color: #2563eb; color: white; }
     .badge-two-phase { background-color: #7c3aed; color: white; }
+    .badge-three-phase { background-color: #f59e0b; color: white; }
+    .badge-exclusive { background-color: #d946ef; color: white; }
     .badge-instant { background-color: #059669; color: white; }
-    
+
+    /* Spec rows - same clean label/value rows as the homepage spec card */
+    .spec-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.875rem;
+    }
+
+    .dark .spec-row {
+        border-color: #374151;
+    }
+
+    .spec-row:last-child {
+        border-bottom: none;
+    }
+
+    .spec-row .k {
+        color: #6b7280;
+    }
+
+    .dark .spec-row .k {
+        color: #9ca3af;
+    }
+
+    .spec-row .v {
+        font-weight: 700;
+        text-align: right;
+        color: #111827;
+    }
+
+    .dark .spec-row .v {
+        color: #fff;
+    }
+
     /* Safety rule badges */
     .badge-sl-rule {
         background-color: #f59e0b;
@@ -91,10 +149,14 @@
 
 {% block content %}
 {% macro dd_label(value) -%}{{ 'Static Balance Based' if value == 'static' else 'Equity Based' }}{%- endmacro %}
+{% macro duration_label(days) -%}{% if days %}{{ days }} days{% else %}No limit{% endif %}{%- endmacro %}
+{% macro duration_short(days) -%}{% if days %}{{ days }}d{% else %}No limit{% endif %}{%- endmacro %}
+{% macro min_days_label(days) -%}{% if days %}{{ days }}{% else %}None{% endif %}{%- endmacro %}
+
 <!-- Page Header -->
 <div class="mb-6 text-center">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">Start Your Funded Trading Journey</h1>
-    <p class="text-gray-600 dark:text-gray-400 text-lg">Choose a challenge, pass it, and get funded up to $100,000</p>
+    <p class="text-gray-600 dark:text-gray-400 text-lg">Choose a challenge, pass it, and get funded up to $200,000</p>
 </div>
 
 <!-- ===== FILTER TABS ===== -->
@@ -108,8 +170,14 @@
     <button class="filter-tab" data-filter="two_phase" onclick="filterChallenges('two_phase', this)">
         <i class="fas fa-rocket mr-1.5"></i> 2 Step
     </button>
+    <button class="filter-tab" data-filter="three_phase" onclick="filterChallenges('three_phase', this)">
+        <i class="fas fa-layer-group mr-1.5"></i> 3 Step
+    </button>
+    <button class="filter-tab" data-filter="exclusive" onclick="filterChallenges('exclusive', this)">
+        <i class="fas fa-star mr-1.5"></i> Exclusive
+    </button>
     <button class="filter-tab" data-filter="instant" onclick="filterChallenges('instant', this)">
-        <i class="fas fa-crown mr-1.5"></i> Instant Funded
+        <i class="fas fa-crown mr-1.5"></i> Instant
     </button>
 </div>
 
@@ -117,34 +185,62 @@
 {% if challenges %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
     {% for challenge in challenges %}
-    <div class="challenge-card-wrapper" data-type="{{ challenge.challenge_type }}">
-        <div class="rounded-3xl overflow-hidden relative border-2 hover:border-blue-400 dark:hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 shadow-lg
-                    {% if challenge.challenge_type == 'one_phase' %}border-blue-200 dark:border-blue-900/30 bg-white dark:bg-gray-800
-                    {% elif challenge.challenge_type == 'two_phase' %}border-purple-200 dark:border-purple-900/30 bg-white dark:bg-gray-800
-                    {% else %}border-emerald-200 dark:border-emerald-900/30 bg-white dark:bg-gray-800{% endif %}" 
+    {# Category: Exclusive rows are detected by name (Pay As You Go / Pay After You Pass),
+       everything else follows its challenge_type. #}
+    {% set _name = (challenge.name or '')|lower %}
+    {% if 'pay as you go' in _name or 'pay after you pass' in _name %}
+        {% set cat = 'exclusive' %}
+    {% elif challenge.challenge_type == 'one_phase' %}
+        {% set cat = 'one_phase' %}
+    {% elif challenge.challenge_type == 'two_phase' %}
+        {% set cat = 'two_phase' %}
+    {% elif challenge.challenge_type == 'three_phase' %}
+        {% set cat = 'three_phase' %}
+    {% else %}
+        {% set cat = 'instant' %}
+    {% endif %}
+
+    <div class="challenge-card-wrapper" data-type="{{ cat }}">
+        <div class="challenge-card rounded-3xl overflow-hidden relative border-2 hover:shadow-2xl
+                    {% if cat == 'one_phase' %}border-blue-200 dark:border-blue-900/30 bg-white dark:bg-gray-800
+                    {% elif cat == 'two_phase' %}border-purple-200 dark:border-purple-900/30 bg-white dark:bg-gray-800
+                    {% elif cat == 'three_phase' %}border-amber-200 dark:border-amber-900/30 bg-white dark:bg-gray-800
+                    {% elif cat == 'exclusive' %}border-fuchsia-200 dark:border-fuchsia-900/30 bg-white dark:bg-gray-800
+                    {% else %}border-emerald-200 dark:border-emerald-900/30 bg-white dark:bg-gray-800{% endif %}"
             data-aos="fade-up"
             data-aos-delay="{{ loop.index0 * 100 }}">
 
+            <!-- Gradient accent bar -->
+            <div class="card-accent accent-{{ cat }}"></div>
+
             <!-- Dynamic Phase Badge -->
             <div class="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm z-10
-                {% if challenge.challenge_type == 'one_phase' %}badge-one-phase
-                {% elif challenge.challenge_type == 'two_phase' %}badge-two-phase
+                {% if cat == 'one_phase' %}badge-one-phase
+                {% elif cat == 'two_phase' %}badge-two-phase
+                {% elif cat == 'three_phase' %}badge-three-phase
+                {% elif cat == 'exclusive' %}badge-exclusive
                 {% else %}badge-instant{% endif %}">
-                {% if challenge.challenge_type == 'one_phase' %}One Phase
-                {% elif challenge.challenge_type == 'two_phase' %}Two Phase
-                {% else %}Instant Funded{% endif %}
+                {% if cat == 'one_phase' %}1 Step
+                {% elif cat == 'two_phase' %}2 Step
+                {% elif cat == 'three_phase' %}3 Step
+                {% elif cat == 'exclusive' %}Exclusive
+                {% else %}Instant{% endif %}
             </div>
 
             <div class="p-6 lg:p-8">
                 <!-- Challenge Header -->
                 <div class="text-center mb-6 pt-4">
-                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 
-                                    {% if challenge.challenge_type == 'one_phase' %}bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300
-                                    {% elif challenge.challenge_type == 'two_phase' %}bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4
+                                    {% if cat == 'one_phase' %}bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300
+                                    {% elif cat == 'two_phase' %}bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300
+                                    {% elif cat == 'three_phase' %}bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300
+                                    {% elif cat == 'exclusive' %}bg-fuchsia-100 dark:bg-fuchsia-900/50 text-fuchsia-600 dark:text-fuchsia-300
                                     {% else %}bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300{% endif %}">
-                        <i class="fas 
-                                        {% if challenge.challenge_type == 'one_phase' %}fa-seedling
-                                        {% elif challenge.challenge_type == 'two_phase' %}fa-rocket
+                        <i class="fas
+                                        {% if cat == 'one_phase' %}fa-seedling
+                                        {% elif cat == 'two_phase' %}fa-rocket
+                                        {% elif cat == 'three_phase' %}fa-layer-group
+                                        {% elif cat == 'exclusive' %}fa-star
                                         {% else %}fa-crown{% endif %} text-3xl">
                         </i>
                     </div>
@@ -153,13 +249,20 @@
                         {{ challenge.name }}
                     </h3>
 
-                    <div class="flex items-center justify-center gap-2 mb-1">
-                        <span class="text-4xl font-bold text-gray-900 dark:text-white">{{ '$' if (challenge.currency or 'USD')|upper == 'USD' else (challenge.currency or 'USD') }}{{ challenge.price }} {{ challenge.currency or 'USD' }}</span>
+                    <div class="flex items-baseline justify-center gap-2 mb-1">
+                        <span class="text-4xl font-extrabold text-gray-900 dark:text-white">{% if (challenge.currency or 'USD')|upper == 'USD' %}${{ challenge.price }}{% else %}{{ challenge.currency or 'USD' }} {{ challenge.price }}{% endif %}</span>
                         <span class="text-gray-500 dark:text-gray-300">/ one-time</span>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-300"></p>
                     <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">${{ "{:,}".format(challenge.account_size) }} Account Size</div>
-                    
+
+                    {% if 'pay as you go' in _name %}
+                    <p class="text-xs text-fuchsia-600 dark:text-fuchsia-400 font-semibold mt-2">Pay Phase 1 now — Phase 2 only if you pass</p>
+                    {% elif 'pay after you pass' in _name %}
+                    <p class="text-xs text-fuchsia-600 dark:text-fuchsia-400 font-semibold mt-2">Entry fee — activation only if you pass</p>
+                    {% endif %}
+
+                    <p class="text-amber-500 dark:text-amber-400 text-sm font-bold mt-3">🎁 Get 1 free when you're funded</p>
+
                     <!-- 🛡️ Safety Rule Badges -->
                     {% if challenge.sl_mandatory_enabled or challenge.activity_rule_enabled or challenge.max_lot_size_enabled %}
                     <div class="flex justify-center gap-2 mt-3">
@@ -176,16 +279,16 @@
                     {% endif %}
                 </div>
 
-                <!-- Challenge Features -->
+                <!-- Challenge Rules (REAL values from the challenge row, never hardcoded) -->
                 {% if challenge.challenge_type == 'one_phase' %}
-                <div class="space-y-3 mb-6 text-sm">
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Target</span><span class="font-semibold text-green-600 dark:text-green-400">{{ challenge.phase1_target }}%</span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Daily Drawdown</span><span class="font-semibold text-red-600 dark:text-red-400 text-right">{{ challenge.phase1_daily_loss }}%<br><span class="text-xs text-gray-500">{{ dd_label(challenge.phase1_daily_dd_type) }}</span></span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Overall Drawdown</span><span class="font-semibold text-red-600 dark:text-red-400 text-right">{{ challenge.phase1_overall_loss }}%<br><span class="text-xs text-gray-500">{{ dd_label(challenge.phase1_overall_dd_type) }}</span></span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Min Days</span><span class="font-semibold text-blue-600 dark:text-blue-400">{{ challenge.phase1_min_days }}</span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Duration</span><span class="font-semibold text-blue-600 dark:text-blue-400">{{ challenge.phase1_duration }} days</span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Leverage</span><span class="font-semibold text-blue-600 dark:text-blue-400">{{ challenge.phase1_leverage }}</span></div>
-                    <div class="flex justify-between items-center py-2"><span class="text-gray-600 dark:text-gray-400">Profit Share</span><span class="font-semibold text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span></div>
+                <div class="mb-6 text-sm">
+                    <div class="spec-row"><span class="k">Target</span><span class="v text-green-600 dark:text-green-400">{{ challenge.phase1_target }}%</span></div>
+                    <div class="spec-row"><span class="k">Daily Drawdown</span><span class="v text-red-600 dark:text-red-400 text-right">{{ challenge.phase1_daily_loss }}%<br><span class="text-xs font-normal text-gray-500">{{ dd_label(challenge.phase1_daily_dd_type) }}</span></span></div>
+                    <div class="spec-row"><span class="k">Overall Drawdown</span><span class="v text-red-600 dark:text-red-400 text-right">{{ challenge.phase1_overall_loss }}%<br><span class="text-xs font-normal text-gray-500">{{ dd_label(challenge.phase1_overall_dd_type) }}</span></span></div>
+                    <div class="spec-row"><span class="k">Min Days</span><span class="v text-blue-600 dark:text-blue-400">{{ min_days_label(challenge.phase1_min_days) }}</span></div>
+                    <div class="spec-row"><span class="k">Duration</span><span class="v text-blue-600 dark:text-blue-400">{{ duration_label(challenge.phase1_duration) }}</span></div>
+                    <div class="spec-row"><span class="k">Leverage</span><span class="v text-blue-600 dark:text-blue-400">{{ challenge.phase1_leverage }}</span></div>
+                    <div class="spec-row"><span class="k">Profit Share</span><span class="v text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span></div>
                 </div>
                 {% elif challenge.challenge_type == 'two_phase' %}
                 <div class="mb-6">
@@ -195,8 +298,8 @@
                             <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase1_target }}%</span></div>
                             <div class="flex justify-between"><span>Daily DD</span><span class="font-semibold text-right">{{ challenge.phase1_daily_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase1_daily_dd_type) }}</span></span></div>
                             <div class="flex justify-between"><span>Overall DD</span><span class="font-semibold text-right">{{ challenge.phase1_overall_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase1_overall_dd_type) }}</span></span></div>
-                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ challenge.phase1_min_days }}</span></div>
-                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ challenge.phase1_duration }}d</span></div>
+                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ min_days_label(challenge.phase1_min_days) }}</span></div>
+                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ duration_short(challenge.phase1_duration) }}</span></div>
                             <div class="flex justify-between"><span>Lev</span><span class="font-semibold">{{ challenge.phase1_leverage }}</span></div>
                         </div>
                         <div class="space-y-2 pl-3">
@@ -204,40 +307,85 @@
                             <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase2_target }}%</span></div>
                             <div class="flex justify-between"><span>Daily DD</span><span class="font-semibold text-right">{{ challenge.phase2_daily_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase2_daily_dd_type) }}</span></span></div>
                             <div class="flex justify-between"><span>Overall DD</span><span class="font-semibold text-right">{{ challenge.phase2_overall_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase2_overall_dd_type) }}</span></span></div>
-                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ challenge.phase2_min_days }}</span></div>
-                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ challenge.phase2_duration }}d</span></div>
+                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ min_days_label(challenge.phase2_min_days) }}</span></div>
+                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ duration_short(challenge.phase2_duration) }}</span></div>
                             <div class="flex justify-between"><span>Lev</span><span class="font-semibold">{{ challenge.phase2_leverage }}</span></div>
                         </div>
                     </div>
                     <div class="flex justify-between items-center py-2 mt-2 px-2 text-sm"><span class="text-gray-600 dark:text-gray-400">Profit Share</span><span class="font-semibold text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span></div>
                 </div>
+                {% elif challenge.challenge_type == 'three_phase' %}
+                <div class="mb-6">
+                    <div class="grid grid-cols-3 gap-4 text-xs bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
+                        <div class="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-3">
+                            <div class="font-bold text-center text-amber-600 dark:text-amber-400 border-b dark:border-gray-700 pb-1">PHASE 1</div>
+                            <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase1_target }}%</span></div>
+                            <div class="flex justify-between"><span>Daily DD</span><span class="font-semibold text-right">{{ challenge.phase1_daily_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase1_daily_dd_type) }}</span></span></div>
+                            <div class="flex justify-between"><span>Overall DD</span><span class="font-semibold text-right">{{ challenge.phase1_overall_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase1_overall_dd_type) }}</span></span></div>
+                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ min_days_label(challenge.phase1_min_days) }}</span></div>
+                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ duration_short(challenge.phase1_duration) }}</span></div>
+                            <div class="flex justify-between"><span>Lev</span><span class="font-semibold">{{ challenge.phase1_leverage }}</span></div>
+                        </div>
+                        <div class="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-3">
+                            <div class="font-bold text-center text-amber-600 dark:text-amber-400 border-b dark:border-gray-700 pb-1">PHASE 2</div>
+                            <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase2_target }}%</span></div>
+                            <div class="flex justify-between"><span>Daily DD</span><span class="font-semibold text-right">{{ challenge.phase2_daily_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase2_daily_dd_type) }}</span></span></div>
+                            <div class="flex justify-between"><span>Overall DD</span><span class="font-semibold text-right">{{ challenge.phase2_overall_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase2_overall_dd_type) }}</span></span></div>
+                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ min_days_label(challenge.phase2_min_days) }}</span></div>
+                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ duration_short(challenge.phase2_duration) }}</span></div>
+                            <div class="flex justify-between"><span>Lev</span><span class="font-semibold">{{ challenge.phase2_leverage }}</span></div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="font-bold text-center text-amber-600 dark:text-amber-400 border-b dark:border-gray-700 pb-1">PHASE 3</div>
+                            <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase3_target }}%</span></div>
+                            <div class="flex justify-between"><span>Daily DD</span><span class="font-semibold text-right">{{ challenge.phase3_daily_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase3_daily_dd_type) }}</span></span></div>
+                            <div class="flex justify-between"><span>Overall DD</span><span class="font-semibold text-right">{{ challenge.phase3_overall_loss }}%<br><span class="text-[10px] text-gray-500">{{ dd_label(challenge.phase3_overall_dd_type) }}</span></span></div>
+                            <div class="flex justify-between"><span>Min Days</span><span class="font-semibold">{{ min_days_label(challenge.phase3_min_days) }}</span></div>
+                            <div class="flex justify-between"><span>Duration</span><span class="font-semibold">{{ duration_short(challenge.phase3_duration) }}</span></div>
+                            <div class="flex justify-between"><span>Lev</span><span class="font-semibold">{{ challenge.phase3_leverage }}</span></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center py-2 mt-2 px-2 text-sm"><span class="text-gray-600 dark:text-gray-400">Profit Share</span><span class="font-semibold text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span></div>
+                </div>
                 {% else %}
-                <div class="space-y-3 mb-6 text-sm">
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Daily Drawdown</span><span class="font-semibold text-red-600 dark:text-red-400 text-right">{{ challenge.instant_daily_loss }}%<br><span class="text-xs text-gray-500">{{ dd_label(challenge.instant_daily_dd_type) }}</span></span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Overall Drawdown</span><span class="font-semibold text-red-600 dark:text-red-400 text-right">{{ challenge.instant_overall_loss }}%<br><span class="text-xs text-gray-500">{{ dd_label(challenge.instant_overall_dd_type) }}</span></span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Min Days</span><span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ challenge.instant_min_days }}</span></div>
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Leverage</span><span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ challenge.instant_leverage }}</span></div>
-                    <div class="flex justify-between items-center py-2"><span class="text-gray-600 dark:text-gray-400">Profit Share</span><span class="font-semibold text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span></div>
+                <div class="mb-6 text-sm">
+                    <div class="spec-row"><span class="k">Target</span><span class="v text-green-600 dark:text-green-400">No target</span></div>
+                    <div class="spec-row"><span class="k">Daily Drawdown</span><span class="v text-red-600 dark:text-red-400 text-right">{{ challenge.instant_daily_loss }}%<br><span class="text-xs font-normal text-gray-500">{{ dd_label(challenge.instant_daily_dd_type) }}</span></span></div>
+                    <div class="spec-row"><span class="k">Overall Drawdown</span><span class="v text-red-600 dark:text-red-400 text-right">{{ challenge.instant_overall_loss }}%<br><span class="text-xs font-normal text-gray-500">{{ dd_label(challenge.instant_overall_dd_type) }}</span></span></div>
+                    <div class="spec-row"><span class="k">Min Days</span><span class="v text-emerald-600 dark:text-emerald-400">{{ min_days_label(challenge.instant_min_days) }}</span></div>
+                    <div class="spec-row"><span class="k">Leverage</span><span class="v text-emerald-600 dark:text-emerald-400">{{ challenge.instant_leverage }}</span></div>
+                    <div class="spec-row"><span class="k">Profit Share</span><span class="v text-green-600 dark:text-green-400">{{ challenge.user_profit_share }}%</span></div>
                 </div>
                 {% endif %}
 
                 <!-- Action Button -->
-                {% if challenge.challenge_type == 'one_phase' %}
+                {% if cat == 'one_phase' %}
                 {% set button_class = 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700' %}
-                {% elif challenge.challenge_type == 'two_phase' %}
+                {% elif cat == 'two_phase' %}
                 {% set button_class = 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' %}
+                {% elif cat == 'three_phase' %}
+                {% set button_class = 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700' %}
+                {% elif cat == 'exclusive' %}
+                {% set button_class = 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 hover:from-fuchsia-600 hover:to-fuchsia-700' %}
                 {% else %}
                 {% set button_class = 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700' %}
                 {% endif %}
 
                 <a href="{{ url_for('user.buy_challenge', challenge_id=challenge.id) }}"
-                    class="block w-full {{ button_class }} text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] text-center no-underline">
+                    class="block w-full {{ button_class }} text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] text-center no-underline shadow-lg">
                     <i class="fas fa-bolt mr-2"></i> SELECT CHALLENGE
                 </a>
             </div>
         </div>
     </div>
     {% endfor %}
+</div>
+
+<!-- Shown when a filter has no matching cards -->
+<div id="no-filter-results" class="hidden glass-card p-8 text-center mb-12">
+    <i class="fas fa-search text-gray-400 text-4xl mb-4"></i>
+    <h3 class="text-xl font-bold text-gray-700 dark:text-gray-200">No challenges in this category yet</h3>
+    <p class="text-gray-600 dark:text-gray-400">Try another category or check back soon.</p>
 </div>
 {% else %}
 <div class="glass-card p-8 text-center mb-12">
@@ -261,14 +409,19 @@
     function filterChallenges(type, btn) {
         document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
         btn.classList.add('active');
-        
+
+        let visible = 0;
         document.querySelectorAll('.challenge-card-wrapper').forEach(wrapper => {
             if (type === 'all' || wrapper.dataset.type === type) {
                 wrapper.classList.remove('hidden');
+                visible++;
             } else {
                 wrapper.classList.add('hidden');
             }
         });
+
+        const empty = document.getElementById('no-filter-results');
+        if (empty) { empty.classList.toggle('hidden', visible > 0); }
     }
 </script>
 {% endblock %}
