@@ -157,6 +157,17 @@ class ChallengeTemplate(db.Model):
     phase2_leverage = db.Column(db.String(20), nullable=True)
     phase2_rules = db.Column(db.Text, nullable=True)
 
+    # Phase 3 Rules
+    phase3_target = db.Column(db.Float, nullable=True)
+    phase3_daily_loss = db.Column(db.Float, nullable=True)
+    phase3_daily_dd_type = db.Column(db.String(20), nullable=False, default='equity')
+    phase3_overall_loss = db.Column(db.Float, nullable=True)
+    phase3_overall_dd_type = db.Column(db.String(20), nullable=False, default='equity')
+    phase3_min_days = db.Column(db.Integer, nullable=True)
+    phase3_duration = db.Column(db.Integer, nullable=True)
+    phase3_leverage = db.Column(db.String(20), nullable=True)
+    phase3_rules = db.Column(db.Text, nullable=True)
+
     # Instant Rules
     instant_daily_loss = db.Column(db.Float, nullable=True)
     instant_daily_dd_type = db.Column(db.String(20), nullable=False, default='equity')
@@ -273,7 +284,7 @@ class ChallengeTemplate(db.Model):
                 'duration': None if self.no_expiry else 365,
                 'leverage': self.instant_leverage or '1:100',
             }
-        if ctype == 'two_phase' and phase == 2:
+        if ctype in ('two_phase', 'three_phase') and phase == 2:
             return {
                 'phase_name': 'Phase 2',
                 'currency': self.currency, 'no_expiry': self.no_expiry,
@@ -299,6 +310,33 @@ class ChallengeTemplate(db.Model):
                 'min_days': self.phase2_min_days or 0,
                 'duration': None if self.no_expiry else (self.phase2_duration or 30),
                 'leverage': self.phase2_leverage or '1:100',
+            }
+        if ctype == 'three_phase' and phase == 3:
+            return {
+                'phase_name': 'Phase 3',
+                'currency': self.currency, 'no_expiry': self.no_expiry,
+                'consistency_enabled': self.consistency_enabled,
+                'max_single_day_profit_percent': self.max_single_day_profit_percent,
+                'consistency_action': self.consistency_action,
+                'first_withdrawal_days': self.first_withdrawal_days,
+                'min_payout_percent': self.min_payout_percent,
+                'performance_reward_percent': self.performance_reward_percent,
+                'performance_reward_mode': self.performance_reward_mode,
+                'max_accounts_per_user': self.max_accounts_per_user,
+                'fee_refund_on_pass': self.fee_refund_on_pass,
+                'refund_policy_text': self.refund_policy_text,
+                'banned_practices': self.banned_practices or [],
+                'news_trading_allowed': self.news_trading_allowed,
+                'overnight_trading_allowed': self.overnight_trading_allowed,
+                'ea_allowed': self.ea_allowed,
+                'target': self.phase3_target or 0.0,
+                'daily_loss': self.phase3_daily_loss or 0.0,
+                'daily_dd_type': self.phase3_daily_dd_type or 'equity',
+                'overall_loss': self.phase3_overall_loss or 0.0,
+                'overall_dd_type': self.phase3_overall_dd_type or 'equity',
+                'min_days': self.phase3_min_days or 0,
+                'duration': None if self.no_expiry else (self.phase3_duration or 30),
+                'leverage': self.phase3_leverage or '1:100',
             }
         return {
             'phase_name': 'Phase 1',
@@ -342,6 +380,7 @@ class ChallengeTemplate(db.Model):
             'challenge_type': self.challenge_type,
             'phase1': self.get_phase_rules(1),
             'phase2': self.get_phase_rules(2),
+            'phase3': self.get_phase_rules(3) if ctype == 'three_phase' else None,
             'instant': self.get_phase_rules(0),
             'weekend_trading': self.weekend_trading,
             'currency': self.currency,
@@ -449,6 +488,7 @@ class TradingJourney(db.Model):
     # Phase progression tracking
     phase1_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     phase2_started_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    phase3_started_at = db.Column(db.DateTime(timezone=True), nullable=True)
     funded_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
     # Phase tracking (preserves lifetime stats)

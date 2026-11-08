@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file
 from datetime import datetime, timedelta, timezone
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection
+from models import db, User, SiteSettings, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection
 from . import admin_bp, admin_required
 from notification_service import create_notification
 import secrets
@@ -181,7 +181,7 @@ def admin_rulebook_reorder():
 @admin_bp.route('/settings')
 @admin_required
 def admin_settings():
-    return render_template('admin/settings.html')
+    return render_template('admin/settings.html', settings=SiteSettings.get_settings())
 
 
 @admin_bp.route('/faq')

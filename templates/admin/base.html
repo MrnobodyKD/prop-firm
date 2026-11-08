@@ -404,9 +404,6 @@
             <a href="/admin/manage-challenges" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_manage_challenges' in request.endpoint or 'admin.admin_edit_challenge' in request.endpoint or 'admin.admin_add_challenge' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-tasks w-5"></i><span>Manage Challenges</span>
             </a>
-            <a href="/admin/rulebook" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_rulebook' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-book-open w-5"></i><span>Rulebook Manager</span>
-            </a>
             <a href="/admin/payments" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.payments' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-money-bill-wave w-5"></i><span>Payments</span>
             </a>
@@ -422,30 +419,15 @@
             <a href="/admin/coupons" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_coupons' in request.endpoint or 'admin.admin_coupon_detail' in request.endpoint or 'admin.admin_coupon_analytics' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-ticket-alt w-5"></i><span>Coupons</span>
             </a>
-            <a href="{{ url_for('admin.email_center_dashboard') }}" class="flex items-center space-x-3 p-3 rounded-xl transition {% if request.endpoint and request.endpoint.startswith('admin.email_') and request.endpoint != 'admin.email_analytics' %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-envelope-open-text w-5"></i><span>Email Center</span>
-            </a>
-            <a href="{{ url_for('admin.email_analytics') }}" class="flex items-center space-x-3 p-3 rounded-xl transition ml-4 {% if request.endpoint == 'admin.email_analytics' %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-chart-pie w-5 text-sm"></i><span class="text-sm">Email Analytics</span>
-            </a>
             <a href="{{ url_for('admin_blog.list_posts') }}" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin_blog' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-blog w-5"></i><span>Manage Blog</span>
             </a>
 
             <div class="px-3 py-2 mt-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Administration</div>
-            <a href="/admin/moderators" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.manage_moderators' in request.endpoint or 'admin.add_moderator' in request.endpoint or 'admin.edit_moderator' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-user-shield w-5"></i><span>Manage Moderators</span>
-            </a>
-            <a href="/admin/moderators/activity" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.moderator_activity' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-history w-5"></i><span>Moderator Activity</span>
-            </a>
 
             <div class="px-3 py-2 mt-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Support System</div>
             <a href="/admin/support" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_support' in request.endpoint or 'admin.admin_ticket_detail' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-headset w-5"></i><span>Support Tickets</span>
-            </a>
-            <a href="/admin/faq" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_faq' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-question-circle w-5"></i><span>Manage FAQs</span>
             </a>
             <a href="/admin/settings" class="flex items-center space-x-3 p-3 rounded-xl transition {% if request.endpoint == 'admin.settings' %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-cog w-5"></i><span>Settings</span>
@@ -491,12 +473,6 @@
             </a>
             {% endif %}
             
-            {% if moderator.has_permission('can_access_rulebook') %}
-            <a href="/admin/rulebook" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_rulebook' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-book-open w-5"></i><span>Rulebook Manager</span>
-            </a>
-            {% endif %}
-            
             {% if moderator.has_permission('can_access_blog') %}
             <a href="{{ url_for('admin_blog.list_posts') }}" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin_blog' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-blog w-5"></i><span>Manage Blog</span>
@@ -506,12 +482,6 @@
             {% if moderator.has_permission('can_access_support') %}
             <a href="/admin/support" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_support' in request.endpoint or 'admin.admin_ticket_detail' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
                 <i class="fas fa-headset w-5"></i><span>Support Tickets</span>
-            </a>
-            {% endif %}
-            
-            {% if moderator.has_permission('can_access_faqs') %}
-            <a href="/admin/faq" class="flex items-center space-x-3 p-3 rounded-xl transition {% if 'admin.admin_faq' in request.endpoint %}bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
-                <i class="fas fa-question-circle w-5"></i><span>Manage FAQs</span>
             </a>
             {% endif %}
 
@@ -571,17 +541,12 @@
             <a href="/admin/manual-claims" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-receipt w-5"></i><span>Manual Claims</span></a>
             <a href="/admin/payouts" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-wallet w-5"></i><span>Payouts</span></a>
             <a href="/admin/coupons" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-ticket-alt w-5"></i><span>Coupons</span></a>
-            <a href="{{ url_for('admin.email_center_dashboard') }}" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-envelope-open-text w-5"></i><span>Email Center</span></a>
-            <a href="{{ url_for('admin.email_analytics') }}" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 ml-4" onclick="toggleSidebar()"><i class="fas fa-chart-pie w-5 text-sm"></i><span class="text-sm">Email Analytics</span></a>
             <a href="{{ url_for('admin_blog.list_posts') }}" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-blog w-5"></i><span>Manage Blog</span></a>
             
             <div class="px-3 py-2 mt-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Administration</div>
-            <a href="/admin/moderators" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-user-shield w-5"></i><span>Manage Moderators</span></a>
-            <a href="/admin/moderators/activity" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-history w-5"></i><span>Moderator Activity</span></a>
             
             <div class="px-3 py-2 mt-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Support</div>
             <a href="/admin/support" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-headset w-5"></i><span>Support Tickets</span></a>
-            <a href="/admin/faq" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-question-circle w-5"></i><span>Manage FAQs</span></a>
             <a href="/admin/settings" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-cog w-5"></i><span>Settings</span></a>
             
             {% elif is_moderator and moderator %}
@@ -595,10 +560,8 @@
             {% if moderator.has_permission('can_access_notifications') %}<a href="/admin/notifications" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-bell w-5"></i><span>Notifications</span></a>{% endif %}
             {% if moderator.has_permission('can_access_challenges') %}<a href="/admin/challenges" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-trophy w-5"></i><span>Challenges</span></a>{% endif %}
             {% if moderator.has_permission('can_access_progression') %}<a href="/admin/progression-requests" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-route w-5"></i><span>Progression</span></a>{% endif %}
-            {% if moderator.has_permission('can_access_rulebook') %}<a href="/admin/rulebook" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-book-open w-5"></i><span>Rulebook</span></a>{% endif %}
             {% if moderator.has_permission('can_access_blog') %}<a href="{{ url_for('admin_blog.list_posts') }}" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-blog w-5"></i><span>Blog</span></a>{% endif %}
             {% if moderator.has_permission('can_access_support') %}<a href="/admin/support" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-headset w-5"></i><span>Support</span></a>{% endif %}
-            {% if moderator.has_permission('can_access_faqs') %}<a href="/admin/faq" class="flex items-center space-x-3 p-3 rounded-xl transition text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800" onclick="toggleSidebar()"><i class="fas fa-question-circle w-5"></i><span>FAQs</span></a>{% endif %}
             
             <div class="px-3 py-2 mt-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Account</div>
             <a href="/logout" class="flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition" onclick="toggleSidebar()"><i class="fas fa-sign-out-alt w-5"></i><span>Logout</span></a>

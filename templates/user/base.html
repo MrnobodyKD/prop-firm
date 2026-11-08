@@ -779,6 +779,15 @@
             </div>
         </header>
 
+        {% if user and not user.email_verified %}
+        <div class="p-4 lg:px-6 pb-0 max-w-7xl mx-auto">
+            <div class="p-3 mb-4 rounded-xl border shadow-sm bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 flex items-center justify-between gap-3">
+                <span>Please verify your email to secure your account.</span>
+                <a href="{{ url_for('auth.send_verification_email') }}" class="font-bold underline whitespace-nowrap">Send verification email</a>
+            </div>
+        </div>
+        {% endif %}
+
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="p-4 lg:p-6 pb-0 max-w-7xl mx-auto">

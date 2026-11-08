@@ -375,7 +375,7 @@ def dashboard():
     progression_eligible_challenges = ChallengePurchase.query.filter(
         ChallengePurchase.user_id == user.id,
         ChallengePurchase.status == 'passed',
-        ChallengePurchase.current_phase.in_([1, 2])
+        ChallengePurchase.current_phase.in_([1, 2, 3])
     ).order_by(ChallengePurchase.completed_at.desc().nullslast()).all()
     
     return render_template('user/user_dashboard.html',
@@ -940,7 +940,7 @@ def request_progression(challenge_id, request_type):
         user = User.query.get(session['user_id'])
         challenge = ChallengePurchase.query.filter_by(id=challenge_id, user_id=user.id).first_or_404()
 
-        if request_type not in ['phase2', 'funded']:
+        if request_type not in ['phase2', 'phase3', 'funded']:
             flash('Invalid progression request type.', 'error')
             return redirect(url_for('user.dashboard'))
 
@@ -949,11 +949,19 @@ def request_progression(challenge_id, request_type):
             return redirect(url_for('user.dashboard'))
 
         if request_type == 'phase2':
-            allowed = challenge.challenge_type == 'two_phase' and challenge.current_phase == 1
+            allowed = challenge.challenge_type in ('two_phase', 'three_phase') and challenge.current_phase == 1
             submitted_title = 'Phase 2 Request Submitted'
             submitted_message = 'Your Phase 2 account request is pending admin review.'
+        elif request_type == 'phase3':
+            allowed = challenge.challenge_type == 'three_phase' and challenge.current_phase == 2
+            submitted_title = 'Phase 3 Request Submitted'
+            submitted_message = 'Your Phase 3 account request is pending admin review.'
         else:
-            allowed = challenge.current_phase == 2 or (challenge.challenge_type == 'one_phase' and challenge.current_phase == 1)
+            allowed = (
+                (challenge.challenge_type == 'two_phase' and challenge.current_phase == 2)
+                or (challenge.challenge_type == 'three_phase' and challenge.current_phase == 3)
+                or (challenge.challenge_type == 'one_phase' and challenge.current_phase == 1)
+            )
             submitted_title = 'Funded Request Submitted'
             submitted_message = 'Your funded account request is pending admin review.'
 

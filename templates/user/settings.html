@@ -56,8 +56,14 @@
                 <!-- Email Address -->
                 <div class="space-y-2">
                     <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-500">Email Address</label>
-                    <p class="bg-gray-100 dark:bg-gray-900/40 rounded-xl py-3 px-4 text-gray-500 dark:text-gray-500 font-medium">
+                    <p class="bg-gray-100 dark:bg-gray-900/40 rounded-xl py-3 px-4 text-gray-500 dark:text-gray-500 font-medium flex flex-wrap items-center gap-2">
                         {{ user.email }}
+                        {% if user.email_verified %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Verified</span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Not verified</span>
+                        <a href="{{ url_for('auth.send_verification_email') }}" class="text-blue-600 dark:text-blue-400 text-xs font-bold underline">Send verification email</a>
+                        {% endif %}
                     </p>
                 </div>
 
@@ -74,6 +80,31 @@
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-blue-600/20">
                     Save Changes
                 </button>
+            </div>
+        </form>
+    </div>
+
+
+    <!-- Change Password -->
+    <div class="glass-card p-6 lg:p-10 border dark:border-dark-border" data-aos="fade-up" style="animation-delay: 0.1s;">
+        <div class="flex items-center gap-4 mb-8 pb-6 border-b dark:border-dark-border">
+            <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-lock text-purple-600 dark:text-purple-400 text-3xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Change Password</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Update your account password</p>
+            </div>
+        </div>
+        <form method="POST" action="{{ url_for('user.change_password') }}" class="space-y-6">
+            {% for field, label in [('current_password', 'Current Password'), ('new_password', 'New Password'), ('confirm_password', 'Confirm New Password')] %}
+            <div class="space-y-2">
+                <label for="{{ field }}" class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-500">{{ label }}</label>
+                <input type="password" name="{{ field }}" id="{{ field }}" required class="w-full bg-gray-50 dark:bg-black/40 border dark:border-dark-border rounded-xl py-3 px-4 text-gray-900 dark:text-white focus:border-blue-500 outline-none transition">
+            </div>
+            {% endfor %}
+            <div class="pt-2 flex justify-end">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-blue-600/20">Change Password</button>
             </div>
         </form>
     </div>

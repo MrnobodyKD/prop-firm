@@ -425,14 +425,32 @@ def register():
             db.session.flush()
             create_notification(
                 new_user.id,
-                'Welcome to Tragene Funded',
-                'Welcome to Tragene Funded! Your account has been created successfully. Explore our funded challenges to begin your trading journey.',
+                'Welcome to Mega Funded',
+                'Welcome to Mega Funded! Your account has been created successfully. Explore our funded challenges to begin your trading journey.',
                 'welcome',
                 action_url='/dashboard',
                 icon='party',
                 dedupe_key=f'welcome:{new_user.id}',
             )
             db.session.commit()
+            try:
+                verification_token = secrets.token_urlsafe(32)
+                new_user.email_verification_token = verification_token
+                db.session.commit()
+                verification_link = url_for(
+                    'auth.verify_email_token',
+                    token=verification_token,
+                    _external=True,
+                )
+                from email_service import send_automation_email
+                send_automation_email(
+                    'email_verification',
+                    new_user,
+                    variables={'verification_link': verification_link},
+                    force=True,
+                )
+            except Exception:
+                db.session.rollback()
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('auth.login'))
         except Exception as e:

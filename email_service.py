@@ -28,8 +28,8 @@ except ImportError:
     RESEND_AVAILABLE = False
 
 
-DEFAULT_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Tragene Funded <support@tragenefunded.com>")
-COMPANY_NAME = "Tragene Funded"
+DEFAULT_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Mega Funded <support@megafunded.online>")
+COMPANY_NAME = "Mega Funded"
 PLACEHOLDER_RE = re.compile(r"{{\s*([a-zA-Z0-9_]+)\s*}}")
 
 TEMPLATE_CATEGORIES = ["transactional", "marketing", "support", "challenge", "promotion", "newsletter"]
@@ -401,7 +401,7 @@ def export_logs_csv(query):
 
 def seed_email_center():
     defaults = [
-        ("email-verification", "Email Verification", "transactional", "Verify Your Email - Tragene Funded", """
+        ("email-verification", "Email Verification", "transactional", "Verify Your Email - Mega Funded", """
         <div style="font-family:Arial,sans-serif;padding:24px;color:#111827">
           <h2>Verify your email</h2>
           <p>Hello {{name}},</p>
@@ -409,11 +409,11 @@ def seed_email_center():
           <p><a href="{{verification_link}}" style="background:#16a34a;color:white;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">Verify Email</a></p>
           <p style="font-size:12px;color:#6b7280">If you did not create this account, you can ignore this email.</p>
         </div>""", ["name", "verification_link", "company_name"]),
-        ("welcome-email", "Welcome Email", "transactional", "Welcome to Tragene Funded", "<p>Hello {{name}}, welcome to {{company_name}}. Your account is ready.</p>", ["name", "company_name"]),
+        ("welcome-email", "Welcome Email", "transactional", "Welcome to Mega Funded", "<p>Hello {{name}}, welcome to {{company_name}}. Your account is ready.</p>", ["name", "company_name"]),
         ("purchase-confirmation", "Purchase Confirmation", "transactional", "Challenge Purchase Confirmed", "<p>Hello {{name}}, your {{challenge}} purchase is confirmed. Order: {{order_id}}</p>", ["name", "challenge", "order_id"]),
-        ("challenge-passed", "Challenge Passed", "challenge", "Challenge Passed - Tragene Funded", "<p>Congratulations {{name}}, you passed {{challenge}}.</p>", ["name", "challenge"]),
-        ("challenge-failed", "Challenge Failed", "challenge", "Challenge Failed - Tragene Funded", "<p>Hello {{name}}, your {{challenge}} has been marked failed. You can review available evidence here: {{evidence_url}}</p>", ["name", "challenge", "evidence_url"]),
-        ("password-reset", "Password Reset", "transactional", "Reset Your Password - Tragene Funded", """
+        ("challenge-passed", "Challenge Passed", "challenge", "Challenge Passed - Mega Funded", "<p>Congratulations {{name}}, you passed {{challenge}}.</p>", ["name", "challenge"]),
+        ("challenge-failed", "Challenge Failed", "challenge", "Challenge Failed - Mega Funded", "<p>Hello {{name}}, your {{challenge}} has been marked failed. You can review available evidence here: {{evidence_url}}</p>", ["name", "challenge", "evidence_url"]),
+        ("password-reset", "Password Reset", "transactional", "Reset Your Password - Mega Funded", """
         <div style="font-family:Arial,sans-serif;padding:24px;color:#111827">
           <h2>Reset your password</h2>
           <p>Hello {{name}},</p>

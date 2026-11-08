@@ -63,7 +63,7 @@ def _notify_challenge_breached(challenge, admin_id=None):
 
 def _activate_progression_stage(challenge, request_type):
     now = datetime.now(timezone.utc)
-    challenge.status = 'active' if request_type == 'phase2' else 'funded'
+    challenge.status = 'active' if request_type in ('phase2', 'phase3') else 'funded'
     challenge.monitoring_status = 'active'
     challenge.review_required = False
     challenge.is_terminated = False
@@ -74,9 +74,15 @@ def _activate_progression_stage(challenge, request_type):
         challenge.phase = 2
         challenge.phase2_started_at = now
         duration = challenge.challenge_template.phase2_duration if challenge.challenge_template else None
-    else:
+    elif request_type == 'phase3':
         challenge.current_phase = 3
         challenge.phase = 3
+        challenge.phase3_started_at = now
+        duration = challenge.challenge_template.phase3_duration if challenge.challenge_template else None
+    else:
+        funded_phase = 4 if challenge.challenge_type == 'three_phase' else 3
+        challenge.current_phase = funded_phase
+        challenge.phase = funded_phase
         challenge.funded_at = now
         duration = 365
 
@@ -270,6 +276,7 @@ def admin_dashboard():
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     
     open_tickets = SupportTicket.query.filter_by(status='open').count()
+    pending_manual_claims = Payment.query.filter_by(payment_method_type='manual', status='pending').count()
     
     total_revenue = db.session.query(db.func.coalesce(db.func.sum(Payment.amount), 0)).filter(
         Payment.status.in_(['SUCCESS', 'success'])
@@ -308,6 +315,7 @@ def admin_dashboard():
                          total_revenue=total_revenue,
                          revenue_change=revenue_change,
                          open_tickets=open_tickets,
+                         pending_manual_claims=pending_manual_claims,
                          settings=settings)
 
 

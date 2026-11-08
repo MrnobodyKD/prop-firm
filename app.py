@@ -421,10 +421,7 @@ def provision_challenge(payment, user, challenge_template_id):
     initial_status = 'phase1_active'
     initial_phase = 1
     
-    if ctype == 'two_phase':
-        initial_status = 'phase1_active'
-        initial_phase = 1
-    elif ctype == 'one_phase':
+    if ctype in ('one_phase', 'two_phase', 'three_phase'):
         initial_status = 'phase1_active'
         initial_phase = 1
     elif ctype == 'instant':
@@ -479,6 +476,7 @@ def provision_challenge(payment, user, challenge_template_id):
     purchase.review_required = False
     purchase.phase1_completed_at = None
     purchase.phase2_started_at = None
+    purchase.phase3_started_at = None
     purchase.funded_at = None
     purchase.phase_start_balance = float(challenge.account_size)
     purchase.phase_start_equity = float(challenge.account_size)
@@ -719,7 +717,7 @@ with app.app_context():
 
         if not User.query.filter_by(email=admin_email).first():
             admin = User(
-                first_name="Tragene",
+                first_name="Mega",
                 last_name="Admin",
                 email=admin_email,
                 phone="0000000000",
@@ -924,8 +922,8 @@ def create_cashfree_order():
         )
         
         order_meta = OrderMeta(
-            return_url=f"https://www.tragenefunded.com/payment-success?order_id={internal_order_id}",
-            notify_url="https://www.tragenefunded.com/cashfree-webhook"
+            return_url=f"https://megafunded.online/payment-success?order_id={internal_order_id}",
+            notify_url="https://megafunded.online/cashfree-webhook"
         )
         
         create_order_request = CreateOrderRequest(
@@ -1582,7 +1580,7 @@ Disallow: /logout
 Disallow: /api/
 Disallow: /cashfree-webhook
 
-Sitemap: https://www.tragenefunded.com/sitemap.xml
+Sitemap: https://megafunded.online/sitemap.xml
 """
     return Response(robots_content, mimetype='text/plain')
 
@@ -1929,7 +1927,7 @@ def n8n_health():
 # ===== MAIN =====
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("TRAGENE FUNDED SERVER")
+    print("MEGA FUNDED SERVER")
     print("="*60)
     print(f"Environment: {'DEVELOPMENT' if DEV_MODE else 'PRODUCTION'}")
     

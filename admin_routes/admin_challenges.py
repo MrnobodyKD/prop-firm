@@ -152,7 +152,7 @@ def admin_challenge_action():
         
         if action == 'force_pass_phase1':
             ctype = purchase.challenge_type or 'one_phase'
-            if ctype == 'two_phase':
+            if ctype in ('two_phase', 'three_phase'):
                 purchase.current_phase = 1
                 purchase.status = 'passed'
                 purchase.phase = 1
@@ -171,11 +171,18 @@ def admin_challenge_action():
             purchase.phase = 2
             purchase.completed_at = datetime.now(timezone.utc)
             _notify_challenge_passed(purchase, session.get('user_id'))
+
+        elif action == 'force_pass_phase3' and purchase.challenge_type == 'three_phase':
+            purchase.current_phase = 3
+            purchase.status = 'passed'
+            purchase.phase = 3
+            purchase.completed_at = datetime.now(timezone.utc)
+            _notify_challenge_passed(purchase, session.get('user_id'))
             
         elif action == 'force_pass_all':
-            purchase.current_phase = 3
+            purchase.current_phase = 4 if purchase.challenge_type == 'three_phase' else 3
             purchase.status = 'funded'
-            purchase.phase = 3
+            purchase.phase = purchase.current_phase
             purchase.funded_at = datetime.now(timezone.utc)
             _notify_challenge_passed(purchase, session.get('user_id'))
             
@@ -216,7 +223,7 @@ def admin_bulk_challenge_action():
         for purchase in purchases:
             if action == 'force_pass_phase1':
                 ctype = purchase.challenge_type or 'one_phase'
-                if ctype == 'two_phase':
+                if ctype in ('two_phase', 'three_phase'):
                     purchase.current_phase = 1
                     purchase.status = 'passed'
                     purchase.phase = 1
@@ -235,11 +242,18 @@ def admin_bulk_challenge_action():
                 purchase.phase = 2
                 purchase.completed_at = datetime.now(timezone.utc)
                 _notify_challenge_passed(purchase, session.get('user_id'))
+
+            elif action == 'force_pass_phase3' and purchase.challenge_type == 'three_phase':
+                purchase.current_phase = 3
+                purchase.status = 'passed'
+                purchase.phase = 3
+                purchase.completed_at = datetime.now(timezone.utc)
+                _notify_challenge_passed(purchase, session.get('user_id'))
                 
             elif action == 'force_pass_all':
-                purchase.current_phase = 3
+                purchase.current_phase = 4 if purchase.challenge_type == 'three_phase' else 3
                 purchase.status = 'funded'
-                purchase.phase = 3
+                purchase.phase = purchase.current_phase
                 purchase.funded_at = datetime.now(timezone.utc)
                 _notify_challenge_passed(purchase, session.get('user_id'))
                 
@@ -294,11 +308,13 @@ def admin_manage_challenges():
     one_phase_challenges = ChallengeTemplate.query.filter_by(challenge_type='one_phase').all()
     two_phase_challenges = ChallengeTemplate.query.filter_by(challenge_type='two_phase').all()
     instant_challenges = ChallengeTemplate.query.filter_by(challenge_type='instant').all()
+    three_phase_challenges = ChallengeTemplate.query.filter_by(challenge_type='three_phase').all()
     
     return render_template('admin/add_challenge.html',
                          one_phase_challenges=one_phase_challenges,
                          two_phase_challenges=two_phase_challenges,
-                         instant_challenges=instant_challenges)
+                         instant_challenges=instant_challenges,
+                         three_phase_challenges=three_phase_challenges)
 
 import re
 
@@ -312,6 +328,7 @@ def validate_challenge_form(data):
     for key in [
         'phase1_daily_dd_type', 'phase1_overall_dd_type',
         'phase2_daily_dd_type', 'phase2_overall_dd_type',
+        'phase3_daily_dd_type', 'phase3_overall_dd_type',
         'instant_daily_dd_type', 'instant_overall_dd_type'
     ]:
         if data.get(key, 'equity') not in ['equity', 'static']:
@@ -335,15 +352,20 @@ def validate_challenge_form(data):
         if duration is not None and int(duration) < 1:
             raise ValueError(f"{phase_name} Duration must be at least 1 day")
 
-    if ctype in ['one_phase', 'two_phase']:
+    if ctype in ['one_phase', 'two_phase', 'three_phase']:
         validate_percentages(data.get('phase1_target'), data.get('phase1_daily_loss'), data.get('phase1_overall_loss'), "Phase 1")
         validate_duration(data.get('phase1_min_days'), data.get('phase1_duration'), "Phase 1")
         validate_leverage(data.get('phase1_leverage'))
         
-        if ctype == 'two_phase':
+        if ctype in ('two_phase', 'three_phase'):
             validate_percentages(data.get('phase2_target'), data.get('phase2_daily_loss'), data.get('phase2_overall_loss'), "Phase 2")
             validate_duration(data.get('phase2_min_days'), data.get('phase2_duration'), "Phase 2")
             validate_leverage(data.get('phase2_leverage'))
+
+        if ctype == 'three_phase':
+            validate_percentages(data.get('phase3_target'), data.get('phase3_daily_loss'), data.get('phase3_overall_loss'), "Phase 3")
+            validate_duration(data.get('phase3_min_days'), data.get('phase3_duration'), "Phase 3")
+            validate_leverage(data.get('phase3_leverage'))
             
     elif ctype == 'instant':
         validate_percentages(None, data.get('instant_daily_loss'), data.get('instant_overall_loss'), "Instant")
@@ -392,7 +414,9 @@ def admin_save_challenge():
         ctype = request.form.get('challenge_type', 'one_phase')
         challenge.challenge_type = ctype
         
-        if ctype == 'two_phase':
+        if ctype == 'three_phase':
+            challenge.phase = 3
+        elif ctype == 'two_phase':
             challenge.phase = 2
         elif ctype == 'instant':
             challenge.phase = 0
@@ -418,6 +442,16 @@ def admin_save_challenge():
         challenge.phase2_duration = None
         challenge.phase2_leverage = None
         challenge.phase2_rules = None
+
+        challenge.phase3_target = None
+        challenge.phase3_daily_loss = None
+        challenge.phase3_daily_dd_type = 'equity'
+        challenge.phase3_overall_loss = None
+        challenge.phase3_overall_dd_type = 'equity'
+        challenge.phase3_min_days = None
+        challenge.phase3_duration = None
+        challenge.phase3_leverage = None
+        challenge.phase3_rules = None
         
         challenge.instant_daily_loss = None
         challenge.instant_daily_dd_type = 'equity'
@@ -435,7 +469,7 @@ def admin_save_challenge():
             val = request.form.get(key)
             return int(val) if val else None
 
-        if ctype in ['one_phase', 'two_phase']:
+        if ctype in ['one_phase', 'two_phase', 'three_phase']:
             challenge.phase1_target = get_float('phase1_target')
             challenge.phase1_daily_loss = get_float('phase1_daily_loss')
             challenge.phase1_daily_dd_type = request.form.get('phase1_daily_dd_type', 'equity')
@@ -446,7 +480,7 @@ def admin_save_challenge():
             challenge.phase1_leverage = request.form.get('phase1_leverage')
             challenge.phase1_rules = request.form.get('phase1_rules_text', '')
             
-            if ctype == 'two_phase':
+            if ctype in ('two_phase', 'three_phase'):
                 challenge.phase2_target = get_float('phase2_target')
                 challenge.phase2_daily_loss = get_float('phase2_daily_loss')
                 challenge.phase2_daily_dd_type = request.form.get('phase2_daily_dd_type', 'equity')
@@ -456,6 +490,17 @@ def admin_save_challenge():
                 challenge.phase2_duration = get_int('phase2_duration')
                 challenge.phase2_leverage = request.form.get('phase2_leverage')
                 challenge.phase2_rules = request.form.get('phase2_rules_text', '')
+
+            if ctype == 'three_phase':
+                challenge.phase3_target = get_float('phase3_target')
+                challenge.phase3_daily_loss = get_float('phase3_daily_loss')
+                challenge.phase3_daily_dd_type = request.form.get('phase3_daily_dd_type', 'equity')
+                challenge.phase3_overall_loss = get_float('phase3_overall_loss')
+                challenge.phase3_overall_dd_type = request.form.get('phase3_overall_dd_type', 'equity')
+                challenge.phase3_min_days = get_int('phase3_min_days')
+                challenge.phase3_duration = get_int('phase3_duration')
+                challenge.phase3_leverage = request.form.get('phase3_leverage')
+                challenge.phase3_rules = request.form.get('phase3_rules_text', '')
                 
         elif ctype == 'instant':
             challenge.instant_daily_loss = get_float('instant_daily_loss')
@@ -539,12 +584,14 @@ def admin_edit_challenge(challenge_id):
     one_phase_challenges = ChallengeTemplate.query.filter_by(challenge_type='one_phase').all()
     two_phase_challenges = ChallengeTemplate.query.filter_by(challenge_type='two_phase').all()
     instant_challenges = ChallengeTemplate.query.filter_by(challenge_type='instant').all()
+    three_phase_challenges = ChallengeTemplate.query.filter_by(challenge_type='three_phase').all()
     
     return render_template('admin/add_challenge.html',
                          challenge=challenge,
                          one_phase_challenges=one_phase_challenges,
                          two_phase_challenges=two_phase_challenges,
-                         instant_challenges=instant_challenges)
+                         instant_challenges=instant_challenges,
+                         three_phase_challenges=three_phase_challenges)
 
 
 @admin_bp.route('/delete-challenge/<int:challenge_id>')
@@ -623,6 +670,9 @@ def admin_progression_request_action(request_id, action):
         if progression_request.request_type == 'phase2':
             title = 'Phase 2 Request Approved'
             message = 'Your request has been approved. Your new trading account is currently being prepared. You will receive your MT5 credentials via your verified email address within 24 hours. Please do not trade on your previous account.'
+        elif progression_request.request_type == 'phase3':
+            title = 'Phase 3 Request Approved'
+            message = 'Your Phase 3 account has been activated. Your new account credentials will be sent to your verified email address within 24 hours.'
         else:
             title = 'Funded Request Approved'
             message = 'Your funded account request has been approved. Your funded account credentials will be sent to your verified email address within 24 hours.'
@@ -636,7 +686,11 @@ def admin_progression_request_action(request_id, action):
         progression_request.status = 'declined'
         progression_request.admin_reason = reason
         progression_request.declined_at = now
-        title = 'Phase 2 Request Declined' if progression_request.request_type == 'phase2' else 'Funded Request Declined'
+        title = (
+            'Phase 2 Request Declined' if progression_request.request_type == 'phase2'
+            else 'Phase 3 Request Declined' if progression_request.request_type == 'phase3'
+            else 'Funded Request Declined'
+        )
         _notify_user(progression_request.user_id, title, f'Request Declined. Reason: {reason}', admin_user.id)
         flash('Progression request declined.', 'success')
     else:
@@ -828,6 +882,7 @@ def api_challenge_details(challenge_id):
             'challenge_type': template.challenge_type or 'one_phase', 'account_size': template.account_size or 10000, 'phase': template.phase or 1,
             'phase1_target': template.phase1_target, 'phase1_daily_loss': template.phase1_daily_loss, 'phase1_daily_dd_type': template.phase1_daily_dd_type or 'equity', 'phase1_overall_loss': template.phase1_overall_loss, 'phase1_overall_dd_type': template.phase1_overall_dd_type or 'equity', 'phase1_min_days': template.phase1_min_days, 'phase1_duration': template.phase1_duration, 'phase1_leverage': template.phase1_leverage or '1:100', 'phase1_rules': template.phase1_rules or '',
             'phase2_target': template.phase2_target, 'phase2_daily_loss': template.phase2_daily_loss, 'phase2_daily_dd_type': template.phase2_daily_dd_type or 'equity', 'phase2_overall_loss': template.phase2_overall_loss, 'phase2_overall_dd_type': template.phase2_overall_dd_type or 'equity', 'phase2_min_days': template.phase2_min_days, 'phase2_duration': template.phase2_duration, 'phase2_leverage': template.phase2_leverage or '1:100', 'phase2_rules': template.phase2_rules or '',
+            'phase3_target': template.phase3_target, 'phase3_daily_loss': template.phase3_daily_loss, 'phase3_daily_dd_type': template.phase3_daily_dd_type or 'equity', 'phase3_overall_loss': template.phase3_overall_loss, 'phase3_overall_dd_type': template.phase3_overall_dd_type or 'equity', 'phase3_min_days': template.phase3_min_days, 'phase3_duration': template.phase3_duration, 'phase3_leverage': template.phase3_leverage or '1:100', 'phase3_rules': template.phase3_rules or '',
             'instant_daily_loss': template.instant_daily_loss, 'instant_daily_dd_type': template.instant_daily_dd_type or 'equity', 'instant_overall_loss': template.instant_overall_loss, 'instant_overall_dd_type': template.instant_overall_dd_type or 'equity', 'instant_min_days': template.instant_min_days, 'instant_leverage': template.instant_leverage or '1:100', 'instant_rules': template.instant_rules or '',
             'user_profit_share': template.user_profit_share or 80, 'payout_cycle': template.payout_cycle or 'biweekly', 'weekend_trading': template.weekend_trading if template.weekend_trading is not None else True, 'is_active': template.is_active if template.is_active is not None else True, 'description': template.description or '',
             'sl_mandatory_enabled': template.sl_mandatory_enabled if template.sl_mandatory_enabled is not None else False, 'sl_grace_period_minutes': template.sl_grace_period_minutes or 3, 'max_risk_per_trade_percent': template.max_risk_per_trade_percent or 1.5, 'activity_rule_enabled': template.activity_rule_enabled if template.activity_rule_enabled is not None else False, 'max_inactive_days': template.max_inactive_days or 4,
@@ -837,6 +892,8 @@ def api_challenge_details(challenge_id):
     phase = ch.current_phase or 1
     if ctype == 'instant':
         current_rules = {'phase_name': 'Instant Funded', 'target': template.instant_daily_loss, 'daily_loss': template.instant_daily_loss, 'daily_dd_type': template.instant_daily_dd_type or 'equity', 'overall_loss': template.instant_overall_loss, 'overall_dd_type': template.instant_overall_dd_type or 'equity', 'min_days': template.instant_min_days or 0, 'duration': 365, 'leverage': template.instant_leverage or '1:100'} if template else None
+    elif ctype == 'three_phase' and phase == 3:
+        current_rules = {'phase_name': 'Phase 3', 'target': template.phase3_target, 'daily_loss': template.phase3_daily_loss, 'daily_dd_type': template.phase3_daily_dd_type or 'equity', 'overall_loss': template.phase3_overall_loss, 'overall_dd_type': template.phase3_overall_dd_type or 'equity', 'min_days': template.phase3_min_days or 0, 'duration': template.phase3_duration or 60, 'leverage': template.phase3_leverage or '1:100'} if template else None
     elif ctype == 'two_phase' and phase == 2:
         current_rules = {'phase_name': 'Phase 2', 'target': template.phase2_target, 'daily_loss': template.phase2_daily_loss, 'daily_dd_type': template.phase2_daily_dd_type or 'equity', 'overall_loss': template.phase2_overall_loss, 'overall_dd_type': template.phase2_overall_dd_type or 'equity', 'min_days': template.phase2_min_days or 0, 'duration': template.phase2_duration or 60, 'leverage': template.phase2_leverage or '1:100'} if template else None
     else:
@@ -1044,7 +1101,7 @@ def api_palantir_activity():
     for p in payments_list:
         status_lower = (p.status or '').lower()
         event_type = 'payment_success' if 'success' in status_lower else ('payment_failed' if 'fail' in status_lower else 'payment')
-        events.append({'timestamp': p.created_at.isoformat() if p.created_at else None, 'type': event_type, 'user': p.user.get_full_name() if p.user else 'Unknown', 'description': f"Payment of ₹{float(p.amount or 0):,.2f} - {p.status}"})
+        events.append({'timestamp': p.created_at.isoformat() if p.created_at else None, 'type': event_type, 'user': p.user.get_full_name() if p.user else 'Unknown', 'description': f"Payment of ${float(p.amount or 0):,.2f} - {p.status}"})
     tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).limit(10).all()
     for t in tickets:
         events.append({'timestamp': t.created_at.isoformat() if t.created_at else None, 'type': 'support_ticket', 'user': t.user.get_full_name() if t.user else 'Unknown', 'description': f"Ticket #{t.ticket_number}: {(t.subject or '')[:50]}"})
@@ -1206,6 +1263,9 @@ def toggle_marketplace_lockdown():
         flash('🔓 Marketplace has been UNLOCKED. Users can now purchase challenges.', 'success')
     
     db.session.commit()
+    next_url = request.form.get('next', '')
+    if next_url.startswith('/admin/'):
+        return redirect(next_url)
     return redirect(url_for('admin.admin_dashboard'))
 
 

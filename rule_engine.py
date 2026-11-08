@@ -1,5 +1,5 @@
 """
-TRAGENE FUNDED - RULE ENGINE v3.0
+MEGA FUNDED - RULE ENGINE v3.0
 Production-Grade Violation Detection System
 
 ALL FEATURES:
@@ -16,20 +16,20 @@ ALL FEATURES:
 """
 
 # RULE INDEX
-# RULE-01 Daily drawdown | check_equity_violations | daily loss + drawdown type | hard breach | Kisiki ON
-# RULE-02 Overall drawdown | check_equity_violations | overall loss + drawdown type | hard breach | Kisiki ON
-# RULE-03 Profit target + min days gate | check_rules | phase targets + min days | pass gate | Kisiki ON
-# RULE-04 Phase progression | _handle_phase_progression | challenge type + current phase | progression | Kisiki ON
-# RULE-05 Expiry | check_rules | duration + no_expiry | hard breach | Kisiki OFF for no-expiry
-# RULE-06 Stop-loss mandatory | check_stoploss_mandatory | sl_mandatory_enabled + grace | hard breach | Kisiki OFF
-# RULE-07 Inactivity | check_trading_activity | activity_rule_enabled + max_inactive_days | flag or hard breach | Kisiki ON
-# RULE-08 Lot size | check_lot_size_compliance | max_lot_size_enabled + max_lot_size | flag or hard breach | Kisiki OFF
-# RULE-09 Max risk per trade | NOT WIRED | max_risk_per_trade_percent | guidance only | Kisiki OFF
-# RULE-10 Weekend | check_weekend_trading | weekend_trading | hard breach, stored open time as-is for weekday | Kisiki ON
+# RULE-01 Daily drawdown | check_equity_violations | daily loss + drawdown type | hard breach | Mega Funded ON
+# RULE-02 Overall drawdown | check_equity_violations | overall loss + drawdown type | hard breach | Mega Funded ON
+# RULE-03 Profit target + min days gate | check_rules | phase targets + min days | pass gate | Mega Funded ON
+# RULE-04 Phase progression | _handle_phase_progression | challenge type + current phase | progression | Mega Funded ON
+# RULE-05 Expiry | check_rules | duration + no_expiry | hard breach | Mega Funded OFF for no-expiry
+# RULE-06 Stop-loss mandatory | check_stoploss_mandatory | sl_mandatory_enabled + grace | hard breach | Mega Funded OFF
+# RULE-07 Inactivity | check_trading_activity | activity_rule_enabled + max_inactive_days | flag or hard breach | Mega Funded ON
+# RULE-08 Lot size | check_lot_size_compliance | max_lot_size_enabled + max_lot_size | flag or hard breach | Mega Funded OFF
+# RULE-09 Max risk per trade | NOT WIRED | max_risk_per_trade_percent | guidance only | Mega Funded OFF
+# RULE-10 Weekend | check_weekend_trading | weekend_trading | hard breach, stored open time as-is for weekday | Mega Funded ON
 # RULE-11 Consistency | check_consistency | consistency_enabled + max_single_day_profit_percent + consistency_action | flag or hard breach | NEW
-# RULE-12 Anti-cheat flags | check_anti_cheat | account balance + credit + heartbeat | flag | Kisiki ON
-# RULE-13 Banned practices | trader display + admin review checklist | banned_practices | manual review | Kisiki ON
-# RULE-14 Payout gates | user_routes.payout_eligibility | first_withdrawal_days + min_payout_percent | gate | Kisiki ON
+# RULE-12 Anti-cheat flags | check_anti_cheat | account balance + credit + heartbeat | flag | Mega Funded ON
+# RULE-13 Banned practices | trader display + admin review checklist | banned_practices | manual review | Mega Funded ON
+# RULE-14 Payout gates | user_routes.payout_eligibility | first_withdrawal_days + min_payout_percent | gate | Mega Funded ON
 
 
 
@@ -872,7 +872,7 @@ def get_active_rules(challenge):
         'ea_allowed': getattr(t, 'ea_allowed', True),
     }
 
-    if ctype == 'two_phase' and phase == 2:
+    if ctype in ('two_phase', 'three_phase') and phase == 2:
         return {
             **base,
             'phase_name': 'Phase 2',
@@ -884,6 +884,20 @@ def get_active_rules(challenge):
             'min_days': _safe_int(t.phase2_min_days),
             'duration': None if base['no_expiry'] else _safe_int(t.phase2_duration),
             'leverage': t.phase2_leverage,
+            'weekend': getattr(t, 'weekend_trading', True),
+        }
+    elif ctype == 'three_phase' and phase == 3:
+        return {
+            **base,
+            'phase_name': 'Phase 3',
+            'profit_target': _safe_float(t.phase3_target),
+            'daily_loss': _safe_float(t.phase3_daily_loss),
+            'daily_dd_type': getattr(t, 'phase3_daily_dd_type', 'equity') or 'equity',
+            'overall_loss': _safe_float(t.phase3_overall_loss),
+            'overall_dd_type': getattr(t, 'phase3_overall_dd_type', 'equity') or 'equity',
+            'min_days': _safe_int(t.phase3_min_days),
+            'duration': None if base['no_expiry'] else _safe_int(t.phase3_duration),
+            'leverage': t.phase3_leverage,
             'weekend': getattr(t, 'weekend_trading', True),
         }
     elif ctype == 'instant':
@@ -1249,7 +1263,7 @@ def check_rules(challenge, data, rules):
 
 # RULE-04: Phase progression | Fields: challenge_type, current_phase | Action: advance phase or fund
 def _handle_phase_progression(challenge):
-    if challenge.challenge_type == 'two_phase' and challenge.current_phase == 1:
+    if challenge.challenge_type in ('two_phase', 'three_phase') and challenge.current_phase == 1:
         now = datetime.now(timezone.utc)
         challenge.status = ChallengeState.PASSED
         challenge.monitoring_status = ChallengeState.PASSED
@@ -1259,13 +1273,31 @@ def _handle_phase_progression(challenge):
         challenge.pass_reason = "Phase 1 passed. Awaiting Phase 2 request."
         log_rule(challenge.id, "phase_complete", Severity.SUCCESS, "Phase 1 complete!")
         notify_user(challenge.user_id, "Phase 1 Passed", "Congratulations! Phase 1 passed.")
+    elif challenge.challenge_type == 'three_phase' and challenge.current_phase == 2:
+        now = datetime.now(timezone.utc)
+        challenge.status = ChallengeState.PASSED
+        challenge.monitoring_status = ChallengeState.PASSED
+        challenge.completed_at = now
+        challenge.review_required = False
+        challenge.pass_reason = "Phase 2 passed. Awaiting Phase 3 request."
+        log_rule(challenge.id, "phase_complete", Severity.SUCCESS, "Phase 2 complete!")
+        notify_user(challenge.user_id, "Phase 2 Passed", "Congratulations! Phase 2 passed.")
+    elif challenge.challenge_type == 'three_phase' and challenge.current_phase == 3:
+        now = datetime.now(timezone.utc)
+        challenge.status = ChallengeState.PASSED
+        challenge.monitoring_status = ChallengeState.PASSED
+        challenge.completed_at = now
+        challenge.review_required = False
+        challenge.pass_reason = "Phase 3 passed."
+        log_rule(challenge.id, "challenge_passed", Severity.SUCCESS, "Phase 3 complete.")
+        notify_user(challenge.user_id, "Phase 3 Passed", "Congratulations! Phase 3 passed.")
     else:
         now = datetime.now(timezone.utc)
         challenge.status = ChallengeState.PASSED
         challenge.monitoring_status = ChallengeState.PASSED
         challenge.completed_at = now
         challenge.review_required = False
-        if challenge.current_phase == 2:
+        if challenge.challenge_type == 'two_phase' and challenge.current_phase == 2:
             challenge.pass_reason = "Phase 2 passed."
             log_rule(challenge.id, "challenge_passed", Severity.SUCCESS, "Phase 2 complete.")
             notify_user(challenge.user_id, "Phase 2 Passed", "Congratulations! Phase 2 passed.")
