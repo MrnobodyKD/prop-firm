@@ -131,7 +131,7 @@ class User(db.Model):
 class ChallengeTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, index=True)
-    price = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
     account_size = db.Column(db.Integer, nullable=False)
     phase = db.Column(db.Integer, nullable=False, default=1)
 
@@ -1035,8 +1035,9 @@ class AccountSnapshot(db.Model):
     free_margin = db.Column(db.Float, default=0.0)
     margin_used = db.Column(db.Float, default=0.0)
     credit = db.Column(db.Float, default=0.0)
-    leverage = db.Column(db.Integer)
+    leverage = db.Column(db.String(30), nullable=True)
     currency = db.Column(db.String(10), default='USD')
+    margin_level = db.Column(db.Float, default=0.0)
     profit_from_start = db.Column(db.Float, default=0.0, index=True)
     drawdown_from_peak = db.Column(db.Float, default=0.0, index=True)
     open_positions_count = db.Column(db.Integer, default=0)
@@ -1062,6 +1063,9 @@ class EATrade(db.Model):
     current_price = db.Column(db.Float, default=0.0)
     profit = db.Column(db.Float, default=0.0)
     floating_pnl = db.Column(db.Float, default=0.0)
+    swap = db.Column(db.Float, default=0.0)
+    commission = db.Column(db.Float, default=0.0)
+    comment = db.Column(db.String(200), nullable=True)
     sl = db.Column(db.Float, default=0.0)
     tp = db.Column(db.Float, default=0.0)
     magic = db.Column(db.BigInteger, default=0, index=True)
@@ -1080,6 +1084,27 @@ class EATrade(db.Model):
     def is_manual_trade(self): return self.magic == 0
     def is_bot_trade(self): return self.magic > 0
     def __repr__(self): return f'<EATrade {self.ticket} - {self.symbol} - {self.status}>'
+
+class EAOrder(db.Model):
+    __tablename__ = 'ea_order'
+    id = db.Column(db.Integer, primary_key=True)
+    challenge_purchase_id = db.Column(db.Integer, db.ForeignKey('challenge_purchase.id'), nullable=False, index=True)
+    ticket = db.Column(db.Integer, nullable=False)
+    position_id = db.Column(db.Integer, nullable=True)
+    symbol = db.Column(db.String(20), nullable=False)
+    order_type = db.Column(db.Integer, nullable=False, default=0)
+    lots = db.Column(db.Float, nullable=False, default=0.0)
+    price = db.Column(db.Float, nullable=False, default=0.0)
+    sl = db.Column(db.Float, nullable=False, default=0.0)
+    tp = db.Column(db.Float, nullable=False, default=0.0)
+    state = db.Column(db.String(30), nullable=False, default='')
+    time_setup = db.Column(db.DateTime(timezone=True), nullable=False)
+    time_done = db.Column(db.DateTime(timezone=True), nullable=True)
+    comment = db.Column(db.String(200), nullable=True)
+    magic = db.Column(db.Integer, nullable=False, default=0)
+    __table_args__ = (
+        db.UniqueConstraint('challenge_purchase_id', 'ticket', name='unique_challenge_order_ticket'),
+    )
 
 class RuleViolation(db.Model):
     __tablename__ = 'rule_violation'

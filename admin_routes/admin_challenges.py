@@ -163,16 +163,21 @@ def admin_challenge_action():
                 purchase.current_phase = 3
                 purchase.status = 'funded'
                 purchase.phase = 3
+                purchase.funded_at = datetime.now(timezone.utc)
                 _notify_challenge_passed(purchase, session.get('user_id'))
             
         elif action == 'force_pass_phase2':
+            if purchase.challenge_type not in ('two_phase', 'three_phase'):
+                return jsonify({'success': False, 'message': 'This challenge has no Phase 2'})
             purchase.current_phase = 2
             purchase.status = 'passed'
             purchase.phase = 2
             purchase.completed_at = datetime.now(timezone.utc)
             _notify_challenge_passed(purchase, session.get('user_id'))
 
-        elif action == 'force_pass_phase3' and purchase.challenge_type == 'three_phase':
+        elif action == 'force_pass_phase3':
+            if purchase.challenge_type != 'three_phase':
+                return jsonify({'success': False, 'message': 'This challenge has no Phase 3'})
             purchase.current_phase = 3
             purchase.status = 'passed'
             purchase.phase = 3
@@ -219,6 +224,10 @@ def admin_bulk_challenge_action():
         challenge_ids = data.get('challenge_ids', [])
         
         purchases = ChallengePurchase.query.filter(ChallengePurchase.id.in_(challenge_ids)).all()
+        if action == 'force_pass_phase2' and any(p.challenge_type not in ('two_phase', 'three_phase') for p in purchases):
+            return jsonify({'success': False, 'message': 'One or more selected challenges have no Phase 2'})
+        if action == 'force_pass_phase3' and any(p.challenge_type != 'three_phase' for p in purchases):
+            return jsonify({'success': False, 'message': 'Phase 3 force pass is only available for three-phase challenges'})
         
         for purchase in purchases:
             if action == 'force_pass_phase1':
@@ -234,9 +243,12 @@ def admin_bulk_challenge_action():
                     purchase.current_phase = 3
                     purchase.status = 'funded'
                     purchase.phase = 3
+                    purchase.funded_at = datetime.now(timezone.utc)
                     _notify_challenge_passed(purchase, session.get('user_id'))
                 
             elif action == 'force_pass_phase2':
+                if purchase.challenge_type not in ('two_phase', 'three_phase'):
+                    continue
                 purchase.current_phase = 2
                 purchase.status = 'passed'
                 purchase.phase = 2
@@ -338,7 +350,11 @@ def validate_challenge_form(data):
         if lev and not re.match(r'^\d+:\d+$', lev):
             raise ValueError(f"Invalid leverage format '{lev}'. Must be like 1:100")
             
+    def empty(value):
+        return None if value is None or value == '' else value
+
     def validate_percentages(target, daily, overall, phase_name):
+        target, daily, overall = map(empty, (target, daily, overall))
         if target is not None and not (0 <= float(target) <= 100):
             raise ValueError(f"{phase_name} Target must be between 0 and 100")
         if daily is not None and not (0 <= float(daily) <= 100):
@@ -347,9 +363,10 @@ def validate_challenge_form(data):
             raise ValueError(f"{phase_name} Overall Loss must be between 0 and 100")
             
     def validate_duration(min_days, duration, phase_name):
+        min_days, duration = map(empty, (min_days, duration))
         if min_days is not None and int(min_days) < 0:
             raise ValueError(f"{phase_name} Min Trading Days cannot be negative")
-        if duration is not None and int(duration) < 1:
+        if not data.get('no_expiry') and duration is not None and int(duration) < 1:
             raise ValueError(f"{phase_name} Duration must be at least 1 day")
 
     if ctype in ['one_phase', 'two_phase', 'three_phase']:
@@ -369,7 +386,7 @@ def validate_challenge_form(data):
             
     elif ctype == 'instant':
         validate_percentages(None, data.get('instant_daily_loss'), data.get('instant_overall_loss'), "Instant")
-        if data.get('instant_min_days') is not None and int(data.get('instant_min_days', 0)) < 0:
+        if empty(data.get('instant_min_days')) is not None and int(data.get('instant_min_days')) < 0:
             raise ValueError("Instant Min Trading Days cannot be negative")
         validate_leverage(data.get('instant_leverage'))
 
@@ -408,7 +425,7 @@ def admin_save_challenge():
             challenge = ChallengeTemplate()
         
         challenge.name = request.form['name']
-        challenge.price = int(request.form['price'])
+        challenge.price = float(request.form['price'])
         challenge.account_size = int(request.form['account_size'])
         
         ctype = request.form.get('challenge_type', 'one_phase')
@@ -511,7 +528,7 @@ def admin_save_challenge():
             challenge.instant_leverage = request.form.get('instant_leverage')
             challenge.instant_rules = request.form.get('instant_rules_text', '')
 
-        challenge.user_profit_share = int(request.form.get('user_profit_share', 0))
+        challenge.user_profit_share = int(request.form.get('user_profit_share') or 0)
         challenge.payout_cycle = request.form.get('payout_cycle', 'biweekly')
         challenge.weekend_trading = 'weekend_trading' in request.form
         challenge.is_active = 'is_active' in request.form
@@ -664,6 +681,12 @@ def admin_progression_request_action(request_id, action):
 
     challenge = progression_request.challenge_purchase
     if action == 'approve':
+        if challenge.status != 'passed':
+            flash('This challenge is no longer eligible for progression approval.', 'error')
+            return redirect(url_for('admin.admin_progression_requests'))
+        if challenge.review_required:
+            flash('This challenge requires compliance review before progression.', 'error')
+            return redirect(url_for('admin.admin_progression_requests'))
         progression_request.status = 'approved'
         progression_request.approved_at = now
         _activate_progression_stage(challenge, progression_request.request_type)

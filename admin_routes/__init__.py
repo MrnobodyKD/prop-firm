@@ -65,7 +65,6 @@ def _activate_progression_stage(challenge, request_type):
     now = datetime.now(timezone.utc)
     challenge.status = 'active' if request_type in ('phase2', 'phase3') else 'funded'
     challenge.monitoring_status = 'active'
-    challenge.review_required = False
     challenge.is_terminated = False
     challenge.completed_at = None
 

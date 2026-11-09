@@ -203,6 +203,12 @@
                                 class="text-green-600 hover:text-green-800 font-medium" title="Force Pass">
                                 <i class="fas fa-check-circle"></i>
                             </button>
+                            {% if challenge.challenge_template.challenge_type == 'three_phase' %}
+                            <button onclick="handleAction('force_pass_phase3', {{ challenge.id }})"
+                                class="text-green-600 hover:text-green-800 font-medium" title="Force Pass Phase 3">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            {% endif %}
                             <button onclick="handleAction('force_fail', {{ challenge.id }})"
                                 class="text-red-600 hover:text-red-800 font-medium" title="Force Fail">
                                 <i class="fas fa-times-circle"></i>
@@ -318,6 +324,24 @@
             } else {
                 const confirmAll = confirm("Are you sure you want to force pass this account?");
                 if (!confirmAll) return;
+                action = 'force_pass_all';
+            }
+        } else if (challengeType === 'three_phase') {
+            if (currentPhase === 1) {
+                const choice = confirm("This is a Three-Phase account currently on Phase 1.\n\nClick 'OK' to pass Phase 1 only and wait for a Phase 2 request.\nClick 'Cancel' to pass ALL phases.");
+                if (choice) action = 'force_pass_phase1';
+                else {
+                    if (!confirm("Are you sure you want to pass ALL phases?")) return;
+                    action = 'force_pass_all';
+                }
+            } else if (currentPhase === 2) {
+                if (!confirm("This is a Three-Phase account currently on Phase 2.\n\nClick 'OK' to pass Phase 2 only and wait for a Phase 3 request.")) return;
+                action = 'force_pass_phase2';
+            } else if (currentPhase === 3) {
+                if (!confirm("This is a Three-Phase account currently on Phase 3.\n\nClick 'OK' to pass Phase 3 and wait for a funded account request.")) return;
+                action = 'force_pass_phase3';
+            } else {
+                if (!confirm("Are you sure you want to pass ALL phases?")) return;
                 action = 'force_pass_all';
             }
         } else {

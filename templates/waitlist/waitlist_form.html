@@ -259,7 +259,8 @@
         {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('submit_waitlist') }}" method="POST" class="space-y-6">
+        <form id="waitlistForm" action="#" method="POST" class="space-y-6">
+            <p id="waitlistNote" class="text-cyan-300" aria-live="polite"></p>
             <!-- Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -336,7 +337,7 @@
                 </label>
             </div>
 
-            <button type="submit"
+            <button type="button" onclick="document.getElementById('waitlistNote').textContent = 'The waitlist is coming soon. Please check back shortly.';"
                 class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300 shadow-lg transform hover:scale-[1.02]">
                 Join Waitlist
             </button>
@@ -350,6 +351,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <script>
+        document.getElementById('waitlistForm')?.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const note = document.getElementById('waitlistNote');
+            if (note) note.textContent = 'The waitlist is coming soon. Please check back shortly.';
+        });
+
         // Countdown Timer to 05 June 2026
         const launchDate = new Date("2026-06-05T00:00:00").getTime();
 

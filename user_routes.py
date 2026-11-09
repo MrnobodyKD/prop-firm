@@ -947,6 +947,9 @@ def request_progression(challenge_id, request_type):
         if challenge.status != 'passed':
             flash('Only passed challenges can request progression.', 'error')
             return redirect(url_for('user.dashboard'))
+        if challenge.review_required:
+            flash('This challenge requires compliance review before progression.', 'error')
+            return redirect(url_for('user.dashboard'))
 
         if request_type == 'phase2':
             allowed = challenge.challenge_type in ('two_phase', 'three_phase') and challenge.current_phase == 1

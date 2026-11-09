@@ -364,7 +364,9 @@
     <div class="desktop-sidebar hidden lg:flex lg:flex-col lg:h-screen">
         <div class="p-6 border-b border-gray-200 dark:border-white/5 shrink-0">
             <a href="{{ '/admin/moderator/dashboard' if is_moderator else '/admin' }}" class="flex items-center gap-3">
-                <div class="flex flex-col">
+               <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Mega Funded" class="h-10 w-10 rounded-xl object-cover shrink-0">
+               <div class="flex flex-col">
+
                     <h1 class="font-black text-xl tracking-widest text-gray-900 dark:text-white">MEGA<span class="text-emerald-500">FUNDED</span></h1>
                     <p class="text-[10px] text-gray-500 dark:text-gray-400 tracking-[0.2em] uppercase font-bold mt-1">{% if is_moderator %}Moderator{% else %}Admin Panel{% endif %}</p>
                 </div>

@@ -250,7 +250,7 @@
                     </h3>
 
                     <div class="flex items-baseline justify-center gap-2 mb-1">
-                        <span class="text-4xl font-extrabold text-gray-900 dark:text-white">{% if (challenge.currency or 'USD')|upper == 'USD' %}${{ challenge.price }}{% else %}{{ challenge.currency or 'USD' }} {{ challenge.price }}{% endif %}</span>
+                        <span class="text-4xl font-extrabold text-gray-900 dark:text-white">{% if (challenge.currency or 'USD')|upper == 'USD' %}${{ '%.2f'|format(challenge.price) }}{% else %}{{ challenge.currency or 'USD' }} {{ '%.2f'|format(challenge.price) }}{% endif %}</span>
                         <span class="text-gray-500 dark:text-gray-300">/ one-time</span>
                     </div>
                     <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">${{ "{:,}".format(challenge.account_size) }} Account Size</div>
@@ -292,7 +292,7 @@
                 </div>
                 {% elif challenge.challenge_type == 'two_phase' %}
                 <div class="mb-6">
-                    <div class="grid grid-cols-2 gap-4 text-xs bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
+                    <div class="grid grid-cols-1 gap-4 text-xs bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
                         <div class="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-3">
                             <div class="font-bold text-center text-purple-600 dark:text-purple-400 border-b dark:border-gray-700 pb-1">PHASE 1</div>
                             <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase1_target }}%</span></div>
@@ -316,7 +316,7 @@
                 </div>
                 {% elif challenge.challenge_type == 'three_phase' %}
                 <div class="mb-6">
-                    <div class="grid grid-cols-3 gap-4 text-xs bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
+                    <div class="grid grid-cols-1 gap-4 text-xs bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
                         <div class="space-y-2 border-r border-gray-200 dark:border-gray-700 pr-3">
                             <div class="font-bold text-center text-amber-600 dark:text-amber-400 border-b dark:border-gray-700 pb-1">PHASE 1</div>
                             <div class="flex justify-between"><span>Target</span><span class="font-semibold">{{ challenge.phase1_target }}%</span></div>

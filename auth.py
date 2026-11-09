@@ -530,12 +530,14 @@ def verify_email_token(token):
 @auth_bp.route('/resend-phone-otp')
 @login_required
 def resend_phone_otp():
-    return redirect(url_for('auth.send_phone_verification'))
+    flash('Phone verification is coming soon. Please continue with your account dashboard.', 'info')
+    return redirect(url_for('user.dashboard'))
 
 @auth_bp.route('/verify/phone')
 @login_required
 def verify_phone():
-    return redirect(url_for('auth.verify_phone_otp'))
+    flash('Phone verification is coming soon. Please continue with your account dashboard.', 'info')
+    return redirect(url_for('user.dashboard'))
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():

@@ -160,7 +160,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ '%.2f'|format(c.price) }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -177,7 +177,7 @@
                     <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_daily_loss }}%</span></div>
                     <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_overall_loss }}%</span></div>
                     <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_min_days }}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_duration }} days</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{% if c.phase1_duration %}{{ c.phase1_duration }} days{% else %}No limit{% endif %}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Leverage:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_leverage }}</span></div>
                     <div class="col-span-2 flex justify-between pt-2 border-t mt-1"><span class="text-gray-500 dark:text-gray-400">Profit Split:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.user_profit_share }}%</span></div>
                     {% if c.sl_mandatory_enabled or c.activity_rule_enabled or c.max_lot_size_enabled %}
@@ -220,7 +220,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ '%.2f'|format(c.price) }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -231,14 +231,14 @@
                         </span>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 text-xs mb-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                <div class="grid grid-cols-1 gap-4 text-xs mb-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                     <div class="space-y-2 border-r pr-2 border-purple-200 dark:border-purple-800">
                         <div class="text-center font-bold text-purple-600 dark:text-purple-400 border-b pb-1 mb-1">PHASE 1</div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Target:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_target }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_daily_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_overall_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_min_days }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{% if c.phase1_duration %}{{ c.phase1_duration }} days{% else %}No limit{% endif %}</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_leverage }}</span></div>
                     </div>
                     <div class="space-y-2 pl-2">
@@ -247,12 +247,12 @@
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_daily_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_overall_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_min_days }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{% if c.phase2_duration %}{{ c.phase2_duration }} days{% else %}No limit{% endif %}</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_leverage }}</span></div>
                     </div>
-                    <div class="col-span-2 flex justify-between pt-2 border-t mt-1"><span class="text-gray-500 dark:text-gray-400">Profit Split:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.user_profit_share }}%</span></div>
+                    <div class="col-span-1 flex justify-between pt-2 border-t mt-1"><span class="text-gray-500 dark:text-gray-400">Profit Split:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.user_profit_share }}%</span></div>
                     {% if c.sl_mandatory_enabled or c.activity_rule_enabled or c.max_lot_size_enabled %}
-                    <div class="col-span-2 flex flex-wrap gap-1 pt-1 border-t mt-1">
+                    <div class="col-span-1 flex flex-wrap gap-1 pt-1 border-t mt-1">
                         {% if c.sl_mandatory_enabled %}<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">🛡️ SL Mandatory</span>{% endif %}
                         {% if c.activity_rule_enabled %}<span class="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded-full">⏱️ Activity Rule</span>{% endif %}
                         {% if c.max_lot_size_enabled %}<span class="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-full">⚖️ Max {{ c.max_lot_size }} Lot</span>{% endif %}
@@ -280,18 +280,18 @@
                 Three-Phase Challenges
             </h2>
             <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-3 py-1 rounded-full text-sm font-semibold border border-amber-200 dark:border-amber-800">
-                {{ two_phase_challenges|length }} Challenges
+                {{ three_phase_challenges|length }} Challenges
             </span>
         </div>
         <div class="space-y-4">
-            {% for c in two_phase_challenges %}
+            {% for c in three_phase_challenges %}
             <div class="border rounded-xl p-4 transition-all hover:shadow-md
                 {% if c.is_active %}border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-900/30
                 {% else %}border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/30{% endif %}">
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ '%.2f'|format(c.price) }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -302,14 +302,14 @@
                         </span>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 gap-3 text-xs mb-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                <div class="grid grid-cols-1 gap-3 text-xs mb-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                     <div class="space-y-2 border-r pr-2 border-amber-200 dark:border-amber-800">
                         <div class="text-center font-bold text-amber-600 dark:text-amber-400 border-b pb-1 mb-1">PHASE 1</div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Target:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_target }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_daily_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_overall_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_min_days }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{% if c.phase1_duration %}{{ c.phase1_duration }} days{% else %}No limit{% endif %}</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase1_leverage }}</span></div>
                     </div>
                     <div class="space-y-2 border-r pr-2 border-amber-200 dark:border-amber-800">
@@ -318,7 +318,7 @@
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_daily_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_overall_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_min_days }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{% if c.phase2_duration %}{{ c.phase2_duration }} days{% else %}No limit{% endif %}</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase2_leverage }}</span></div>
                     </div>
                     <div class="space-y-2 pl-2">
@@ -327,12 +327,12 @@
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Daily Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_daily_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Loss:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_overall_loss }}%</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Min Days:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_min_days }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_duration }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span> <span class="font-semibold text-gray-900 dark:text-white">{% if c.phase3_duration %}{{ c.phase3_duration }} days{% else %}No limit{% endif %}</span></div>
                         <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Lev:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.phase3_leverage }}</span></div>
                     </div>
-                    <div class="col-span-3 flex justify-between pt-2 border-t mt-1"><span class="text-gray-500 dark:text-gray-400">Profit Split:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.user_profit_share }}%</span></div>
+                    <div class="col-span-1 flex justify-between pt-2 border-t mt-1"><span class="text-gray-500 dark:text-gray-400">Profit Split:</span> <span class="font-semibold text-gray-900 dark:text-white">{{ c.user_profit_share }}%</span></div>
                     {% if c.sl_mandatory_enabled or c.activity_rule_enabled or c.max_lot_size_enabled %}
-                    <div class="col-span-3 flex flex-wrap gap-1 pt-1 border-t mt-1">
+                    <div class="col-span-1 flex flex-wrap gap-1 pt-1 border-t mt-1">
                         {% if c.sl_mandatory_enabled %}<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">🛡️ SL Mandatory</span>{% endif %}
                         {% if c.activity_rule_enabled %}<span class="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded-full">⏱️ Activity Rule</span>{% endif %}
                         {% if c.max_lot_size_enabled %}<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">⚖️ Max {{ c.max_lot_size }} Lot</span>{% endif %}
@@ -371,7 +371,7 @@
                 <div class="flex justify-between items-start mb-3">
                     <div>
                         <h3 class="font-bold text-gray-900 dark:text-white text-lg">{{ c.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ c.price }} • ${{ c.account_size }} Account</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">'$'{{ '%.2f'|format(c.price) }} • ${{ c.account_size }} Account</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         {% if c.sl_mandatory_enabled %}<span class="text-xs" title="Stop-Loss Mandatory">🛡️</span>{% endif %}
@@ -433,7 +433,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price *</label>
-                    <input type="number" id="challengePrice" name="price" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
+                    <input type="number" id="challengePrice" name="price" step="0.01" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
                 </div>
             </div>
 

@@ -47,6 +47,22 @@
 
             <!-- Compact Progress Bar -->
             <div class="mb-2">
+                {% set phase_number = challenge.current_phase or 1 %}
+                {% set phase_count = 3 if challenge.challenge_type == 'three_phase' else (2 if challenge.challenge_type == 'two_phase' else 1) %}
+                {% if challenge.challenge_type == 'instant' or (challenge.status in ['funded', 'funded_active'] and phase_number > phase_count) %}
+                <p class="text-[10px] font-semibold text-green-600 dark:text-green-400 mb-1">Funded Account</p>
+                {% else %}
+                {% set prefix = 'phase' ~ phase_number ~ '_' %}
+                <p class="text-[10px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Phase {{ phase_number }} of {{ phase_count }}</p>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-gray-500 dark:text-gray-400 mb-2">
+                    <span>Target: {{ challenge.challenge_template|attr(prefix ~ 'target') }}%</span>
+                    <span>Daily DD: {{ challenge.challenge_template|attr(prefix ~ 'daily_loss') }}% ({{ challenge.challenge_template|attr(prefix ~ 'daily_dd_type') or 'equity' }})</span>
+                    <span>Overall DD: {{ challenge.challenge_template|attr(prefix ~ 'overall_loss') }}% ({{ challenge.challenge_template|attr(prefix ~ 'overall_dd_type') or 'equity' }})</span>
+                    <span>Min Days: {{ challenge.challenge_template|attr(prefix ~ 'min_days') or 0 }}</span>
+                    <span>Duration: {% if challenge.challenge_template|attr(prefix ~ 'duration') %}{{ challenge.challenge_template|attr(prefix ~ 'duration') }} days{% else %}No limit{% endif %}</span>
+                    <span>Leverage: {{ challenge.challenge_template|attr(prefix ~ 'leverage') or '—' }}</span>
+                </div>
+                {% endif %}
                 <div class="flex justify-between text-[10px] mb-1">
                     <span class="text-gray-500 dark:text-gray-400">Progress</span>
                     <span class="font-semibold text-blue-600 dark:text-blue-400">{{ "%.0f"|format(challenge.progress_percentage or 0) }}%</span>
@@ -91,7 +107,7 @@
     {% set eligible_phase3 = progression_eligible_challenges|selectattr('current_phase', 'equalto', 3)|list %}
 
     {% if eligible_phase1 or eligible_phase2 or eligible_phase3 or progression_requests %}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 gap-3">
         {% for challenge in eligible_phase1 %}
         <div class="glass-card p-3 border dark:border-dark-border">
             <p class="text-xs font-bold text-gray-900 dark:text-white">Congratulations!</p>
@@ -236,7 +252,7 @@
                         <span>TP: {{ challenge_template.phase1_target }}%</span>
                         <span>DD: {{ challenge_template.phase1_daily_loss }}%</span>
                     </div>
-                    <p class="text-sm font-bold text-gray-900 dark:text-white mb-2">${{ "{:.0f}".format(challenge_template.price) }}</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-white mb-2">${{ "{:.2f}".format(challenge_template.price) }}</p>
                     <a href="{{ url_for('user.buy_challenge', challenge_id=challenge_template.id) }}" 
                        class="block w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white py-1.5 rounded-lg text-xs font-semibold transition">
                         Buy Now

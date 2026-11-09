@@ -9,7 +9,7 @@ import traceback
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    from models import db, ChallengePurchase, AccountSnapshot, EATrade, SYNC_ELIGIBLE_STATUSES
+    from models import db, ChallengePurchase, AccountSnapshot, EATrade, EAOrder, SYNC_ELIGIBLE_STATUSES
     from rule_engine import process_sync
     HAS_APP_CONTEXT = True
 except ImportError as e:
@@ -50,6 +50,18 @@ def parse_datetime(dt_str):
     if isinstance(dt_str, datetime):
         return dt_str.replace(tzinfo=timezone.utc) if dt_str.tzinfo is None else dt_str
     try:
+        if isinstance(dt_str, (int, float)) and not isinstance(dt_str, bool):
+            timestamp = float(dt_str)
+            if abs(timestamp) >= 1e12:
+                timestamp /= 1000.0
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
+        if isinstance(dt_str, str) and dt_str.isdigit():
+            timestamp = float(dt_str)
+            if abs(timestamp) >= 1e12:
+                timestamp /= 1000.0
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
         from dateutil import parser
         dt = parser.parse(str(dt_str))
         return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
@@ -86,7 +98,6 @@ def mt5_sync():
     
     # Get raw data
     raw_data = request.get_data()
-    print(f"🔥 RAW DATA (first 200 chars): {raw_data[:200]}")
     
     # Clean the data
     try:
@@ -97,7 +108,6 @@ def mt5_sync():
             cleaned_str = cleaned_str[start:end]
         
         data = json.loads(cleaned_str)
-        print(f"🔥 CLEANED JSON: {data}")
     except Exception as e:
         print(f"❌ JSON parse error: {e}")
         return jsonify({"status": "error", "message": "Invalid JSON format"}), 400
@@ -129,8 +139,8 @@ def mt5_sync():
                 
                 # Get account data
                 account_data = data.get('account', {})
-                balance = float(account_data.get('balance', data.get('balance', journey.current_balance or 0)))
-                equity = float(account_data.get('equity', data.get('equity', journey.current_equity or 0)))
+                balance = _safe_float(account_data.get('balance', data.get('balance', journey.current_balance or 0)))
+                equity = _safe_float(account_data.get('equity', data.get('equity', journey.current_equity or 0)))
                 
                 # Update heartbeat
                 journey.last_heartbeat = datetime.now(timezone.utc)
@@ -145,7 +155,13 @@ def mt5_sync():
                     journey.equity = equity
                 
                 # Get trades
-                trades = data.get('closed_trades', []) + data.get('open_trades', [])
+                open_trades_data = data.get('open_trades', [])
+                closed_trades_data = data.get('closed_trades', [])
+                trades = closed_trades_data + open_trades_data
+                print(
+                    f"[SYNC] challenge {journey.id} | balance {balance} | equity {equity} | "
+                    f"open {len(open_trades_data)} | closed {len(closed_trades_data)}"
+                )
                 
                 # Format data for rule engine
                 engine_data = {
@@ -167,7 +183,10 @@ def mt5_sync():
                     ).order_by(AccountSnapshot.timestamp.desc()).first()
                     
                     if last_snapshot:
-                        time_diff = abs((datetime.now(timezone.utc) - last_snapshot.timestamp).total_seconds())
+                        snapshot_time = last_snapshot.timestamp
+                        if snapshot_time.tzinfo is None:
+                            snapshot_time = snapshot_time.replace(tzinfo=timezone.utc)
+                        time_diff = abs((datetime.now(timezone.utc) - snapshot_time).total_seconds())
                         if (time_diff < 2 and 
                             abs(last_snapshot.balance - balance) < 0.01 and 
                             abs(last_snapshot.equity - equity) < 0.01):
@@ -182,13 +201,16 @@ def mt5_sync():
                         challenge_purchase_id=journey.id,
                         timestamp=datetime.now(timezone.utc),
                         ea_version=data.get('ea_version', '1.0'),
-                        terminal_build=int(data.get('terminal_build', 0)),
+                        terminal_build=_safe_int(data.get('terminal_build', 0)),
                         mt5_login=str(account_data.get('account_login', '')),
                         broker_server=account_data.get('broker_server', ''),
                         balance=balance,
                         equity=equity,
-                        free_margin=float(account_data.get('free_margin', 0.0)),
-                        margin_used=float(account_data.get('margin_used', 0.0))
+                        free_margin=_safe_float(account_data.get('free_margin', 0.0)),
+                        margin_used=_safe_float(account_data.get('margin_used', 0.0)),
+                        leverage=str(account_data['leverage']) if account_data.get('leverage') is not None else None,
+                        currency=account_data.get('currency') if isinstance(account_data.get('currency'), str) else 'USD',
+                        margin_level=_safe_float(account_data.get('margin_level'))
                     )
                     db.session.add(snapshot)
                     db.session.flush()  # Get snapshot ID without committing
@@ -198,7 +220,6 @@ def mt5_sync():
                 # This ensures evidence system has current positions
                 # ================================================================
                 
-                open_trades_data = data.get('open_trades', [])
                 for td in open_trades_data:
                     ticket = td.get('ticket')
                     if not ticket:
@@ -216,6 +237,9 @@ def mt5_sync():
                             existing_trade.floating_pnl = _safe_float(td.get('floating_pnl'))
                             existing_trade.sl = _safe_float(td.get('sl'))
                             existing_trade.tp = _safe_float(td.get('tp'))
+                            existing_trade.swap = _safe_float(td.get('swap'))
+                            existing_trade.commission = _safe_float(td.get('commission'))
+                            existing_trade.comment = td.get('comment') if isinstance(td.get('comment'), str) else None
                             existing_trade.updated_at = datetime.now(timezone.utc)
                             
                             # If trade has close_time, mark as closed
@@ -230,7 +254,7 @@ def mt5_sync():
                                 challenge_purchase_id=journey.id,
                                 ticket=ticket,
                                 symbol=td.get('symbol', 'UNKNOWN'),
-                                trade_type=int(td.get('type', 0)),
+                                trade_type=_safe_int(td.get('type', 0)),
                                 lots=_safe_float(td.get('lots')),
                                 open_price=_safe_float(td.get('open_price')),
                                 current_price=_safe_float(td.get('current_price')),
@@ -242,6 +266,9 @@ def mt5_sync():
                                 close_time=parse_datetime(td.get('close_time')) if td.get('close_time') else None,
                                 close_price=_safe_float(td.get('close_price')) if td.get('close_price') else None,
                                 profit=_safe_float(td.get('profit')),
+                                swap=_safe_float(td.get('swap')),
+                                commission=_safe_float(td.get('commission')),
+                                comment=td.get('comment') if isinstance(td.get('comment'), str) else None,
                                 status='closed' if td.get('close_time') else 'open'
                             )
                             db.session.add(new_trade)
@@ -254,7 +281,6 @@ def mt5_sync():
                 # STEP 3: Mark closed trades in EATrade
                 # ================================================================
                 
-                closed_trades_data = data.get('closed_trades', [])
                 for td in closed_trades_data:
                     ticket = td.get('ticket')
                     if not ticket:
@@ -271,7 +297,15 @@ def mt5_sync():
                             existing_trade.close_time = parse_datetime(td.get('close_time'))
                             existing_trade.profit = _safe_float(td.get('profit'))
                             existing_trade.floating_pnl = 0.0
+                            existing_trade.swap = _safe_float(td.get('swap'))
+                            existing_trade.commission = _safe_float(td.get('commission'))
+                            existing_trade.comment = td.get('comment') if isinstance(td.get('comment'), str) else None
                             existing_trade.status = 'closed'
+                            existing_trade.updated_at = datetime.now(timezone.utc)
+                        elif existing_trade:
+                            existing_trade.swap = _safe_float(td.get('swap'))
+                            existing_trade.commission = _safe_float(td.get('commission'))
+                            existing_trade.comment = td.get('comment') if isinstance(td.get('comment'), str) else None
                             existing_trade.updated_at = datetime.now(timezone.utc)
                         elif not existing_trade:
                             # Create the closed trade if it doesn't exist
@@ -279,12 +313,15 @@ def mt5_sync():
                                 challenge_purchase_id=journey.id,
                                 ticket=ticket,
                                 symbol=td.get('symbol', 'UNKNOWN'),
-                                trade_type=int(td.get('type', 0)),
+                                trade_type=_safe_int(td.get('type', 0)),
                                 lots=_safe_float(td.get('lots')),
                                 open_price=_safe_float(td.get('open_price')),
                                 close_price=_safe_float(td.get('close_price')),
                                 current_price=_safe_float(td.get('close_price')),
                                 profit=_safe_float(td.get('profit')),
+                                swap=_safe_float(td.get('swap')),
+                                commission=_safe_float(td.get('commission')),
+                                comment=td.get('comment') if isinstance(td.get('comment'), str) else None,
                                 floating_pnl=0.0,
                                 sl=_safe_float(td.get('sl')),
                                 tp=_safe_float(td.get('tp')),
@@ -298,6 +335,51 @@ def mt5_sync():
                     except Exception as e:
                         print(f"[EATrade Close Error] ticket {ticket}: {e}")
                         continue
+
+                # ================================================================
+                # STEP 3.5: Upsert history orders
+                # ================================================================
+
+                history_orders = data.get('history_orders', [])
+                if isinstance(history_orders, list):
+                    for order in history_orders:
+                        if not isinstance(order, dict):
+                            continue
+                        ticket = _safe_int(order.get('ticket'))
+                        if ticket == 0:
+                            continue
+
+                        existing_order = EAOrder.query.filter_by(
+                            challenge_purchase_id=journey.id,
+                            ticket=ticket
+                        ).first()
+                        time_done_value = order.get('time_done')
+                        time_done = parse_datetime(time_done_value) if time_done_value else None
+
+                        if existing_order:
+                            existing_order.state = order.get('state') if isinstance(order.get('state'), str) else ''
+                            existing_order.time_done = time_done
+                            existing_order.price = _safe_float(order.get('price'))
+                            existing_order.sl = _safe_float(order.get('sl'))
+                            existing_order.tp = _safe_float(order.get('tp'))
+                        else:
+                            position_id_value = order.get('position_id')
+                            db.session.add(EAOrder(
+                                challenge_purchase_id=journey.id,
+                                ticket=ticket,
+                                position_id=_safe_int(position_id_value) if position_id_value not in (None, '') else None,
+                                symbol=order.get('symbol') if isinstance(order.get('symbol'), str) else 'UNKNOWN',
+                                order_type=_safe_int(order.get('order_type')),
+                                lots=_safe_float(order.get('lots')),
+                                price=_safe_float(order.get('price')),
+                                sl=_safe_float(order.get('sl')),
+                                tp=_safe_float(order.get('tp')),
+                                state=order.get('state') if isinstance(order.get('state'), str) else '',
+                                time_setup=parse_datetime(order.get('time_setup')),
+                                time_done=time_done,
+                                comment=order.get('comment') if isinstance(order.get('comment'), str) else None,
+                                magic=_safe_int(order.get('magic'))
+                            ))
                 
                 # ================================================================
                 # STEP 4: Commit snapshot + trades BEFORE rule processing

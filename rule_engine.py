@@ -1246,7 +1246,7 @@ def check_rules(challenge, data, rules):
                      f"Profit reached but need {needed} more trading day(s). ({phase_days}/{min_days})",
                      phase_days, min_days)
 
-    if not rules.get('no_expiry') and challenge.end_date:
+    if challenge.challenge_type != 'instant' and not rules.get('no_expiry') and challenge.end_date:
         end_date_utc = ensure_utc(challenge.end_date)
         if end_date_utc and datetime.now(timezone.utc) > end_date_utc:
             if phase_profit >= pt and phase_days >= min_days:
@@ -1269,7 +1269,6 @@ def _handle_phase_progression(challenge):
         challenge.monitoring_status = ChallengeState.PASSED
         challenge.phase1_completed_at = now
         challenge.completed_at = now
-        challenge.review_required = False
         challenge.pass_reason = "Phase 1 passed. Awaiting Phase 2 request."
         log_rule(challenge.id, "phase_complete", Severity.SUCCESS, "Phase 1 complete!")
         notify_user(challenge.user_id, "Phase 1 Passed", "Congratulations! Phase 1 passed.")
@@ -1278,7 +1277,6 @@ def _handle_phase_progression(challenge):
         challenge.status = ChallengeState.PASSED
         challenge.monitoring_status = ChallengeState.PASSED
         challenge.completed_at = now
-        challenge.review_required = False
         challenge.pass_reason = "Phase 2 passed. Awaiting Phase 3 request."
         log_rule(challenge.id, "phase_complete", Severity.SUCCESS, "Phase 2 complete!")
         notify_user(challenge.user_id, "Phase 2 Passed", "Congratulations! Phase 2 passed.")
@@ -1287,7 +1285,6 @@ def _handle_phase_progression(challenge):
         challenge.status = ChallengeState.PASSED
         challenge.monitoring_status = ChallengeState.PASSED
         challenge.completed_at = now
-        challenge.review_required = False
         challenge.pass_reason = "Phase 3 passed."
         log_rule(challenge.id, "challenge_passed", Severity.SUCCESS, "Phase 3 complete.")
         notify_user(challenge.user_id, "Phase 3 Passed", "Congratulations! Phase 3 passed.")
@@ -1296,7 +1293,6 @@ def _handle_phase_progression(challenge):
         challenge.status = ChallengeState.PASSED
         challenge.monitoring_status = ChallengeState.PASSED
         challenge.completed_at = now
-        challenge.review_required = False
         if challenge.challenge_type == 'two_phase' and challenge.current_phase == 2:
             challenge.pass_reason = "Phase 2 passed."
             log_rule(challenge.id, "challenge_passed", Severity.SUCCESS, "Phase 2 complete.")
