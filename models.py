@@ -380,7 +380,7 @@ class ChallengeTemplate(db.Model):
             'challenge_type': self.challenge_type,
             'phase1': self.get_phase_rules(1),
             'phase2': self.get_phase_rules(2),
-            'phase3': self.get_phase_rules(3) if ctype == 'three_phase' else None,
+            'phase3': self.get_phase_rules(3) if self.challenge_type == 'three_phase' else None,
             'instant': self.get_phase_rules(0),
             'weekend_trading': self.weekend_trading,
             'currency': self.currency,

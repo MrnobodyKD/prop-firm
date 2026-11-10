@@ -6,3 +6,5 @@ __pycache__/
 instance/
 *.db
 static/uploads/
+*.bak
+*.bak2

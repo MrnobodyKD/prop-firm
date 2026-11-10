@@ -644,6 +644,7 @@ def crypto_payment_start():
         return redirect(invoice['invoice_url'])
     except Exception as exc:
         db.session.rollback()
+        import logging; logging.getLogger(__name__).exception('Crypto checkout failed: %s', exc)
         flash(str(exc) if isinstance(exc, ValueError) else 'Crypto checkout is currently unavailable. Please try again.', 'error')
         return redirect(url_for('user.buy_challenge', challenge_id=challenge.id))
 
