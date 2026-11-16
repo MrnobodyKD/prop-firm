@@ -299,6 +299,11 @@
   .method-option.selected .method-radio::after { transform: scale(1); }
 
   .method-option.unavailable { opacity: .55; cursor: not-allowed; pointer-events: none; }
+  @media (max-width: 768px) {
+    .methods-list { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding: .25rem .15rem .75rem; }
+    .method-option { flex: 0 0 80%; scroll-snap-align: start; }
+    .method-desc { display: none; }
+  }
 
   /* ============ CHECK ROWS ============ */
   .check-row {
