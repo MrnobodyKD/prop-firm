@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8SBBXX72M7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-8SBBXX72M7');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Team | Mega Funded</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/images/favicon_512.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/images/favicon_192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon_64.png">
+    <link rel="shortcut icon" href="/static/images/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/favicon_192.png">
+
+    <!-- Primary SEO -->
+    <meta name="description" content="Meet the leadership team behind Mega Funded — the people building a transparent, performance-driven prop trading platform.">
+    <meta name="author" content="Mega Funded">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Our Team | Mega Funded">
+    <meta property="og:description" content="Meet the leadership team behind Mega Funded.">
+    <meta property="og:url" content="https://megafunded.online/team">
+    <meta property="og:site_name" content="Mega Funded">
+    <meta property="og:image" content="https://megafunded.online/static/images/banner.png">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Our Team | Mega Funded">
+    <meta name="twitter:description" content="Meet the leadership team behind Mega Funded.">
+    <meta name="twitter:image" content="https://megafunded.online/static/images/banner.png">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://megafunded.online/team">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <style>
+        html, body { overflow-x: hidden; max-width: 100%; }
+        * { box-sizing: border-box; }
+
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bg-starry-night {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2d2d2d 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stars {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 5s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .liquid-glass {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glow-text { text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 100px;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 100%);
+            animation: shootingStar 5s linear infinite;
+        }
+
+        @keyframes shootingStar {
+            0% { transform: translateX(-100px) translateY(0) rotate(45deg); opacity: 0; }
+            10% { opacity: 1; }
+            20% { transform: translateX(200px) translateY(200px) rotate(45deg); opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* Team table styling */
+        .team-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem;
+        }
+
+        .team-table thead th {
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .team-table tbody td {
+            padding: 1.1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            color: #e5e7eb;
+        }
+
+        .team-table tbody tr:last-child td { border-bottom: none; }
+
+        .team-table tbody tr {
+            transition: background 0.25s ease;
+        }
+
+        .team-table tbody tr:hover {
+            background: rgba(34, 197, 94, 0.07);
+        }
+
+        .team-name {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .team-role {
+            color: #cbd5e1;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: rgba(34, 197, 94, 0.14);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        @media (max-width: 640px) {
+            .team-table thead { display: none; }
+            .team-table, .team-table tbody, .team-table tr, .team-table td {
+                display: block;
+                width: 100%;
+            }
+            .team-table tr {
+                padding: 1rem 0.25rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .team-table td {
+                padding: 0.15rem 0.25rem;
+                border: none;
+            }
+            .team-table td:first-child {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #fff;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-starry-night text-white">
+    <div class="stars" id="stars"></div>
+
+    <!-- Fixed Navigation -->
+    <nav class="bg-black/80 backdrop-blur-md shadow-xl w-full z-50 py-1 sticky top-0 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="text-white font-bold text-xl tracking-tight flex items-center gap-2 group">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Mega Funded" class="h-9 w-9 rounded-lg object-cover">
+                        <span>Mega Funded</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('about') }}" class="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition">About</a>
+                    {% if session.get('user_id') %}
+                    <a href="{{ url_for('admin.admin_dashboard') if session.get('is_admin') else url_for('user.dashboard') }}"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition duration-300">
+                        Dashboard
+                    </a>
+                    <a href="/logout"
+                        class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition duration-300">
+                        Logout
+                    </a>
+                    {% else %}
+                    <a href="/login"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition duration-300">
+                        Login
+                    </a>
+                    <a href="/register"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition duration-300">
+                        Get Started
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero -->
+        <section class="pt-20 pb-12 bg-starry-night relative overflow-hidden">
+            <div class="shooting-star" style="top: 20%; left: 10%; animation-delay: 2s;"></div>
+            <div class="shooting-star" style="top: 60%; left: 30%; animation-delay: 5s;"></div>
+            <div class="shooting-star" style="top: 40%; left: 70%; animation-delay: 8s;"></div>
+
+            <div class="relative z-10 max-w-5xl mx-auto px-4 text-center">
+                <div data-aos="fade-down" data-aos-delay="100">
+                    <span class="liquid-glass text-cyan-300 px-4 py-2 rounded-full text-sm font-medium mb-6 inline-block">
+                        OUR TEAM
+                    </span>
+                </div>
+                <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-tight" data-aos="fade-up">
+                    <span class="text-gradient bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent glow-text">
+                        The People Behind MegaFunded
+                    </span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-300 mb-4 max-w-3xl mx-auto leading-relaxed" data-aos="fade-up" data-aos-delay="100">
+                    A team of trading, operations, and customer-experience professionals working to make funded trading opportunities more accessible.
+                </p>
+            </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Team Table -->
+        <section class="py-16 bg-starry-night relative">
+            <div class="stars"></div>
+            <div class="relative z-10 max-w-4xl mx-auto px-4">
+                <div class="text-center mb-10" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Leadership Team</h2>
+                    <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                        The core team steering MegaFunded’s platform, trading operations, and trader experience.
+                    </p>
+                </div>
+
+                <div class="liquid-glass rounded-2xl p-2 sm:p-4" data-aos="fade-up" data-aos-delay="100">
+                    <table class="team-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="team-name">Marcus Bennett</td>
+                                <td><span class="team-role">Chief Executive Officer</span></td>
+                            </tr>
+                            <tr>
+                                <td class="team-name">Sofia Martinez</td>
+                                <td><span class="team-role">Chief Operating Officer</span></td>
+                            </tr>
+                            <tr>
+                                <td class="team-name">Daniel Weber</td>
+                                <td><span class="team-role">Head of Trading</span></td>
+                            </tr>
+                            <tr>
+                                <td class="team-name">Amara Johnson</td>
+                                <td><span class="team-role">Head of Marketing</span></td>
+                            </tr>
+                            <tr>
+                                <td class="team-name">James Mitchell</td>
+                                <td><span class="team-role">Risk Management Director</span></td>
+                            </tr>
+                            <tr>
+                                <td class="team-name">Elena Petrova</td>
+                                <td><span class="team-role">Head of Customer Experience</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-10 text-center" data-aos="fade-up" data-aos-delay="200">
+                    <p class="text-gray-400 text-sm max-w-xl mx-auto">
+                        Team details are verified and updated directly by MegaFunded. For media or partnership enquiries, please contact
+                        <a href="mailto:support@megafunded.online" class="text-green-400 hover:text-green-300 underline">support@megafunded.online</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- CTA -->
+        <section class="py-16 bg-starry-night text-center">
+            <div class="max-w-4xl mx-auto px-4">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Ready to Take the Challenge?</h2>
+                <p class="text-xl text-gray-300 mb-7">Your trading journey starts with one decision.</p>
+                <a class="inline-flex bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl font-semibold"
+                    href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}">
+                    GET FUNDED
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black/80 text-white py-12 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid md:grid-cols-5 gap-8">
+                <div>
+                    <h3 class="text-2xl font-black mb-4 flex items-center tracking-tight">
+                        <span>Mega<span class="text-green-400">Funded</span></span>
+                    </h3>
+                    <p class="text-gray-400">Professional Simulated Trading Challenges. Trade with our capital, keep your profits.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ url_for('index') }}" class="hover:text-white transition">Home</a></li>
+                        <li><a href="{{ url_for('index') }}#challenges" class="hover:text-white transition">Challenges</a></li>
+                        <li><a href="{{ url_for('index') }}#rules" class="hover:text-white transition">Trading Rules</a></li>
+                        <li><a href="{{ url_for('about') }}" class="hover:text-white transition">About</a></li>
+                        <li><a href="{{ url_for('team') }}" class="hover:text-white transition">Team</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ url_for('help_center') }}" class="hover:text-white transition">Help Center</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="hover:text-white transition">Contact Us</a></li>
+                        <li><a href="{{ url_for('faq') }}" class="hover:text-white transition">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ url_for('privacy') }}" class="hover:text-white transition">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('terms') }}" class="hover:text-white transition">Terms & Conditions</a></li>
+                        <li><a href="{{ url_for('refund_policy') }}" class="hover:text-white transition">Refund Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Content</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ url_for('blog.index') }}" class="hover:text-white transition">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2026 Mega Funded. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 150;
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.width = `${Math.random() * 3}px`;
+                star.style.height = star.style.width;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                starsContainer.appendChild(star);
+            }
+            document.querySelectorAll('.stars').forEach(container => {
+                if (container.id !== 'stars') {
+                    for (let i = 0; i < 50; i++) {
+                        const star = document.createElement('div');
+                        star.classList.add('star');
+                        star.style.left = `${Math.random() * 100}%`;
+                        star.style.top = `${Math.random() * 100}%`;
+                        star.style.width = `${Math.random() * 2}px`;
+                        star.style.height = star.style.width;
+                        star.style.animationDelay = `${Math.random() * 5}s`;
+                        container.appendChild(star);
+                    }
+                }
+            });
+        }
+
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 50,
+            easing: 'ease-out-cubic'
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            createStars();
+        });
+    </script>
+</body>
+
+</html>

@@ -1537,6 +1537,9 @@ def get_live_challenge_data(challenge_id):
 def home():
     return render_template('index.html')
 
+# Alias so templates calling url_for('index') resolve to the same view.
+app.add_url_rule('/', endpoint='index', view_func=home)
+
 @app.route('/terms')
 def terms():
     return render_template('terms.html')
@@ -1933,6 +1936,19 @@ def n8n_health():
         'status': 'healthy',
         'timestamp': datetime.now(timezone.utc).isoformat()
     })
+
+
+
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/team')
+def team():
+    return render_template('team.html')
+
+
 
 # ===== MAIN =====
 if __name__ == '__main__':

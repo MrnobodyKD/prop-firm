@@ -97,7 +97,7 @@
           "name": "How much does a challenge cost?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "From $7.20 (Pay After You Pass entry fee) to $850, depending on the challenge type and account size. All fees are in USD, payable by card or cryptocurrency."
+            "text": "From $7.20 (Pay After You Pass entry fee) to $850, depending on the challenge type and account size. All fees are in USD, payable manually or by cryptocurrency."
           }
         },
         {
@@ -897,6 +897,101 @@
                 transition: none;
             }
         }
+
+        /* =============================================
+           CHALLENGE SWITCHER (Pricing / Phases & Rules)
+           ============================================= */
+        .switcher-toggle {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .switcher-toggle button {
+            border: none;
+            background: transparent;
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.55rem 1.25rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+            white-space: nowrap;
+        }
+
+        .switcher-toggle button:hover {
+            color: #fff;
+        }
+
+        .switcher-toggle button.active {
+            background: linear-gradient(135deg, #16a34a, #059669);
+            color: #fff;
+            box-shadow: 0 6px 22px rgba(34, 197, 94, 0.3);
+        }
+
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .pricing-table th {
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            padding: 0.45rem 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pricing-table td {
+            padding: 0.45rem 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .pricing-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pricing-table .price {
+            text-align: right;
+            font-weight: 700;
+            color: #4ade80;
+        }
+
+        .variant-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+
+        @media (max-width: 640px) {
+            .switcher-toggle button {
+                font-size: 0.82rem;
+                padding: 0.5rem 1rem;
+            }
+
+            .pricing-table {
+                font-size: 0.82rem;
+            }
+
+            .pricing-table th,
+            .pricing-table td {
+                padding: 0.4rem 0.35rem;
+            }
+        }
     </style>
 </head>
 
@@ -993,7 +1088,7 @@
         <div class="section-divider"></div>
 
         <!-- =============================================
-             CHALLENGES SECTION (instant selector)
+             CHALLENGES SECTION (with Pricing / Phases & Rules switcher)
              ============================================= -->
         <section id="challenges" class="py-16 bg-starry-night relative">
             <div class="stars"></div>
@@ -1002,6 +1097,15 @@
                     <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 glow-text">Choose Your Challenge</h2>
                     <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">Five evaluation options, clearly priced with their conditions.</p>
                 </div>
+
+                <!-- Switcher: Pricing | Phases & Rules -->
+                <div class="flex justify-start sm:justify-center mb-8 overflow-x-auto">
+                    <div class="switcher-toggle" role="tablist" aria-label="Challenge view switcher">
+                        <button type="button" id="btn-pricing" class="active" role="tab" aria-selected="true" aria-controls="challenge-cards">Pricing</button>
+                        <button type="button" id="btn-rules" role="tab" aria-selected="false" aria-controls="challenge-cards">Phases &amp; Rules</button>
+                    </div>
+                </div>
+
                 <div id="challenge-cards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite"></div>
             </div>
         </section>
@@ -1013,13 +1117,34 @@
              ============================================= -->
         <section id="how-it-works" class="py-16 bg-starry-night relative"><div class="stars"></div><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">How It Works</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 1</div><h3 class="text-xl font-bold text-white">Choose a challenge</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 2</div><h3 class="text-xl font-bold text-white">Complete your evaluation</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 3</div><h3 class="text-xl font-bold text-white">Qualify for a funded account</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 4</div><h3 class="text-xl font-bold text-white">Request eligible rewards</h3></article></div></div></section><div class="section-divider"></div>
         <section id="why-choose-us" class="py-16 bg-starry-night relative"><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">Why MegaFunded?</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Transparent rules</h3><p class="text-gray-300">Evaluation objectives and trading conditions are clearly communicated.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Modern dashboard</h3><p class="text-gray-300">Review your challenge progress and account information in one place.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Multiple challenges</h3><p class="text-gray-300">Choose from five evaluation options.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Reward opportunities</h3><p class="text-gray-300">Eligible traders can request rewards subject to programme terms.</p></article></div></div></section>
-        <section id="about" class="py-16 bg-starry-night relative"><div class="relative z-10 max-w-5xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-white mb-3 glow-text">ABOUT MEGAFUNDED</h2><p class="text-xl text-green-300 mb-8">Your Trading Skills. Our Capital. Your Opportunity.</p><div class="space-y-5 text-gray-300 leading-relaxed">
-<p>At MegaFunded, we believe that talented traders should not be limited by the size of their personal trading accounts. Your trading potential should be measured by your discipline, strategy, consistency, and ability to manage risk — not simply by how much money you have in your bank account.</p>
-<p>We are building a platform that connects ambitious traders with opportunities to demonstrate their trading abilities and access larger simulated trading accounts through structured evaluation programmes.</p><p>Our mission is simple: Give traders the opportunity to grow beyond their personal capital limitations.</p>
-<h3 class="text-2xl font-bold text-white pt-4">Who We Are</h3><p>MegaFunded is a proprietary trading-focused platform designed for traders who want to take their trading journey to the next level.</p><p>Whether you are an experienced Forex trader or an emerging trader looking to prove your abilities, our programmes are designed to provide a structured pathway to demonstrate your skills, develop consistency, and qualify for funded trading opportunities.</p><p>We believe that trading success comes from a combination of knowledge, discipline, patience, and effective risk management.</p>
-<h3 class="text-2xl font-bold text-white pt-4">What Makes MegaFunded Different?</h3><article class="liquid-glass rounded-2xl p-5"><h4 class="text-lg font-bold text-white mb-2">1. Accessible Trading Challenges</h4><p>We aim to make funded trading opportunities accessible through competitively priced evaluation programmes and different account options.</p></article><article class="liquid-glass rounded-2xl p-5"><h4 class="text-lg font-bold text-white mb-2">2. Opportunities to Trade Larger Accounts</h4><p>Qualified traders can access larger simulated trading accounts, subject to the applicable programme requirements and trading rules.</p></article><article class="liquid-glass rounded-2xl p-5"><h4 class="text-lg font-bold text-white mb-2">3. Performance-Based Rewards</h4><p>Eligible traders can earn rewards based on their trading performance, subject to programme terms, conditions, and payout requirements.</p></article><article class="liquid-glass rounded-2xl p-5"><h4 class="text-lg font-bold text-white mb-2">4. Transparent Trading Rules</h4><p>We believe traders deserve clarity. Our goal is to provide straightforward evaluation objectives, clearly communicated risk parameters, and transparent programme conditions.</p></article><article class="liquid-glass rounded-2xl p-5"><h4 class="text-lg font-bold text-white mb-2">5. Built for Ambitious Traders</h4><p>From beginners developing their trading discipline to experienced traders looking for greater opportunities, MegaFunded is built around the ambition to improve and grow.</p></article><h3 class="text-2xl font-bold text-white pt-4">Our Mission</h3><p>To make funded trading opportunities more accessible by creating an environment where traders can demonstrate their abilities, develop professionally, and be rewarded for disciplined performance.</p><h3 class="text-2xl font-bold text-white pt-4">Our Vision</h3><p>To become a recognised global destination for aspiring and experienced traders, empowering a new generation of disciplined traders through technology, accessibility, and performance-driven opportunities.</p><h3 class="text-2xl font-bold text-white pt-4">Who Can Join?</h3><p>MegaFunded welcomes eligible traders who are serious about developing their trading skills and following structured trading rules.</p><p>We encourage traders who value:</p><ul class="list-disc pl-6 space-y-1"><li>Discipline over gambling.</li><li>Risk management over reckless trading.</li><li>Consistency over quick profits.</li><li>Continuous learning and improvement.</li><li>Long-term trading development.</li></ul><h3 class="text-2xl font-bold text-white pt-4">Start Your Journey Today</h3><p>You don’t have to trade with millions of dollars of your own capital to demonstrate your trading potential.</p><p>Take the challenge. Prove your skills. Work towards becoming funded.</p><p>Your next trading opportunity starts with MegaFunded.</p><p class="font-semibold text-white">MegaFunded — Trade Smart. Trade Bigger.</p><a class="inline-flex mt-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold" href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}">GET FUNDED TODAY</a></div></div></section>
-        <!-- Team section intentionally hidden until verified member details are supplied. -->
-        <section id="team" class="hidden" aria-hidden="true"><!-- Populate a single team data structure with verified names, roles, photos and bios before publishing. --></section>
+
+        <!-- =============================================
+             ABOUT TEASER SECTION (replaces full About block)
+             ============================================= -->
+        <section id="about" class="py-16 bg-starry-night relative">
+            <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
+                <div data-aos="fade-up">
+                    <span class="liquid-glass text-green-300 px-4 py-2 rounded-full text-sm font-medium mb-6 inline-block">ABOUT MEGAFUNDED</span>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-6 glow-text" data-aos="fade-up" data-aos-delay="100">
+                    Your Trading Skills. Our Capital. Your Opportunity.
+                </h2>
+                <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+                    MegaFunded gives disciplined traders a structured path to larger simulated accounts — without being limited by personal capital. Learn how we built a platform around transparency, performance, and ambition.
+                </p>
+                <a href="{{ url_for('about') }}"
+                    class="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl"
+                    data-aos="fade-up" data-aos-delay="300">
+                    <span>Learn more about us</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <!-- Team section removed — full team details live on the /team page -->
+
         <section id="experiences" class="py-16 bg-starry-night relative"><div class="max-w-5xl mx-auto px-4 text-center"><h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Real Trader Experiences</h2><div class="liquid-glass rounded-2xl p-8 text-gray-300">Verified reviews and independently verifiable payout evidence, once available.</div></div></section>
         <div class="section-divider"></div>
 
@@ -1257,7 +1382,8 @@
                         <li><a href="#home" class="hover:text-white transition">Home</a></li>
                         <li><a href="#challenges" class="hover:text-white transition">Challenges</a></li>
                         <li><a href="#rules" class="hover:text-white transition">Trading Rules</a></li>
-                        <li><a href="#about" class="hover:text-white transition">About</a></li>
+                        <li><a href="{{ url_for('about') }}" class="hover:text-white transition">About</a></li>
+                        <li><a href="{{ url_for('team') }}" class="hover:text-white transition">Team</a></li>
                     </ul>
                 </div>
                 <div>
@@ -1356,10 +1482,12 @@
         });
 
         // =============================================
-        // CHALLENGE SELECTOR - runs fully in the browser,
-        // no reload, no server calls. Edit prices/rules here.
-        // Prices are [list price, discounted price].
-        // Exclusive "pay" is [pay now, pay if you pass, total].
+        // CHALLENGE SELECTOR + SWITCHER
+        // Single in-memory data source. Switching tabs re-renders
+        // #challenge-cards only — no fetch, no reload, no network.
+        // Edit prices/rules only in TYPES.
+        // prices = [list price, discounted price]
+        // pay = [pay now, pay if you pass, total]
         // =============================================
         (function () {
             const TYPES = {
@@ -1437,20 +1565,127 @@
             };
 
             const catalogue = [
-                {type:'step1', variant:0, filter:'one_phase'}, {type:'step2', variant:0, filter:'two_phase'}, {type:'step3', variant:0, filter:'three_phase'},
-                {type:'exclusive', variant:0, filter:'exclusive'}, {type:'exclusive', variant:1, filter:'exclusive'}
+                { type: 'step1', variant: 0, filter: 'one_phase' },
+                { type: 'step2', variant: 0, filter: 'two_phase' },
+                { type: 'step3', variant: 0, filter: 'three_phase' },
+                { type: 'exclusive', variant: 0, filter: 'exclusive' },
+                { type: 'exclusive', variant: 1, filter: 'exclusive' }
             ];
+
             const cards = document.getElementById('challenge-cards');
+            const btnPricing = document.getElementById('btn-pricing');
+            const btnRules = document.getElementById('btn-rules');
             const challengeUrl = "{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}";
-            cards.innerHTML = catalogue.map(({type:key, variant:index, filter}) => {
-                const type = TYPES[key], option = type.variants[index];
-                const variants = (key === 'exclusive') ? [option] : type.variants;
-                const prices = variants.flatMap(v => v.prices ? Object.values(v.prices).map(x => x[0]) : Object.values(v.pay).map(x => x[0]));
-                const from = Math.min(...prices);
-                const priceLabel = Number.isInteger(from) ? String(from) : from.toFixed(2);
-                const cardName = key === 'exclusive' ? option.display : type.name;
-                return `<article class="liquid-glass rounded-2xl p-6 flex flex-col"><h3 class="text-2xl font-bold text-white">${cardName}</h3><p class="text-gray-400 mt-2 flex-grow">${type.tagline}</p><p class="text-green-300 font-bold text-2xl mt-6">from $${priceLabel}</p><a href="${challengeUrl}${challengeUrl.includes('?') ? '&' : '?'}filter=${filter}" class="plan-cta mt-4">Explore ${cardName}</a></article>`;
-            }).join('');
+
+            let currentView = 'pricing'; // 'pricing' | 'rules'
+
+            function fmtPrice(v) {
+                return Number.isInteger(v) ? String(v) : v.toFixed(2);
+            }
+
+            function variantDisplayName(typeKey, variant) {
+                return typeKey === 'exclusive' ? variant.display : (variant.display || variant.label);
+            }
+
+            function priceTableHTML(typeKey, variant) {
+                if (variant.prices) {
+                    const sizes = Object.keys(variant.prices);
+                    const rows = sizes.map(size => {
+                        const list = variant.prices[size][0];
+                        return `<tr><td>$${size}</td><td class="price">$${fmtPrice(list)}</td></tr>`;
+                    }).join('');
+                    return `
+                        <div class="mt-3">
+                            <span class="variant-label">${variant.label}</span>
+                            <table class="pricing-table">
+                                <thead><tr><th>Account</th><th class="text-right">Price</th></tr></thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>`;
+                }
+                if (variant.pay) {
+                    const sizes = Object.keys(variant.pay);
+                    const rows = sizes.map(size => {
+                        const now = variant.pay[size][0];
+                        const later = variant.pay[size][1];
+                        return `<tr><td>$${size}</td><td class="price">$${fmtPrice(now)} <span class="text-gray-500 font-normal">+ $${fmtPrice(later)}</span></td></tr>`;
+                    }).join('');
+                    return `
+                        <div class="mt-3">
+                            <span class="variant-label">${variant.label}</span>
+                            <table class="pricing-table">
+                                <thead><tr><th>Account</th><th class="text-right">Pay now / later</th></tr></thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>`;
+                }
+                return '';
+            }
+
+            function rulesHTML(variant) {
+                const rows = variant.rows.map(([k, v]) =>
+                    `<div class="spec-row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+                ).join('');
+                let payNote = '';
+                if (variant.pay) {
+                    const sizes = Object.keys(variant.pay);
+                    const lines = sizes.map(size => {
+                        const now = variant.pay[size][0];
+                        const later = variant.pay[size][1];
+                        return `<div class="spec-row"><span class="k">$${size}</span><span class="v">$${fmtPrice(now)} ${variant.payNowLabel || ''} + $${fmtPrice(later)} ${variant.payLaterLabel || ''}</span></div>`;
+                    }).join('');
+                    payNote = `<div class="mt-3 pt-3 border-t border-white/10">${lines}</div>`;
+                }
+                return `<div class="mt-3">${rows}${payNote}</div>`;
+            }
+
+            function cardHTML(typeKey, variant) {
+                const type = TYPES[typeKey];
+                const cardName = typeKey === 'exclusive' ? variant.display : type.name;
+                const variants = (typeKey === 'exclusive') ? [variant] : type.variants;
+
+                const body = (currentView === 'pricing')
+                    ? variants.map(v => priceTableHTML(typeKey, v)).join('')
+                    : variants.map(v => (typeKey === 'exclusive')
+                        ? `<div class="mb-2"><span class="variant-label">${v.label}</span></div>${rulesHTML(v)}`
+                        : rulesHTML(v)).join('');
+
+                return `<article class="liquid-glass rounded-2xl p-6 flex flex-col swap-in">
+                    <h3 class="text-2xl font-bold text-white">${cardName}</h3>
+                    <p class="text-gray-400 mt-2">${type.tagline}</p>
+                    ${body}
+                    <a href="${challengeUrl}${challengeUrl.includes('?') ? '&' : '?'}filter=${catalogue.find(c => c.type === typeKey)?.filter || ''}" class="plan-cta mt-4">Explore ${cardName}</a>
+                </article>`;
+            }
+
+            function render() {
+                cards.innerHTML = catalogue.map(({ type, variant }) => {
+                    const v = TYPES[type].variants[variant];
+                    return cardHTML(type, v);
+                }).join('');
+            }
+
+            function setView(view) {
+                currentView = view;
+                if (view === 'pricing') {
+                    btnPricing.classList.add('active');
+                    btnPricing.setAttribute('aria-selected', 'true');
+                    btnRules.classList.remove('active');
+                    btnRules.setAttribute('aria-selected', 'false');
+                } else {
+                    btnRules.classList.add('active');
+                    btnRules.setAttribute('aria-selected', 'true');
+                    btnPricing.classList.remove('active');
+                    btnPricing.setAttribute('aria-selected', 'false');
+                }
+                render();
+            }
+
+            btnPricing.addEventListener('click', () => setView('pricing'));
+            btnRules.addEventListener('click', () => setView('rules'));
+
+            // Initial render
+            render();
         })();
     </script>
 </body>
