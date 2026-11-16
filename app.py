@@ -1608,7 +1608,8 @@ def sitemap():
         for endpoint, changefreq, priority in static_pages:
             try:
                 loc = url_for(endpoint, _external=True)
-                
+                # Canonicalise generated entries to the site's no-www domain.
+                loc = loc.replace('https://www.megafunded.online', 'https://megafunded.online')
                 url_elem = ET.SubElement(urlset, "url")
                 ET.SubElement(url_elem, "loc").text = loc
                 ET.SubElement(url_elem, "lastmod").text = today
@@ -1616,12 +1617,21 @@ def sitemap():
                 ET.SubElement(url_elem, "priority").text = priority
             except Exception as e:
                 app.logger.warning(f"Sitemap: Failed to generate URL for endpoint {endpoint}: {e}")
+
+        # Homepage sections are public destinations; the Team anchor remains
+        # an empty placeholder until verified team details are supplied.
+        for fragment in ('challenges', 'how-it-works', 'why-choose-us', 'about', 'team', 'experiences', 'rules', 'homepage-faq'):
+            url_elem = ET.SubElement(urlset, "url")
+            ET.SubElement(url_elem, "loc").text = f"https://megafunded.online/#{fragment}"
+            ET.SubElement(url_elem, "lastmod").text = today
+            ET.SubElement(url_elem, "changefreq").text = 'monthly'
+            ET.SubElement(url_elem, "priority").text = '0.5'
         
         posts = db.session.query(BlogPost.slug, BlogPost.date_published).order_by(BlogPost.date_published.desc()).all()
         
         for post_slug, date_published in posts:
             try:
-                loc = url_for('blog.detail', slug=post_slug, _external=True)
+                loc = url_for('blog.detail', slug=post_slug, _external=True).replace('https://www.megafunded.online', 'https://megafunded.online')
                 
                 lastmod = date_published.strftime('%Y-%m-%d') if date_published else today
                 
