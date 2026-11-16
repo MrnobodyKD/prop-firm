@@ -25,23 +25,23 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="Mega Funded | trading challenges">
     <meta property="og:description" content="Low-cost challenges, beginner-friendly rules, fast and transparent payouts. trading challenges">
-    <meta property="og:url" content="https://www.megafunded.online">
+    <meta property="og:url" content="https://megafunded.online">
     <meta property="og:site_name" content="Mega Funded">
-    <meta property="og:image" content="https://megafunded.online/static/images/logo.png">
+    <meta property="og:image" content="https://megafunded.online/static/images/banner.png">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Mega Funded | trading challenges">
     <meta name="twitter:description" content="Low-cost challenges. Beginner friendly. trading challenges">
-    <meta name="twitter:image" content="https://megafunded.online/static/images/logo.png">
+    <meta name="twitter:image" content="https://megafunded.online/static/images/banner.png">
 
-    <link rel="canonical" href="https://www.megafunded.online">
+    <link rel="canonical" href="https://megafunded.online">
 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "Mega Funded",
-      "url": "https://www.megafunded.online",
+      "url": "https://megafunded.online",
       "logo": "https://megafunded.online/static/images/logo.png"
     }
     </script>
@@ -281,6 +281,14 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
     </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css">
+<style>
+  .iti { width: 100%; }
+  .iti__dropdown-content { max-width: calc(100vw - 3rem); }
+  .register-input { background: rgba(17,24,39,.72); border-color: rgba(148,163,184,.35); }
+  .register-input:focus { border-color: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.18); }
+  #dobDropdown { max-width: calc(100vw - 2rem); }
+</style>
 </head>
 <body class="bg-starry-night text-white">
     <div class="stars" id="stars"></div>
@@ -328,7 +336,7 @@
                     Start Your Journey
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-400">
-                    Join thousands of funded traders
+                    Create your Mega Funded account
                 </p>
             </div>
 
@@ -339,13 +347,13 @@
                         <div>
                             <label for="first_name" class="block text-sm font-medium text-gray-300 mb-2">First Name</label>
                             <input id="first_name" name="first_name" type="text" required
-                                   class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                                   class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
                                    placeholder="John">
                         </div>
                         <div>
                             <label for="last_name" class="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
                             <input id="last_name" name="last_name" type="text" required
-                                   class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                                   class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
                                    placeholder="Doe">
                         </div>
                     </div>
@@ -354,19 +362,18 @@
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
                         <input id="email" name="email" type="email" autocomplete="email" required
-                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
                                placeholder="trader@example.com">
                     </div>
 
-                    <!-- Phone — numbers only -->
+                    <!-- Phone with international dial code selector -->
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
-                        <input id="phone" name="phone" type="tel" required
-                               inputmode="numeric"
-                               pattern="[0-9+\s\-()]{7,15}"
-                               oninput="this.value = this.value.replace(/[^0-9+\s\-()+]/g, '')"
-                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                               placeholder="Include country code">
+                        <label for="phoneInput" class="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+                        <input id="phoneInput" type="tel" required inputmode="numeric" autocomplete="tel-national"
+                               oninput="this.value = this.value.replace(/\D/g, '')"
+                               class="register-input relative block w-full px-4 py-3 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition duration-200"
+                               placeholder="Phone number">
+                        <input id="phone" name="phone" type="hidden">
                     </div>
 
                     <!-- Date of Birth — custom scrollable picker -->
@@ -375,7 +382,7 @@
                         <input type="hidden" id="dob" name="dob">
                         <div class="dob-picker-wrapper">
                             <div id="dobDisplay"
-                                 class="dob-display relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                                 class="dob-display relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
                                  onclick="toggleDobDropdown()">
                                 <span id="dobDisplayText" class="placeholder-text">Select your date of birth</span>
                                 <i class="fas fa-calendar-alt text-gray-400"></i>
@@ -400,63 +407,18 @@
 
                     <!-- Location -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div class="relative">
                             <label for="country" class="block text-sm font-medium text-gray-300 mb-2">Country</label>
-                            <select id="country" name="country" required
-                                    class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                    onchange="toggleStateField()">
-                                <option value="">Select Country</option>
-                                <option value="India">India</option>
-                                <option value="USA">United States</option>
-                                <option value="UK">United Kingdom</option>
-                                <option value="Canada">Canada</option>
-                                <option value="Australia">Australia</option>
-                                <option value="Other">Other</option>
-                            </select>
+                            <input id="country" name="country" list="countryOptions" required autocomplete="country-name"
+                                   class="register-input relative block w-full px-4 py-3 border rounded-lg text-white focus:outline-none transition duration-200"
+                                   placeholder="Search your country">
+                            <datalist id="countryOptions"></datalist>
                         </div>
-                        <div id="state-field" class="state-field">
-                            <label for="state" class="block text-sm font-medium text-gray-300 mb-2">State</label>
-                            <select id="state" name="state"
-                                    class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
-                                <option value="">Select State</option>
-                                <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                                <option value="Assam">Assam</option>
-                                <option value="Bihar">Bihar</option>
-                                <option value="Chhattisgarh">Chhattisgarh</option>
-                                <option value="Goa">Goa</option>
-                                <option value="Gujarat">Gujarat</option>
-                                <option value="Haryana">Haryana</option>
-                                <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                <option value="Jharkhand">Jharkhand</option>
-                                <option value="Karnataka">Karnataka</option>
-                                <option value="Kerala">Kerala</option>
-                                <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                <option value="Maharashtra">Maharashtra</option>
-                                <option value="Manipur">Manipur</option>
-                                <option value="Meghalaya">Meghalaya</option>
-                                <option value="Mizoram">Mizoram</option>
-                                <option value="Nagaland">Nagaland</option>
-                                <option value="Odisha">Odisha</option>
-                                <option value="Punjab">Punjab</option>
-                                <option value="Rajasthan">Rajasthan</option>
-                                <option value="Sikkim">Sikkim</option>
-                                <option value="Tamil Nadu">Tamil Nadu</option>
-                                <option value="Telangana">Telangana</option>
-                                <option value="Tripura">Tripura</option>
-                                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                <option value="Uttarakhand">Uttarakhand</option>
-                                <option value="West Bengal">West Bengal</option>
-                                <!-- Union Territories -->
-                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                                <option value="Chandigarh">Chandigarh</option>
-                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra & Nagar Haveli and Daman & Diu</option>
-                                <option value="Delhi">Delhi (NCT)</option>
-                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                                <option value="Ladakh">Ladakh</option>
-                                <option value="Lakshadweep">Lakshadweep</option>
-                                <option value="Puducherry">Puducherry</option>
-                            </select>
+                        <div>
+                            <label for="state" class="block text-sm font-medium text-gray-300 mb-2">State / Province (optional)</label>
+                            <input id="state" name="state" type="text" autocomplete="address-level1"
+                                   class="register-input relative block w-full px-4 py-3 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition duration-200"
+                                   placeholder="State or province">
                         </div>
                     </div>
 
@@ -464,7 +426,7 @@
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                         <input id="password" name="password" type="password" autocomplete="new-password" required
-                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
                                placeholder="••••••••">
                         <p class="mt-1 text-xs text-gray-400">Minimum 8 characters with numbers and letters</p>
                     </div>
@@ -473,14 +435,14 @@
                     <div>
                         <label for="confirm_password" class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
                         <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required
-                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                               class="relative block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
                                placeholder="••••••••">
                     </div>
 
                     <!-- Terms -->
                     <div class="flex items-center">
                         <input id="terms" name="terms" type="checkbox" required
-                               class="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-600 rounded bg-gray-900/50">
+                               class="h-4 w-4 text-blue-500 focus:ring-green-500 border-gray-600 rounded bg-gray-900/50">
                         <label for="terms" class="ml-2 block text-sm text-gray-300">
                             I agree to the <a href="/terms" target="_blank" class="text-blue-400 hover:text-blue-300">Terms &amp; Conditions</a> and <a href="/privacy" target="_blank" class="text-blue-400 hover:text-blue-300">Privacy Policy</a>
                         </label>
@@ -509,7 +471,7 @@
                 <p class="text-xs text-gray-500">Why join Mega Funded?</p>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-400">
                     <div class="flex items-center justify-center"><span class="mr-1">🚀</span> Instant Setup</div>
-                    <div class="flex items-center justify-center"><span class="mr-1">💸</span> 80% Profit Split</div>
+                    <div class="flex items-center justify-center"><span class="mr-1">💸</span> Up to 80% on eligible challenges</div>
                     <div class="flex items-center justify-center"><span class="mr-1">⚡</span> Fast Payouts</div>
                     <div class="flex items-center justify-center"><span class="mr-1">🛡️</span> Risk Management</div>
                 </div>
@@ -517,7 +479,51 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
     <script>
+        /* ── Global country and dial-code controls ── */
+        const countryField = document.getElementById('country');
+        const phoneField = document.getElementById('phoneInput');
+        const fullPhoneField = document.getElementById('phone');
+        const countryOptions = document.getElementById('countryOptions');
+        const iti = window.intlTelInput(phoneField, {
+            initialCountry: 'in',
+            separateDialCode: true,
+            nationalMode: true,
+            utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js'
+        });
+        window.intlTelInput.getCountryData().forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.label = `${country.name} (${country.iso2.toUpperCase()})`;
+            option.dataset.iso = country.iso2;
+            countryOptions.appendChild(option);
+        });
+        function syncCountryFromDialCode() {
+            const selected = iti.getSelectedCountryData();
+            if (selected && selected.name) countryField.value = selected.name;
+        }
+        phoneField.addEventListener('countrychange', syncCountryFromDialCode);
+        syncCountryFromDialCode();
+        countryField.addEventListener('change', () => {
+            const selected = window.intlTelInput.getCountryData().find(c => c.name.toLowerCase() === countryField.value.trim().toLowerCase() || c.iso2.toLowerCase() === countryField.value.trim().toLowerCase());
+            if (selected) { iti.setCountry(selected.iso2); countryField.value = selected.name; }
+        });
+        document.getElementById('registerForm').addEventListener('submit', event => {
+            const countryMatch = window.intlTelInput.getCountryData().some(c => c.name.toLowerCase() === countryField.value.trim().toLowerCase());
+            const nationalDigits = phoneField.value.replace(/\D/g, '').replace(/^0+/, '');
+            const dial = iti.getSelectedCountryData().dialCode || '';
+            const international = '+' + dial + nationalDigits;
+            if (!countryMatch || !/^\+[1-9]\d{6,14}$/.test(international)) {
+                event.preventDefault();
+                phoneField.setCustomValidity('Enter a valid phone number with 7 to 15 digits including the country code.');
+                phoneField.reportValidity();
+                return;
+            }
+            phoneField.setCustomValidity('');
+            fullPhoneField.value = international;
+        });
+
         /* ── Stars ── */
         function createStars() {
             const container = document.getElementById('stars');
@@ -531,21 +537,6 @@
                 s.style.height = sz + 'px';
                 s.style.animationDelay = Math.random() * 5 + 's';
                 container.appendChild(s);
-            }
-        }
-
-        /* ── State field toggle ── */
-        function toggleStateField() {
-            const country    = document.getElementById('country').value;
-            const stateField = document.getElementById('state-field');
-            const stateInput = document.getElementById('state');
-            if (country === 'India') {
-                stateField.style.display = 'block';
-                stateInput.required = true;
-            } else {
-                stateField.style.display = 'none';
-                stateInput.required = false;
-                stateInput.value = '';
             }
         }
 

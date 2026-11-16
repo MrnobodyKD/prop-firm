@@ -7,6 +7,7 @@ from models import db, User, Moderator, ModeratorActivityLog
 from notification_service import create_notification
 import os
 import json
+import re
 
 try:
     import redis
@@ -377,13 +378,17 @@ def register():
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         email = request.form['email']
-        phone = request.form['phone']
+        phone = request.form.get('phone', '').strip()
         dob = request.form['dob']
         country = request.form['country']
-        state = request.form.get('state', '')
+        state = request.form.get('state', '').strip() or None
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         
+        if not re.fullmatch(r'\+[1-9]\d{6,14}', phone):
+            flash('Enter a valid international phone number, including its country code.', 'error')
+            return render_template('register.html')
+
         try:
             dob_date = datetime.strptime(dob, '%Y-%m-%d').date()
         except ValueError:
@@ -416,7 +421,7 @@ def register():
             phone=phone,
             dob=dob_date,
             country=country,
-            state=state if country == 'India' else None
+            state=state
         )
         new_user.set_password(password)
         
