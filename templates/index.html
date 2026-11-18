@@ -16,7 +16,6 @@
     <title>Trade Bigger. Prove Your Skills. Earn Your Rewards. | Mega Funded</title>
     {% set min_account = challenges|min(attribute='account_size') if challenges else none %}
     {% set max_account = challenges|max(attribute='account_size') if challenges else none %}
-    {% set max_split = challenges|max(attribute='user_profit_share') if challenges else none %}
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="512x512" href="/static/images/favicon_512.png">
@@ -263,30 +262,88 @@
             }
         }
 
-        /* Liquid Glass Theme */
+        /* =============================================
+           A. UNIVERSE BACKGROUND (fixed, living canvas, never in the way)
+           Sections are transparent so this layer shows through;
+           main + footer sit above it (z-index 10).
+           #universe-canvas is drawn by the script at the bottom of the
+           page; a CSS vignette keeps all white text readable.
+           ============================================= */
+        .candle-galaxy {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background:
+                radial-gradient(600px circle at 0% 0%, rgba(16, 185, 129, 0.12), transparent 70%),
+                radial-gradient(600px circle at 100% 100%, rgba(139, 92, 246, 0.12), transparent 70%);
+        }
+
+        #universe-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Readability shield: dark edges + darker top band (nav & hero text stay crisp) */
+        .universe-vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 30%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
+        }
+
+        main,
+        footer {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Liquid Glass v2 — real macOS-style frosted glass */
         .liquid-glass {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.20);
             position: relative;
             overflow: hidden;
         }
 
         .liquid-glass::before {
-            content: '';
+            content: "";
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: 0.5s;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 40%);
+            pointer-events: none;
         }
 
-        .liquid-glass:hover::before {
-            left: 100%;
+        /* Nav glass — same recipe, keeps the nav's sticky positioning */
+        .nav-glass {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
+            background-color: rgba(10, 10, 10, 0.55);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            backdrop-filter: blur(20px) saturate(160%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.20);
+        }
+
+        .nav-glass::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 60%);
+            pointer-events: none;
+        }
+
+        .nav-glass>* {
+            position: relative;
         }
 
         .floating {
@@ -378,7 +435,47 @@
             }
         }
 
+        /* =============================================
+           D. HERO POLISH — gradient keyword + CTA shine
+           ============================================= */
+        .gradient-keyword {
+            background: linear-gradient(90deg, #22c55e, #a3e635);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+        }
 
+        .cta-shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-shine::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transform: translateX(-160%) skewX(-20deg);
+            animation: shine 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+
+            0%,
+            55% {
+                transform: translateX(-160%) skewX(-20deg);
+            }
+
+            100% {
+                transform: translateX(380%) skewX(-20deg);
+            }
+        }
 
         /* =============================================
            DASHBOARD SHOWCASE SECTION - NEW STYLES
@@ -908,119 +1005,77 @@
             outline-offset: 3px;
         }
 
+        /* =============================================
+           C. CHALLENGE SUMMARY CARDS (no tabs, no toggle)
+           ============================================= */
+        .challenge-card {
+            border-top: 3px solid var(--accent, #22c55e);
+            min-width: 0;
+        }
+
+        .challenge-card .fact {
+            min-width: 0;
+        }
+
+        .challenge-card .fact dt {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94a3b8;
+            margin: 0 0 2px;
+        }
+
+        .challenge-card .fact dd {
+            margin: 0;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #fff;
+            overflow-wrap: anywhere;
+        }
+
+        .challenge-card .fact {
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        /* Hover only on devices that really hover — never sticks after a tap */
+        @media (hover: hover) and (pointer: fine) {
+            .challenge-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .challenge-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 24px var(--accent-glow, rgba(34, 197, 94, 0.2));
+            }
+        }
+
+        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
 
-            .swap-in,
-            .sel-btn,
-            .plan-cta {
-                animation: none;
-                transition: none;
-            }
-        }
-
-        /* =============================================
-           CHALLENGE SWITCHER (Pricing / Phases & Rules)
-           ============================================= */
-        .switcher-toggle {
-            display: inline-flex;
-            gap: 4px;
-            padding: 4px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .switcher-toggle button {
-            border: none;
-            background: transparent;
-            color: #cbd5e1;
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 0.55rem 1.25rem;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-            white-space: nowrap;
-        }
-
-        .switcher-toggle button:hover {
-            color: #fff;
-        }
-
-        .switcher-toggle button.active {
-            background: linear-gradient(135deg, #16a34a, #059669);
-            color: #fff;
-            box-shadow: 0 6px 22px rgba(34, 197, 94, 0.3);
-        }
-
-        .pricing-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        .pricing-table th {
-            text-align: left;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #94a3b8;
-            padding: 0.45rem 0.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .pricing-table td {
-            padding: 0.45rem 0.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            color: #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .pricing-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .pricing-table .price {
-            text-align: right;
-            font-weight: 700;
-            color: #4ade80;
-        }
-
-        .variant-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #94a3b8;
-            margin-bottom: 0.35rem;
-            display: block;
-        }
-
-        @media (max-width: 640px) {
-            .switcher-toggle button {
-                font-size: 0.82rem;
-                padding: 0.5rem 1rem;
-            }
-
-            .pricing-table {
-                font-size: 0.82rem;
-            }
-
-            .pricing-table th,
-            .pricing-table td {
-                padding: 0.4rem 0.35rem;
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
 </head>
 
 <body class="bg-starry-night text-white">
+    <!-- A. Living universe: animated candlestick galaxies, planets, dust & shooting stars on one canvas + emerald/violet nebula (behind everything) -->
+    <div class="candle-galaxy" aria-hidden="true">
+        <canvas id="universe-canvas"></canvas>
+        <div class="universe-vignette"></div>
+    </div>
+
     <!-- Starry Background -->
     <div class="stars" id="stars"></div>
 
     <!-- Fixed Navigation -->
-    <nav class="bg-black/80 backdrop-blur-md shadow-xl w-full z-50 py-1 sticky top-0 border-b border-gray-800">
+    <nav class="nav-glass w-full z-50 py-1 sticky top-0">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center">
                 <!-- Logo -->
@@ -1062,7 +1117,7 @@
     <!-- Main Content -->
     <main class="pt-0">
         <!-- Hero Section -->
-        <section id="home" class="pt-20 pb-16 bg-starry-night relative overflow-hidden">
+        <section id="home" class="py-20 md:py-24 relative overflow-hidden">
             <div class="shooting-star" style="top: 20%; left: 10%; animation-delay: 2s;"></div>
             <div class="shooting-star" style="top: 60%; left: 30%; animation-delay: 5s;"></div>
             <div class="shooting-star" style="top: 40%; left: 70%; animation-delay: 8s;"></div>
@@ -1076,8 +1131,7 @@
                 </div>
 
                 <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight" data-aos="fade-up">
-                    <span
-                        class="text-gradient bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent glow-text">Trade Bigger. Prove Your Skills. Earn Your Rewards.</span>
+                    <span class="glow-text">Trade Bigger. Prove Your Skills. Earn Your <span class="gradient-keyword">Rewards</span>.</span>
                 </h1>
 
                 <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed" data-aos="fade-up"
@@ -1088,7 +1142,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center" data-aos="fade-up"
                     data-aos-delay="200">
                     <a href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}"
-                        class="group bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl flex items-center pulse-glow">
+                        class="cta-shine group bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl flex items-center pulse-glow">
                         <span>Start Challenge</span>
                         <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
                     </a>
@@ -1105,26 +1159,19 @@
         <div class="section-divider"></div>
 
         <!-- =============================================
-             CHALLENGES SECTION (with Pricing / Phases & Rules switcher)
+             CHALLENGES SECTION (short summary cards — everything visible, no tabs)
              ============================================= -->
-        <section id="challenges" class="py-16 bg-starry-night relative">
+        <section id="challenges" class="py-20 md:py-24 relative">
             <div class="stars"></div>
             <div class="relative z-10 max-w-6xl mx-auto px-4">
                 {% set challenge_names = challenges|map(attribute='name')|list|unique|list %}
-                <div class="text-center mb-10" data-aos="fade-up">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <div class="text-green-400 text-xs font-bold uppercase tracking-widest mb-3">CHALLENGES</div>
                     <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 glow-text">Choose Your Challenge</h2>
                     <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">{{ challenge_names|length }} evaluation options, clearly priced with their conditions.</p>
                 </div>
 
-                <!-- Switcher: Pricing | Phases & Rules -->
-                <div class="flex justify-start sm:justify-center mb-8 overflow-x-auto">
-                    <div class="switcher-toggle" role="tablist" aria-label="Challenge view switcher">
-                        <button type="button" id="btn-pricing" class="active" role="tab" aria-selected="true" aria-controls="challenge-cards">Pricing</button>
-                        <button type="button" id="btn-rules" role="tab" aria-selected="false" aria-controls="challenge-cards">Phases &amp; Rules</button>
-                    </div>
-                </div>
-
-                <div id="challenge-cards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite">
+                <div id="challenge-cards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for challenge in challenges %}
                     {% set challenge_name_lower = (challenge.name or '')|lower %}
                     {% if 'pay as you go' in challenge_name_lower or 'pay after you pass' in challenge_name_lower %}{% set cat = 'exclusive' %}
@@ -1132,44 +1179,53 @@
                     {% elif challenge.challenge_type == 'two_phase' %}{% set cat = 'two_phase' %}
                     {% elif challenge.challenge_type == 'three_phase' %}{% set cat = 'three_phase' %}
                     {% else %}{% set cat = 'instant' %}{% endif %}
-                    <article class="liquid-glass rounded-2xl p-6 flex flex-col swap-in" data-type="{{ cat }}">
-                        <h3 class="text-2xl font-bold text-white">{{ challenge.name }}</h3>
-                        {% if challenge.description %}<p class="text-gray-400 mt-2">{{ challenge.description }}</p>{% endif %}
-                        <div class="challenge-pricing-view mt-3">
-                            <table class="pricing-table">
-                                <thead><tr><th>Account</th><th class="text-right">Price</th></tr></thead>
-                                <tbody><tr><td>{{ '$' }}{{ '{:,}'.format(challenge.account_size) }}</td><td class="price">{% if (challenge.currency or 'USD')|upper == 'USD' %}${{ '%.2f'|format(challenge.price) }}{% else %}{{ challenge.currency or 'USD' }} {{ '%.2f'|format(challenge.price) }}{% endif %}</td></tr></tbody>
-                            </table>
-                        </div>
-                        <div class="challenge-rules-view mt-3 hidden">
-                            {% set phase_count = 0 if challenge.challenge_type == 'instant' else 3 if challenge.challenge_type == 'three_phase' else 2 if challenge.challenge_type == 'two_phase' else 1 %}
-                            {% if phase_count == 0 %}
-                            <div class="spec-row"><span class="k">Profit Target</span><span class="v">N/A</span></div>
-                            <div class="spec-row"><span class="k">Daily Loss</span><span class="v">{{ challenge.instant_daily_loss if challenge.instant_daily_loss is not none else '—' }}{% if challenge.instant_daily_loss is not none %}%{% endif %}</span></div>
-                            <div class="spec-row"><span class="k">Overall Loss</span><span class="v">{{ challenge.instant_overall_loss if challenge.instant_overall_loss is not none else '—' }}{% if challenge.instant_overall_loss is not none %}%{% endif %}</span></div>
-                            <div class="spec-row"><span class="k">Min Days</span><span class="v">{{ challenge.instant_min_days if challenge.instant_min_days is not none else '—' }}</span></div>
-                            <div class="spec-row"><span class="k">Leverage</span><span class="v">{{ challenge.instant_leverage or '—' }}</span></div>
-                            {% else %}
-                            {% for phase in range(1, phase_count + 1) %}
-                            {% if phase_count > 1 %}<div class="variant-label mt-3">Phase {{ phase }}</div>{% endif %}
-                            {% set target = challenge|attr('phase' ~ phase ~ '_target') %}
-                            {% set daily = challenge|attr('phase' ~ phase ~ '_daily_loss') %}
-                            {% set overall = challenge|attr('phase' ~ phase ~ '_overall_loss') %}
-                            {% set min_days = challenge|attr('phase' ~ phase ~ '_min_days') %}
-                            {% set duration = challenge|attr('phase' ~ phase ~ '_duration') %}
-                            {% set leverage = challenge|attr('phase' ~ phase ~ '_leverage') %}
-                            <div class="spec-row"><span class="k">Profit Target</span><span class="v">{{ target if target is not none else '—' }}{% if target is not none %}%{% endif %}</span></div>
-                            <div class="spec-row"><span class="k">Daily Loss</span><span class="v">{{ daily if daily is not none else '—' }}{% if daily is not none %}%{% endif %}</span></div>
-                            <div class="spec-row"><span class="k">Overall Loss</span><span class="v">{{ overall if overall is not none else '—' }}{% if overall is not none %}%{% endif %}</span></div>
-                            <div class="spec-row"><span class="k">Min Days</span><span class="v">{{ min_days if min_days is not none else '—' }}</span></div>
-                            <div class="spec-row"><span class="k">Duration</span><span class="v">{% if challenge.no_expiry %}None{% elif duration %}{{ duration }} days{% else %}No limit{% endif %}</span></div>
-                            <div class="spec-row"><span class="k">Leverage</span><span class="v">{{ leverage or '—' }}</span></div>
-                            {% endfor %}
-                            {% endif %}
-                            <div class="spec-row"><span class="k">Profit Split</span><span class="v">{{ challenge.user_profit_share }}%</span></div>
-                        </div>
-                        <a href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}" class="plan-cta mt-4">Explore {{ challenge.name }}</a>
-                    </article>
+                    {% set accent = {'one_phase': '#22c55e', 'two_phase': '#3b82f6', 'three_phase': '#f59e0b', 'exclusive': '#a855f7', 'instant': '#22d3ee'}[cat] %}
+                    {% set cat_label = {'one_phase': '1 Step', 'two_phase': '2 Step', 'three_phase': '3 Step', 'exclusive': 'Exclusive', 'instant': 'Instant'}[cat] %}
+
+                    {# Short-summary facts — same database fields the old rules view used #}
+                    {% if challenge.challenge_type == 'instant' %}
+                        {% set f_target = 'N/A' %}
+                        {% set f_daily = (challenge.instant_daily_loss ~ '%') if challenge.instant_daily_loss is not none else '—' %}
+                        {% set f_overall = (challenge.instant_overall_loss ~ '%') if challenge.instant_overall_loss is not none else '—' %}
+                        {% set f_leverage = challenge.instant_leverage or '—' %}
+                        {% set f_min = challenge.instant_min_days if challenge.instant_min_days is not none else '—' %}
+                    {% else %}
+                        {% set t1 = (challenge.phase1_target ~ '%') if challenge.phase1_target is not none else '—' %}
+                        {% set t2 = (challenge.phase2_target ~ '%') if challenge.phase2_target is not none else '—' %}
+                        {% set t3 = (challenge.phase3_target ~ '%') if challenge.phase3_target is not none else '—' %}
+                        {% if challenge.challenge_type == 'two_phase' %}{% set f_target = t1 ~ ' / ' ~ t2 %}
+                        {% elif challenge.challenge_type == 'three_phase' %}{% set f_target = t1 ~ ' / ' ~ t2 ~ ' / ' ~ t3 %}
+                        {% else %}{% set f_target = t1 %}{% endif %}
+                        {% set f_daily = (challenge.phase1_daily_loss ~ '%') if challenge.phase1_daily_loss is not none else '—' %}
+                        {% set f_overall = (challenge.phase1_overall_loss ~ '%') if challenge.phase1_overall_loss is not none else '—' %}
+                        {% set f_leverage = challenge.phase1_leverage or '—' %}
+                        {% set f_min = challenge.phase1_min_days if challenge.phase1_min_days is not none else '—' %}
+                    {% endif %}
+
+                    <div class="h-full" data-aos="fade-up" data-aos-delay="{{ (loop.index0 * 80) if loop.index0 < 5 else 320 }}" data-type="{{ cat }}">
+                        <article class="liquid-glass challenge-card p-6 flex flex-col h-full" style="--accent: {{ accent }}; --accent-glow: {{ accent }}33;">
+                            <div class="flex items-start justify-between gap-3">
+                                <h3 class="text-2xl font-bold text-white leading-tight">{{ challenge.name }}</h3>
+                                <span class="plan-badge shrink-0">{{ cat_label }}</span>
+                            </div>
+
+                            <div class="mt-5 flex items-end flex-wrap gap-x-3 gap-y-1">
+                                <span class="text-4xl font-extrabold text-white tracking-tight">{% if (challenge.currency or 'USD')|upper == 'USD' %}${{ '%.2f'|format(challenge.price) }}{% else %}{{ challenge.currency or 'USD' }} {{ '%.2f'|format(challenge.price) }}{% endif %}</span>
+                                <span class="text-sm text-gray-400 pb-1">{{ '$' }}{{ '{:,}'.format(challenge.account_size) }} account</span>
+                            </div>
+
+                            <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 flex-1 content-start">
+                                <div class="fact"><dt>Profit Target</dt><dd>{{ f_target }}</dd></div>
+                                <div class="fact"><dt>Daily Loss</dt><dd>{{ f_daily }}</dd></div>
+                                <div class="fact"><dt>Overall Loss</dt><dd>{{ f_overall }}</dd></div>
+                                <div class="fact"><dt>Profit Split</dt><dd>{{ challenge.user_profit_share }}%</dd></div>
+                                <div class="fact"><dt>Leverage</dt><dd>{{ f_leverage }}</dd></div>
+                                <div class="fact"><dt>Min Days</dt><dd>{{ f_min }}</dd></div>
+                            </dl>
+
+                            <a href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}" class="plan-cta mt-6">Explore {{ challenge.name }}</a>
+                        </article>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -1180,13 +1236,67 @@
         <!-- =============================================
              HOW IT WORKS SECTION
              ============================================= -->
-        <section id="how-it-works" class="py-16 bg-starry-night relative"><div class="stars"></div><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">How It Works</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 1</div><h3 class="text-xl font-bold text-white">Choose a challenge</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 2</div><h3 class="text-xl font-bold text-white">Complete your evaluation</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 3</div><h3 class="text-xl font-bold text-white">Qualify for a funded account</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 4</div><h3 class="text-xl font-bold text-white">Request eligible rewards</h3></article></div></div></section><div class="section-divider"></div>
-        <section id="why-choose-us" class="py-16 bg-starry-night relative"><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">Why MegaFunded?</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Transparent rules</h3><p class="text-gray-300">Evaluation objectives and trading conditions are clearly communicated.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Modern dashboard</h3><p class="text-gray-300">Review your challenge progress and account information in one place.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Multiple challenges</h3><p class="text-gray-300">Choose from {{ challenge_names|length }} evaluation options.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Reward opportunities</h3><p class="text-gray-300">Eligible traders can request rewards subject to programme terms.</p></article></div></div></section>
+        <section id="how-it-works" class="py-20 md:py-24 relative">
+            <div class="stars"></div>
+            <div class="relative z-10 max-w-6xl mx-auto px-4">
+                <div class="text-center mb-10" data-aos="fade-up">
+                    <div class="text-green-400 text-xs font-bold uppercase tracking-widest mb-3">HOW IT WORKS</div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white glow-text">How It Works</h2>
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <article class="liquid-glass rounded-2xl p-6 text-center" data-aos="fade-up" data-aos-delay="0">
+                        <div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 1</div>
+                        <h3 class="text-xl font-bold text-white">Choose a challenge</h3>
+                    </article>
+                    <article class="liquid-glass rounded-2xl p-6 text-center" data-aos="fade-up" data-aos-delay="80">
+                        <div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 2</div>
+                        <h3 class="text-xl font-bold text-white">Complete your evaluation</h3>
+                    </article>
+                    <article class="liquid-glass rounded-2xl p-6 text-center" data-aos="fade-up" data-aos-delay="160">
+                        <div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 3</div>
+                        <h3 class="text-xl font-bold text-white">Qualify for a funded account</h3>
+                    </article>
+                    <article class="liquid-glass rounded-2xl p-6 text-center" data-aos="fade-up" data-aos-delay="240">
+                        <div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 4</div>
+                        <h3 class="text-xl font-bold text-white">Request eligible rewards</h3>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-divider"></div>
+
+        <section id="why-choose-us" class="py-20 md:py-24 relative">
+            <div class="relative z-10 max-w-6xl mx-auto px-4">
+                <div class="text-center mb-10" data-aos="fade-up">
+                    <div class="text-green-400 text-xs font-bold uppercase tracking-widest mb-3">WHY MEGAFUNDED</div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white glow-text">Why MegaFunded?</h2>
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="0">
+                        <h3 class="text-xl font-bold text-white mb-3">Transparent rules</h3>
+                        <p class="text-gray-300">Evaluation objectives and trading conditions are clearly communicated.</p>
+                    </article>
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="80">
+                        <h3 class="text-xl font-bold text-white mb-3">Modern dashboard</h3>
+                        <p class="text-gray-300">Review your challenge progress and account information in one place.</p>
+                    </article>
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="160">
+                        <h3 class="text-xl font-bold text-white mb-3">Multiple challenges</h3>
+                        <p class="text-gray-300">Choose from {{ challenge_names|length }} evaluation options.</p>
+                    </article>
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="240">
+                        <h3 class="text-xl font-bold text-white mb-3">Reward opportunities</h3>
+                        <p class="text-gray-300">Eligible traders can request rewards subject to programme terms.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
 
         <!-- =============================================
              ABOUT TEASER SECTION (replaces full About block)
              ============================================= -->
-        <section id="about" class="py-16 bg-starry-night relative">
+        <section id="about" class="py-20 md:py-24 relative">
             <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
                 <div data-aos="fade-up">
                     <span class="liquid-glass text-green-300 px-4 py-2 rounded-full text-sm font-medium mb-6 inline-block">ABOUT MEGAFUNDED</span>
@@ -1210,23 +1320,24 @@
 
         <!-- Team section removed — full team details live on the /team page -->
 
-        <section id="experiences" class="py-16 bg-starry-night relative"><div class="max-w-5xl mx-auto px-4 text-center"><h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Real Trader Experiences</h2><div class="liquid-glass rounded-2xl p-8 text-gray-300">Verified reviews and independently verifiable payout evidence, once available.</div></div></section>
-        <div class="section-divider"></div>
+        
 
         <!-- Trading Rules Section -->
-        <section id="rules" class="py-16 bg-starry-night relative">
+        <section id="rules" class="py-20 md:py-24 relative">
             <div class="stars"></div>
             <div class="relative z-10 max-w-6xl mx-auto px-4">
-                <h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-4 glow-text" data-aos="fade-up">
-                    Trading Rules & Guidelines
-                </h2>
-                <p class="text-xl text-gray-300 text-center mb-12 max-w-2xl mx-auto" data-aos="fade-up"
-                    data-aos-delay="100">
-                    Clear, transparent rules designed for your disciplined trading success
-                </p>
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <div class="text-green-400 text-xs font-bold uppercase tracking-widest mb-3">RULES</div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">
+                        Trading Rules & Guidelines
+                    </h2>
+                    <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                        Clear, transparent rules designed for your disciplined trading success
+                    </p>
+                </div>
 
                 <div class="grid md:grid-cols-2 gap-8">
-                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-right">
+                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-up" data-aos-delay="0">
                         <div class="flex items-center mb-6">
                             <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mr-4">
                                 <i class="fas fa-bullseye text-green-400 text-xl"></i>
@@ -1240,7 +1351,7 @@
                         </ul>
                     </div>
 
-                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-left">
+                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-up" data-aos-delay="80">
                         <div class="flex items-center mb-6">
                             <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mr-4">
                                 <i class="fas fa-shield-alt text-red-400 text-xl"></i>
@@ -1254,7 +1365,7 @@
                         </ul>
                     </div>
 
-                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-right" data-aos-delay="100">
+                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-up" data-aos-delay="160">
                         <div class="flex items-center mb-6">
                             <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mr-4">
                                 <i class="fas fa-balance-scale text-blue-400 text-xl"></i>
@@ -1268,7 +1379,7 @@
                         </ul>
                     </div>
 
-                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-left" data-aos-delay="100">
+                    <div class="liquid-glass rounded-2xl p-8" data-aos="fade-up" data-aos-delay="240">
                         <div class="flex items-center mb-6">
                             <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mr-4">
                                 <i class="fas fa-hand-holding-usd text-purple-400 text-xl"></i>
@@ -1297,10 +1408,11 @@
         <div class="section-divider"></div>
 
         <!-- Homepage FAQ Section -->
-        <section id="homepage-faq" class="py-16 bg-starry-night relative">
+        <section id="homepage-faq" class="py-20 md:py-24 relative">
             <div class="stars"></div>
             <div class="relative z-10 max-w-5xl mx-auto px-4">
                 <div class="text-center mb-12" data-aos="fade-up">
+                    <div class="text-green-400 text-xs font-bold uppercase tracking-widest mb-3">FAQ</div>
                     <h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Frequently Asked Questions</h2>
                     <p class="text-xl text-gray-300 max-w-2xl mx-auto">
                         Everything you need to know about trading challenges, rules, and payouts at Mega Funded.
@@ -1308,14 +1420,14 @@
                 </div>
 
                 <div class="space-y-5">
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="0">
                         <h3 class="text-xl font-semibold text-white mb-3">What is Mega Funded?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             Mega Funded is a proprietary trading firm that provides skilled traders worldwide with access to the active challenge accounts listed below. Traders who pass an evaluation can trade a simulated funded account.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="40">
                         <h3 class="text-xl font-semibold text-white mb-3">What trading challenges do you offer?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             We offer these active challenges:
@@ -1323,70 +1435,70 @@
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="80">
                         <h3 class="text-xl font-semibold text-white mb-3">How much capital can I trade?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             Active challenges have account sizes of {% for challenge in challenges %}{% if not loop.first %}, {% endif %}${{ "{:,}".format(challenge.account_size) }}{% endfor %}.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="120">
                         <h3 class="text-xl font-semibold text-white mb-3">What is the profit split?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             {% for challenge in challenges %}{% if not loop.first %}; {% endif %}{{ challenge.name }}: {{ challenge.user_profit_share }}%{% endfor %}.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="160">
                         <h3 class="text-xl font-semibold text-white mb-3">How and when do I get paid?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             Payouts are processed monthly after each trading cycle. Once eligible, you can request your payout directly through your Client Section. Payouts are processed within 1 to 5 business days via bank transfer or cryptocurrency.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">What payment methods do you accept?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             We accept cryptocurrency (USDT) and manual payments — bank transfer and mobile money. All fees are in USD. We do not accept credit or debit cards.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">Can I hold trades overnight and over weekends?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             Yes. Mega Funded permits holding positions overnight and over weekends across all challenge types.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">Are there any minimum or maximum trading day requirements?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             {% for challenge in challenges %}{% if not loop.first %}; {% endif %}{{ challenge.name }}: minimum {{ challenge.phase1_min_days if challenge.phase1_min_days is not none else "—" }} trading days, {% if challenge.no_expiry %}no time limit{% else %}{{ challenge.phase1_duration if challenge.phase1_duration is not none else "No limit" }} days{% endif %}{% endfor %}.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">What trading styles or strategies are prohibited?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             Prohibited practices include: copy trading across multiple accounts, account sharing or reselling, trading on the same device/IP across multiple accounts, high-frequency trading (HFT), latency arbitrage, tick scalping, and exploiting demo-server feed errors. You must also maintain consistency and not switch strategies mid-phase (e.g. manual to EA).
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">Can I use Expert Advisors (EAs) or automated trading?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             Yes, algorithmic and EA trading is permitted, provided your strategy does not employ prohibited practices (like HFT or latency arbitrage) and maintains strategy consistency throughout the evaluation phase.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">Do I need to verify my identity (KYC)?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             No. There is no identity verification (KYC) step to buy a challenge, trade the evaluation, or receive a funded account.
                         </p>
                     </article>
 
-                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
+                    <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                         <h3 class="text-xl font-semibold text-white mb-3">How do I contact Mega Funded support?</h3>
                         <p class="text-gray-300 leading-relaxed">
                             You can reach our dedicated support team by emailing support@megafunded.online, via Live Chat in your Client Section.
@@ -1397,7 +1509,13 @@
         </section>
 
         <div class="section-divider"></div>
-        <section class="py-16 bg-starry-night text-center"><div class="max-w-4xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Ready to Take the Challenge?</h2><p class="text-xl text-gray-300 mb-7">Your trading journey starts with one decision.</p><a class="inline-flex bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl font-semibold" href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}">GET FUNDED</a></div></section>
+        <section class="py-20 md:py-24 relative text-center">
+            <div class="relative z-10 max-w-4xl mx-auto px-4" data-aos="fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4 glow-text">Ready to Take the Challenge?</h2>
+                <p class="text-xl text-gray-300 mb-7">Your trading journey starts with one decision.</p>
+                <a class="inline-flex bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl font-semibold" href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}">GET FUNDED</a>
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -1514,24 +1632,391 @@
                 }
             });
         });
+    </script>
 
-        // Challenge card view switcher
-        (function () {
-            const btnPricing = document.getElementById('btn-pricing');
-            const btnRules = document.getElementById('btn-rules');
-            const cards = document.getElementById('challenge-cards');
-            function setView(view) {
-                const pricing = view === 'pricing';
-                cards.querySelectorAll('.challenge-pricing-view').forEach(el => el.classList.toggle('hidden', !pricing));
-                cards.querySelectorAll('.challenge-rules-view').forEach(el => el.classList.toggle('hidden', pricing));
-                btnPricing.classList.toggle('active', pricing);
-                btnPricing.setAttribute('aria-selected', String(pricing));
-                btnRules.classList.toggle('active', !pricing);
-                btnRules.setAttribute('aria-selected', String(!pricing));
+    <!-- Universe background (canvas, plain JS) -->
+    <script>
+(function () {
+    'use strict';
+
+    var canvas = document.getElementById('universe-canvas');
+    if (!canvas || !canvas.getContext) { return; }
+    var ctx = canvas.getContext('2d');
+    if (!ctx) { return; }
+
+    var TAU = Math.PI * 2;
+    var GREEN = '#22c55e';
+    var RED = '#ef4444';
+
+    var reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var hoverMq = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+    var W = 1, H = 1, dpr = 1;
+    var mobile = false, builtMobile = null;
+    var galaxies = [], planets = [], dust = [];
+    var simT = 0, rafId = 0, lastTs = 0, running = false;
+    var mouseTX = 0, mouseTY = 0, parX = 0, parY = 0, scrollEase = 0;
+    var shoot = { active: false, x: 0, y: 0, dx: 0, dy: 0, speed: 0, age: 0, life: 1, len: 100 };
+    var nextShoot = rand(4, 7);
+    var resizeTimer = 0;
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    /* ---------- sizing ---------- */
+    function measure() {
+        var rect = canvas.getBoundingClientRect();
+        W = Math.max(1, Math.round(rect.width || window.innerWidth));
+        H = Math.max(1, Math.round(rect.height || window.innerHeight));
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        var bw = Math.round(W * dpr), bh = Math.round(H * dpr);
+        if (canvas.width !== bw) { canvas.width = bw; }
+        if (canvas.height !== bh) { canvas.height = bh; }
+        mobile = window.innerWidth < 768;
+    }
+
+    /* ---------- builders ---------- */
+    function makeGalaxy(fx, fy, rs, secs, dir, tilt, flat, count, dotCount, pulsePhase) {
+        var g = {
+            fx: fx, fy: fy, rs: rs, secs: secs, dir: dir,
+            tilt: tilt, flat: flat, tc: Math.cos(tilt), ts: Math.sin(tilt),
+            up: [], down: [], dots: [[], [], []], pp: pulsePhase
+        };
+        var arms = 3, i, t, th, k;
+        for (i = 0; i < count; i++) {
+            t = 0.04 + Math.pow(Math.random(), 1.5) * 0.96;          // denser near the centre
+            th = (i % arms) * (TAU / arms) + t * TAU * 1.1 + rand(-0.5, 0.5) * 0.45 * (0.4 + t);
+            var r = t + rand(-0.5, 0.5) * 0.04;
+            var rot = rand(-0.3, 0.3);                               // slight random rotation
+            k = {
+                lx: r * Math.cos(th), ly: r * Math.sin(th),
+                bw: 2 + t * 2,                                       // 2–4px body
+                bh: rand(2.5, 7.5) * (0.55 + t * 0.9),
+                wk: rand(1.5, 5) * (0.6 + t * 0.6),
+                cr: Math.cos(rot), sr: Math.sin(rot)
+            };
+            (Math.random() < 0.5 ? g.up : g.down).push(k);
+        }
+        for (i = 0; i < dotCount; i++) {
+            t = 0.03 + Math.pow(Math.random(), 1.3) * 0.97;
+            th = (i % arms) * (TAU / arms) + t * TAU * 1.1 + rand(-0.5, 0.5) * 0.9 * (0.3 + t);
+            var rr = t + rand(-0.5, 0.5) * 0.08;
+            var ci = Math.random() < (0.5 - t * 0.6) ? 0 : (Math.random() < 0.5 ? 1 : 2);
+            g.dots[ci].push({ lx: rr * Math.cos(th), ly: rr * Math.sin(th) });
+        }
+        return g;
+    }
+
+    function makePlanet(fx, fy, r, vy, lightDir, ph) {
+        var p = { fx: fx, fy: fy, r: r, vy: vy, lx: lightDir, ph: ph, rt: -0.35, ring: [] };
+        for (var i = 0; i < 46; i++) {
+            p.ring.push({
+                phi: (i / 46) * TAU + rand(-0.05, 0.05),
+                up: Math.random() < 0.5,
+                bw: rand(1.6, 2.6), bh: rand(2, 5), wk: rand(1, 2.5)
+            });
+        }
+        return p;
+    }
+
+    function makeDust(n) {
+        var arr = [];
+        for (var i = 0; i < n; i++) {
+            var a = rand(0, TAU), sp = rand(1.5, 5);
+            arr.push({
+                fx: Math.random(), fy: Math.random(),
+                vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                s: rand(0.5, 1.2), base: rand(0.12, 0.42),
+                tw: rand(0.6, 2.2), ph: rand(0, TAU)
+            });
+        }
+        return arr;
+    }
+
+    function build() {
+        builtMobile = mobile;
+        var f = mobile ? 0.5 : 1;
+        galaxies = [
+            makeGalaxy(0.80, 0.26, 0.46 * (mobile ? 1.25 : 1), 40, 1, -0.35, 0.5, Math.round(330 * f), Math.round(220 * f), 0),
+            makeGalaxy(0.16, 0.80, 0.26 * (mobile ? 1.25 : 1), 60, -1, 0.35, 0.55, Math.round(270 * f), Math.round(150 * f), 1.5)
+        ];
+        planets = mobile ? [] : [
+            makePlanet(0.07, 0.62, 52, 4, 1, 0),
+            makePlanet(0.93, 0.30, 64, -3, -1, 2)
+        ];
+        dust = makeDust(120);
+        if (mobile) { mouseTX = 0; mouseTY = 0; }
+    }
+
+    /* ---------- drawing ---------- */
+    function drawDust(ox, oy) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        for (var i = 0; i < dust.length; i++) {
+            var d = dust[i];
+            ctx.globalAlpha = d.base * (0.5 + 0.5 * Math.sin(simT * d.tw + d.ph));
+            ctx.fillRect(d.fx * W + ox, d.fy * H + oy, d.s, d.s);
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function drawRingHalf(p, cx, cy, front) {
+        var crt = Math.cos(p.rt), srt = Math.sin(p.rt);
+        var a = p.r * 1.75, b = p.r * 0.36;
+        for (var i = 0; i < p.ring.length; i++) {
+            var rc = p.ring[i];
+            if ((Math.sin(rc.phi) > 0) !== front) { continue; }
+            var x = a * Math.cos(rc.phi), y = b * Math.sin(rc.phi);
+            var X = cx + x * crt - y * srt, Y = cy + x * srt + y * crt;
+            ctx.fillStyle = rc.up ? GREEN : RED;
+            ctx.fillRect(X - 0.5, Y - rc.bh / 2 - rc.wk, 1, rc.bh + rc.wk * 2);
+            ctx.fillRect(X - rc.bw / 2, Y - rc.bh / 2, rc.bw, rc.bh);
+        }
+    }
+
+    function drawPlanet(p, ox, oy) {
+        var cx = p.fx * W + Math.sin(simT * 0.05 + p.ph) * 18 + ox;
+        var cy = p.fy * H + oy;
+        var r = p.r;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        ctx.globalAlpha = 0.55;
+        drawRingHalf(p, cx, cy, false);                               // ring behind the sphere
+
+        ctx.globalAlpha = 0.8;
+        var g = ctx.createRadialGradient(cx + p.lx * r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+        g.addColorStop(0, 'rgba(70,92,130,0.65)');
+        g.addColorStop(0.55, 'rgba(12,18,34,0.92)');
+        g.addColorStop(1, 'rgba(3,5,12,0.97)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
+
+        var rimC = p.lx > 0 ? -Math.PI * 0.25 : -Math.PI * 0.75;     // soft rim light on one side
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = 'rgba(52,211,153,0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy, r - 0.75, rimC - 0.75, rimC + 0.75); ctx.stroke();
+
+        ctx.globalAlpha = 0.6;
+        drawRingHalf(p, cx, cy, true);                                // ring in front of the sphere
+        ctx.globalAlpha = 1;
+    }
+
+    function drawCandles(list, color, g, R, cx, cy, c, s) {
+        ctx.fillStyle = color;
+        for (var i = 0; i < list.length; i++) {
+            var k = list[i];
+            var xr = (k.lx * c - k.ly * s) * R;
+            var yr = (k.lx * s + k.ly * c) * R * g.flat;
+            var X = cx + xr * g.tc - yr * g.ts;
+            var Y = cy + xr * g.ts + yr * g.tc;
+            if (X < -20 || X > W + 20 || Y < -20 || Y > H + 20) { continue; }
+            ctx.setTransform(dpr * k.cr, dpr * k.sr, -dpr * k.sr, dpr * k.cr, X * dpr, Y * dpr);
+            ctx.fillRect(-0.5, -k.bh / 2 - k.wk, 1, k.bh + k.wk * 2);
+            ctx.fillRect(-k.bw / 2, -k.bh / 2, k.bw, k.bh);
+        }
+    }
+
+    var DOT_COLORS = ['#fde68a', '#34d399', '#a78bfa'];
+    var DOT_ALPHA = [0.55, 0.4, 0.4];
+
+    function drawGalaxy(g, baseR, ox, oy) {
+        var R = g.rs * baseR;
+        var cx = g.fx * W + ox, cy = g.fy * H + oy;
+        var angle = g.dir * TAU * simT / g.secs;
+        var c = Math.cos(angle), s = Math.sin(angle);
+        var pulse = 0.8 + 0.1 * Math.sin(TAU * (simT + g.pp) / 6);    // 0.7 → 0.9, 6 s cycle
+
+        // flattened + tilted disc space for the glow layers
+        ctx.setTransform(dpr * g.tc, dpr * g.ts, -dpr * g.ts * g.flat, dpr * g.tc * g.flat, cx * dpr, cy * dpr);
+        ctx.globalAlpha = 1;
+        var halo = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+        halo.addColorStop(0, 'rgba(251,191,36,0.10)');
+        halo.addColorStop(0.35, 'rgba(16,185,129,0.06)');
+        halo.addColorStop(0.7, 'rgba(139,92,246,0.05)');
+        halo.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+
+        var cr = R * 0.26;
+        var core = ctx.createRadialGradient(0, 0, 0, 0, 0, cr);
+        core.addColorStop(0, 'rgba(254,243,199,0.85)');
+        core.addColorStop(0.3, 'rgba(251,191,36,0.32)');
+        core.addColorStop(1, 'rgba(251,146,60,0)');
+        ctx.globalAlpha = pulse;
+        ctx.fillStyle = core;
+        ctx.beginPath(); ctx.arc(0, 0, cr, 0, TAU); ctx.fill();
+
+        // glowing dust along the arms
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        for (var ci = 0; ci < 3; ci++) {
+            var list = g.dots[ci];
+            ctx.globalAlpha = DOT_ALPHA[ci];
+            ctx.fillStyle = DOT_COLORS[ci];
+            for (var i = 0; i < list.length; i++) {
+                var d = list[i];
+                var xr = (d.lx * c - d.ly * s) * R;
+                var yr = (d.lx * s + d.ly * c) * R * g.flat;
+                ctx.fillRect(cx + xr * g.tc - yr * g.ts - 0.7, cy + xr * g.ts + yr * g.tc - 0.7, 1.4, 1.4);
             }
-            btnPricing.addEventListener('click', () => setView('pricing'));
-            btnRules.addEventListener('click', () => setView('rules'));
-        })();
+        }
+
+        // candlestick spiral arms
+        ctx.globalAlpha = 0.85;
+        drawCandles(g.up, GREEN, g, R, cx, cy, c, s);
+        drawCandles(g.down, RED, g, R, cx, cy, c, s);
+        ctx.globalAlpha = 1;
+    }
+
+    function drawShoot() {
+        if (!shoot.active) { return; }
+        var a = Math.sin(Math.PI * Math.min(1, shoot.age / shoot.life));
+        var tx = shoot.x - shoot.dx * shoot.len, ty = shoot.y - shoot.dy * shoot.len;
+        var g = ctx.createLinearGradient(shoot.x, shoot.y, tx, ty);
+        g.addColorStop(0, 'rgba(255,255,255,0.95)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(shoot.x, shoot.y, 1.4, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+
+    function render() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        var ox = parX, oy = parY - scrollEase;
+        var baseR = Math.min(W, H * 1.3);
+        var i;
+
+        drawDust(ox * 0.5, oy * 0.5);
+        for (i = 0; i < planets.length; i++) { drawPlanet(planets[i], ox, oy); }
+        for (i = 0; i < galaxies.length; i++) { drawGalaxy(galaxies[i], baseR, ox, oy); }
+        drawShoot();
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+    }
+
+    /* ---------- simulation ---------- */
+    function spawnShoot() {
+        var dir = Math.random() < 0.5 ? 1 : -1;
+        var ang = rand(0.25, 0.6);
+        shoot.dx = dir * Math.cos(ang);
+        shoot.dy = Math.sin(ang);
+        shoot.speed = Math.max(520, W * 0.6);
+        shoot.len = mobile ? 70 : 110;
+        shoot.x = dir > 0 ? rand(0, 0.55) * W : rand(0.45, 1) * W;
+        shoot.y = rand(0.02, 0.5) * H;
+        shoot.age = 0;
+        shoot.life = rand(0.9, 1.2);
+        shoot.active = true;
+        nextShoot = rand(4, 7);
+    }
+
+    function step(dt) {
+        simT += dt;
+
+        var k = 1 - Math.exp(-dt * 4);                                // eased parallax
+        parX += (mouseTX - parX) * k;
+        parY += (mouseTY - parY) * k;
+        var maxS = H * 0.3;
+        var target = maxS * Math.tanh(((window.pageYOffset || 0) * 0.15) / maxS);   // 0.15x scroll speed, soft-capped
+        scrollEase += (target - scrollEase) * k;
+
+        var i;
+        for (i = 0; i < dust.length; i++) {
+            var d = dust[i];
+            d.fx += d.vx * dt / W;
+            d.fy += d.vy * dt / H;
+            if (d.fx < -0.01) { d.fx += 1.02; } else if (d.fx > 1.01) { d.fx -= 1.02; }
+            if (d.fy < -0.01) { d.fy += 1.02; } else if (d.fy > 1.01) { d.fy -= 1.02; }
+        }
+        for (i = 0; i < planets.length; i++) {
+            var p = planets[i];
+            p.fy += p.vy * dt / H;
+            var m = (p.r * 3) / H;
+            if (p.fy > 1 + m) { p.fy = -m; } else if (p.fy < -m) { p.fy = 1 + m; }
+        }
+
+        if (shoot.active) {
+            shoot.age += dt;
+            shoot.x += shoot.dx * shoot.speed * dt;
+            shoot.y += shoot.dy * shoot.speed * dt;
+            if (shoot.age >= shoot.life) { shoot.active = false; }
+        } else {
+            nextShoot -= dt;
+            if (nextShoot <= 0) { spawnShoot(); }
+        }
+    }
+
+    function frame(ts) {
+        if (!running) { return; }
+        var dt = Math.min(0.1, Math.max(0, (ts - lastTs) / 1000));
+        lastTs = ts;
+        step(dt);
+        render();
+        rafId = requestAnimationFrame(frame);
+    }
+
+    function start() {
+        if (running || reduceMq.matches || document.hidden) { return; }
+        running = true;
+        lastTs = performance.now();
+        rafId = requestAnimationFrame(frame);
+    }
+
+    function stop() {
+        running = false;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    }
+
+    function renderStatic() {
+        simT = 0; parX = 0; parY = 0; scrollEase = 0;
+        shoot.active = false;
+        render();
+    }
+
+    /* ---------- events ---------- */
+    window.addEventListener('mousemove', function (e) {
+        if (mobile || reduceMq.matches || !hoverMq.matches) { return; }
+        mouseTX = Math.max(-1, Math.min(1, (e.clientX / W - 0.5) * 2)) * 12;
+        mouseTY = Math.max(-1, Math.min(1, (e.clientY / H - 0.5) * 2)) * 12;
+    }, { passive: true });
+
+    document.documentElement.addEventListener('mouseleave', function () {
+        mouseTX = 0; mouseTY = 0;
+    });
+
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            measure();
+            if (mobile !== builtMobile) { build(); }
+            if (reduceMq.matches) { renderStatic(); }
+        }, 200);
+    });
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { stop(); } else { start(); }
+    });
+
+    function onReduceChange() {
+        if (reduceMq.matches) { stop(); renderStatic(); } else { start(); }
+    }
+    if (reduceMq.addEventListener) { reduceMq.addEventListener('change', onReduceChange); }
+    else if (reduceMq.addListener) { reduceMq.addListener(onReduceChange); }
+
+    /* ---------- go ---------- */
+    measure();
+    build();
+    if (reduceMq.matches) { renderStatic(); } else { start(); }
+})();
     </script>
 </body>
 
