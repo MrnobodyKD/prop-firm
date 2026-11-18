@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, extract, or_
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, SiteSettings
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, PurchaseRuleAcceptance, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, SiteSettings
 from . import admin_bp, admin_required
 from notification_service import notify_all_users
 import secrets
@@ -623,6 +623,10 @@ def admin_delete_challenge(challenge_id):
             db.session.commit()
             flash(f'Challenge has {purchases_count} active purchases and cannot be fully deleted. It has been DEACTIVATED instead.', 'warning')
         else:
+            PurchaseRuleAcceptance.query.filter_by(challenge_template_id=challenge_id).delete(synchronize_session=False)
+            Payment.query.filter_by(challenge_template_id=challenge_id).update(
+                {Payment.challenge_template_id: None}, synchronize_session=False
+            )
             db.session.delete(challenge)
             db.session.commit()
             flash('Challenge deleted successfully!', 'success')
@@ -630,7 +634,7 @@ def admin_delete_challenge(challenge_id):
     except Exception as e:
         db.session.rollback()
         print(f"Error deleting challenge: {e}")
-        flash('Error processing challenge deletion.', 'error')
+        flash(f'Error deleting challenge: {e}', 'error')
     
     return redirect(url_for('admin.admin_manage_challenges'))
 

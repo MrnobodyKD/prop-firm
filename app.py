@@ -1535,7 +1535,8 @@ def get_live_challenge_data(challenge_id):
 # ===== MAIN ROUTES =====
 @app.route('/')
 def home():
-    return render_template('index.html')
+    challenges = ChallengeTemplate.query.filter_by(is_active=True).all()
+    return render_template('index.html', challenges=challenges)
 
 # Alias so templates calling url_for('index') resolve to the same view.
 app.add_url_rule('/', endpoint='index', view_func=home)

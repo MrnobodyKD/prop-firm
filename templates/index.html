@@ -14,6 +14,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trade Bigger. Prove Your Skills. Earn Your Rewards. | Mega Funded</title>
+    {% set min_account = challenges|min(attribute='account_size') if challenges else none %}
+    {% set max_account = challenges|max(attribute='account_size') if challenges else none %}
+    {% set max_split = challenges|max(attribute='user_profit_share') if challenges else none %}
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="512x512" href="/static/images/favicon_512.png">
@@ -23,8 +26,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/favicon_192.png">
 
     <!-- Primary SEO -->
-    <meta name="description" content="Access challenge accounts from $6K to $200K and work towards scaling opportunities up to $1M.">
-    <meta name="keywords" content="Mega Funded, prop firm, funded trading account, trading challenge, 1 step challenge, 2 step challenge, 3 step challenge, instant funding, pay later prop firm, zero time limits prop firm">
+    <meta name="description" content="Explore active trading challenges and their current rules.">
+    <meta name="keywords" content="Mega Funded, prop firm, funded trading account, trading challenge">
     <meta name="author" content="Mega Funded">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#0f172a">
@@ -32,7 +35,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Trade Bigger. Prove Your Skills. Earn Your Rewards. | Mega Funded">
-    <meta property="og:description" content="Access challenge accounts from $6K to $200K and work towards scaling opportunities up to $1M.">
+    <meta property="og:description" content="Explore active trading challenges and their current rules.">
     <meta property="og:url" content="https://megafunded.online">
     <meta property="og:site_name" content="Mega Funded">
     <meta property="og:image" content="https://megafunded.online/static/images/banner.png">
@@ -40,7 +43,7 @@
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Trade Bigger. Prove Your Skills. Earn Your Rewards. | Mega Funded">
-    <meta name="twitter:description" content="Access challenge accounts from $6K to $200K and work towards scaling opportunities up to $1M.">
+    <meta name="twitter:description" content="Explore active trading challenges and their current rules.">
     <meta name="twitter:image" content="https://megafunded.online/static/images/banner.png">
 
     <!-- Canonical -->
@@ -54,7 +57,7 @@
       "name": "Mega Funded",
       "url": "https://megafunded.online",
       "logo": "https://megafunded.online/static/images/logo.png",
-      "description": "Mega Funded is a premier prop firm empowering global traders with funding up to $1M, up to 95% profit split, and zero time limits.",
+      "description": "Mega Funded offers active trading challenges with published rules and pricing.",
     }
     </script>
     <script type="application/ld+json">
@@ -63,7 +66,7 @@
       "@type": "WebSite",
       "name": "Mega Funded",
       "url": "https://megafunded.online",
-      "description": "Trade with Our Capital. Keep Your Profits. Access challenge accounts from $6K to $200K and work towards scaling opportunities up to $1M.",
+      "description": "Explore active trading challenges and their current rules.",
       "potentialAction": {
         "@type": "SearchAction",
         "target": "https://megafunded.online/blog?q={search_term_string}",
@@ -71,6 +74,15 @@
       }
     }
     </script>
+    {% set challenge_faq = namespace(models='') %}
+    {% for challenge in challenges %}
+      {% set target = challenge.phase1_target if challenge.phase1_target is not none else '—' %}
+      {% if challenge.challenge_type == 'two_phase' %}{% set target = target ~ '% / ' ~ (challenge.phase2_target if challenge.phase2_target is not none else '—') %}{% elif challenge.challenge_type == 'three_phase' %}{% set target = target ~ '% / ' ~ (challenge.phase2_target if challenge.phase2_target is not none else '—') ~ '% / ' ~ (challenge.phase3_target if challenge.phase3_target is not none else '—') %}{% endif %}
+      {% set item = challenge.name ~ ': ' ~ target ~ ('% targets; ' if challenge.phase1_target is not none else '; ') ~ challenge.user_profit_share ~ '% profit split' %}
+      {% set challenge_faq.models = challenge_faq.models ~ ('; ' if challenge_faq.models else '') ~ item %}
+    {% endfor %}
+    {% set min_price = challenges|min(attribute='price') if challenges else none %}
+    {% set max_price = challenges|max(attribute='price') if challenges else none %}
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -89,7 +101,7 @@
           "name": "What challenge types are available?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "1 Step, 2 Step, 3 Step, Pay As You Go, and Pay After You Pass. Each has its own targets, loss limits, and price."
+            "text": {{ challenge_faq.models|tojson }}
           }
         },
         {
@@ -97,7 +109,7 @@
           "name": "How much does a challenge cost?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "From $7.20 (Pay After You Pass entry fee) to $850, depending on the challenge type and account size. All fees are in USD, payable manually or by cryptocurrency."
+            "text": {{ ("From $%.2f to $%.2f. All fees are in USD."|format(min_price.price, max_price.price) if challenges else "No active challenges are currently available.")|tojson }}
           }
         },
         {
@@ -105,7 +117,7 @@
           "name": "What are the profit targets and loss limits?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "1 Step: 10% target, 6% trailing or 5% static overall loss, 3% daily loss. 2 Step: 8% then 5% targets, 10% or 5% overall loss, 5% or 3% daily loss. 3 Step: 6% per phase, 5% overall loss, 3% daily loss. Pay As You Go: 5% then 8% targets, 10% overall loss, 5% daily loss. Pay After You Pass: 1% target in 7 days, 6% trailing overall loss, 3% daily loss."
+            "text": {{ challenge_faq.models|tojson }}
           }
         },
         {
@@ -113,7 +125,7 @@
           "name": "How many days must I trade?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Minimum 3 trading days on 1 Step, 2 Step, 3 Step, and Pay As You Go. Pay After You Pass has no minimum-days rule and a 7-day time limit."
+            "text": {{ challenge_faq.models|tojson }}
           }
         },
         {
@@ -150,18 +162,26 @@
         },
         {
           "@type": "Question",
-          "name": "What is the KYC process?",
+          "name": "How do I pay for a challenge?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Identity documents, address proof, and bank verification, reviewed in 24–48 hours, completed before the funded account is activated."
+            "text": "By cryptocurrency (USDT) or manual payment (bank transfer or mobile money), in USD. Challenge fees are non-refundable except for duplicate payments, non-delivery within 48 hours, or platform-side technical failures."
           }
         },
         {
           "@type": "Question",
-          "name": "How do I pay for a challenge?",
+          "name": "What payment methods do you accept?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "By payment card or cryptocurrency, in USD. Challenge fees are non-refundable except for duplicate payments, non-delivery within 48 hours, or platform-side technical failures."
+            "text": "We accept cryptocurrency (USDT) and manual payments — bank transfer and mobile money. All fees are in USD. We do not accept credit or debit cards."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to verify my identity (KYC)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. There is no identity verification (KYC) step to buy a challenge, trade the evaluation, or receive a funded account."
           }
         },
         {
@@ -1062,7 +1082,7 @@
 
                 <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed" data-aos="fade-up"
                     data-aos-delay="100">
-                    Access challenge accounts from <strong class="text-green-400">$6K to $200K</strong> and work towards scaling opportunities up to <strong>$1M</strong>.
+                    Explore active challenge accounts{% if challenges %} from <strong class="text-green-400">${{ "{:,}".format(min_account.account_size) }} to ${{ "{:,}".format(max_account.account_size) }}</strong>{% endif %} and review their rules and pricing.
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center" data-aos="fade-up"
@@ -1079,8 +1099,8 @@
                 </div>
 
                 <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="300">
-                    <div class="text-center liquid-glass p-5 rounded-2xl"><div class="text-2xl md:text-3xl font-bold text-white">95%</div><div class="text-gray-400 text-sm">Maximum eligible profit split</div></div>
-                    <div class="text-center liquid-glass p-5 rounded-2xl"><div class="text-2xl md:text-3xl font-bold text-white">$200K</div><div class="text-gray-400 text-sm">Largest displayed challenge</div></div>
+                    <div class="text-center liquid-glass p-5 rounded-2xl"><div class="text-2xl md:text-3xl font-bold text-white">{{ max_split if max_split is not none else '—' }}{% if max_split is not none %}%{% endif %}</div><div class="text-gray-400 text-sm">Maximum eligible profit split</div></div>
+                    <div class="text-center liquid-glass p-5 rounded-2xl"><div class="text-2xl md:text-3xl font-bold text-white">{% if max_account %}${{ "{:,}".format(max_account.account_size) }}{% else %}—{% endif %}</div><div class="text-gray-400 text-sm">Largest displayed challenge</div></div>
                 </div>
             </div>
         </section>
@@ -1093,9 +1113,10 @@
         <section id="challenges" class="py-16 bg-starry-night relative">
             <div class="stars"></div>
             <div class="relative z-10 max-w-6xl mx-auto px-4">
+                {% set challenge_names = challenges|map(attribute='name')|list|unique|list %}
                 <div class="text-center mb-10" data-aos="fade-up">
                     <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 glow-text">Choose Your Challenge</h2>
-                    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">Five evaluation options, clearly priced with their conditions.</p>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">{{ challenge_names|length }} evaluation options, clearly priced with their conditions.</p>
                 </div>
 
                 <!-- Switcher: Pricing | Phases & Rules -->
@@ -1106,7 +1127,54 @@
                     </div>
                 </div>
 
-                <div id="challenge-cards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite"></div>
+                <div id="challenge-cards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite">
+                    {% for challenge in challenges %}
+                    {% set challenge_name_lower = (challenge.name or '')|lower %}
+                    {% if 'pay as you go' in challenge_name_lower or 'pay after you pass' in challenge_name_lower %}{% set cat = 'exclusive' %}
+                    {% elif challenge.challenge_type == 'one_phase' %}{% set cat = 'one_phase' %}
+                    {% elif challenge.challenge_type == 'two_phase' %}{% set cat = 'two_phase' %}
+                    {% elif challenge.challenge_type == 'three_phase' %}{% set cat = 'three_phase' %}
+                    {% else %}{% set cat = 'instant' %}{% endif %}
+                    <article class="liquid-glass rounded-2xl p-6 flex flex-col swap-in" data-type="{{ cat }}">
+                        <h3 class="text-2xl font-bold text-white">{{ challenge.name }}</h3>
+                        {% if challenge.description %}<p class="text-gray-400 mt-2">{{ challenge.description }}</p>{% endif %}
+                        <div class="challenge-pricing-view mt-3">
+                            <table class="pricing-table">
+                                <thead><tr><th>Account</th><th class="text-right">Price</th></tr></thead>
+                                <tbody><tr><td>{{ '$' }}{{ '{:,}'.format(challenge.account_size) }}</td><td class="price">{% if (challenge.currency or 'USD')|upper == 'USD' %}${{ '%.2f'|format(challenge.price) }}{% else %}{{ challenge.currency or 'USD' }} {{ '%.2f'|format(challenge.price) }}{% endif %}</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div class="challenge-rules-view mt-3 hidden">
+                            {% set phase_count = 0 if challenge.challenge_type == 'instant' else 3 if challenge.challenge_type == 'three_phase' else 2 if challenge.challenge_type == 'two_phase' else 1 %}
+                            {% if phase_count == 0 %}
+                            <div class="spec-row"><span class="k">Profit Target</span><span class="v">N/A</span></div>
+                            <div class="spec-row"><span class="k">Daily Loss</span><span class="v">{{ challenge.instant_daily_loss if challenge.instant_daily_loss is not none else '—' }}{% if challenge.instant_daily_loss is not none %}%{% endif %}</span></div>
+                            <div class="spec-row"><span class="k">Overall Loss</span><span class="v">{{ challenge.instant_overall_loss if challenge.instant_overall_loss is not none else '—' }}{% if challenge.instant_overall_loss is not none %}%{% endif %}</span></div>
+                            <div class="spec-row"><span class="k">Min Days</span><span class="v">{{ challenge.instant_min_days if challenge.instant_min_days is not none else '—' }}</span></div>
+                            <div class="spec-row"><span class="k">Leverage</span><span class="v">{{ challenge.instant_leverage or '—' }}</span></div>
+                            {% else %}
+                            {% for phase in range(1, phase_count + 1) %}
+                            {% if phase_count > 1 %}<div class="variant-label mt-3">Phase {{ phase }}</div>{% endif %}
+                            {% set target = challenge|attr('phase' ~ phase ~ '_target') %}
+                            {% set daily = challenge|attr('phase' ~ phase ~ '_daily_loss') %}
+                            {% set overall = challenge|attr('phase' ~ phase ~ '_overall_loss') %}
+                            {% set min_days = challenge|attr('phase' ~ phase ~ '_min_days') %}
+                            {% set duration = challenge|attr('phase' ~ phase ~ '_duration') %}
+                            {% set leverage = challenge|attr('phase' ~ phase ~ '_leverage') %}
+                            <div class="spec-row"><span class="k">Profit Target</span><span class="v">{{ target if target is not none else '—' }}{% if target is not none %}%{% endif %}</span></div>
+                            <div class="spec-row"><span class="k">Daily Loss</span><span class="v">{{ daily if daily is not none else '—' }}{% if daily is not none %}%{% endif %}</span></div>
+                            <div class="spec-row"><span class="k">Overall Loss</span><span class="v">{{ overall if overall is not none else '—' }}{% if overall is not none %}%{% endif %}</span></div>
+                            <div class="spec-row"><span class="k">Min Days</span><span class="v">{{ min_days if min_days is not none else '—' }}</span></div>
+                            <div class="spec-row"><span class="k">Duration</span><span class="v">{% if challenge.no_expiry %}None{% elif duration %}{{ duration }} days{% else %}No limit{% endif %}</span></div>
+                            <div class="spec-row"><span class="k">Leverage</span><span class="v">{{ leverage or '—' }}</span></div>
+                            {% endfor %}
+                            {% endif %}
+                            <div class="spec-row"><span class="k">Profit Split</span><span class="v">{{ challenge.user_profit_share }}%</span></div>
+                        </div>
+                        <a href="{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}" class="plan-cta mt-4">Explore {{ challenge.name }}</a>
+                    </article>
+                    {% endfor %}
+                </div>
             </div>
         </section>
 
@@ -1116,7 +1184,7 @@
              HOW IT WORKS SECTION
              ============================================= -->
         <section id="how-it-works" class="py-16 bg-starry-night relative"><div class="stars"></div><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">How It Works</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 1</div><h3 class="text-xl font-bold text-white">Choose a challenge</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 2</div><h3 class="text-xl font-bold text-white">Complete your evaluation</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 3</div><h3 class="text-xl font-bold text-white">Qualify for a funded account</h3></article><article class="liquid-glass rounded-2xl p-6 text-center"><div class="text-green-400 text-xs font-bold tracking-widest mb-3">STEP 4</div><h3 class="text-xl font-bold text-white">Request eligible rewards</h3></article></div></div></section><div class="section-divider"></div>
-        <section id="why-choose-us" class="py-16 bg-starry-night relative"><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">Why MegaFunded?</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Transparent rules</h3><p class="text-gray-300">Evaluation objectives and trading conditions are clearly communicated.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Modern dashboard</h3><p class="text-gray-300">Review your challenge progress and account information in one place.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Multiple challenges</h3><p class="text-gray-300">Choose from five evaluation options.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Reward opportunities</h3><p class="text-gray-300">Eligible traders can request rewards subject to programme terms.</p></article></div></div></section>
+        <section id="why-choose-us" class="py-16 bg-starry-night relative"><div class="relative z-10 max-w-6xl mx-auto px-4"><h2 class="text-3xl md:text-4xl font-bold text-center text-white mb-10 glow-text">Why MegaFunded?</h2><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Transparent rules</h3><p class="text-gray-300">Evaluation objectives and trading conditions are clearly communicated.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Modern dashboard</h3><p class="text-gray-300">Review your challenge progress and account information in one place.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Multiple challenges</h3><p class="text-gray-300">Choose from {{ challenge_names|length }} evaluation options.</p></article><article class="liquid-glass rounded-2xl p-6"><h3 class="text-xl font-bold text-white mb-3">Reward opportunities</h3><p class="text-gray-300">Eligible traders can request rewards subject to programme terms.</p></article></div></div></section>
 
         <!-- =============================================
              ABOUT TEASER SECTION (replaces full About block)
@@ -1169,19 +1237,9 @@
                             <h3 class="text-2xl font-bold text-white">Profit Targets & Duration</h3>
                         </div>
                         <ul class="space-y-4">
-                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>1 Step:</strong> 10% target, single phase</span>
-                            </li>
-                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>2 Step:</strong> Phase 1: 8% | Phase 2: 5%</span></li>
-                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>3 Step:</strong> 6% per phase (3 phases)</span></li>
-                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Pay As You Go:</strong> Phase 1: 5% | Phase 2: 8%</span></li>
-                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Pay After You Pass:</strong> 1% target in 7 days</span></li>
-                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Zero Time Limits:</strong> On 1/2/3 Step & Pay As You Go; minimum 3 trading days</span></li>
+                            {% for challenge in challenges %}
+                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span class="text-white"><strong>{{ challenge.name }}:</strong> Target {{ challenge.phase1_target if challenge.phase1_target is not none else '—' }}%{% if challenge.challenge_type == 'two_phase' %}, then {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}%{% elif challenge.challenge_type == 'three_phase' %}, then {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}% and {{ challenge.phase3_target if challenge.phase3_target is not none else '—' }}%{% endif %}; daily loss {{ challenge.phase1_daily_loss if challenge.challenge_type != 'instant' and challenge.phase1_daily_loss is not none else (challenge.instant_daily_loss if challenge.instant_daily_loss is not none else '—') }}%; overall loss {{ challenge.phase1_overall_loss if challenge.challenge_type != 'instant' and challenge.phase1_overall_loss is not none else (challenge.instant_overall_loss if challenge.instant_overall_loss is not none else '—') }}%; profit split {{ challenge.user_profit_share }}%.</span></li>
+                            {% endfor %}
                         </ul>
                     </div>
 
@@ -1193,19 +1251,9 @@
                             <h3 class="text-2xl font-bold text-white">Risk Management</h3>
                         </div>
                         <ul class="space-y-4">
-                            <li class="flex items-start"><i
-                                    class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Maximum Daily Loss:</strong> 3% on 1 Step, 3 Step & Pay After You Pass; 5% on 2 Step Standard & Pay As You Go; 3% on 2 Step Pro</span>
-                            </li>
-                            <li class="flex items-start"><i
-                                    class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Maximum Overall Loss:</strong> 6% trailing / 5% static on 1 Step; 10% / 5% on 2 Step; 5% on 3 Step; 10% on Pay As You Go; 6% trailing on Pay After You Pass</span></li>
-                            <li class="flex items-start"><i
-                                    class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Overnight & Weekend Holding:</strong> Fully permitted across all plans</span></li>
-                            <li class="flex items-start"><i
-                                    class="fas fa-check text-green-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>No Lot Size Restrictions:</strong> Trade within standard margin parameters</span></li>
+                            {% for challenge in challenges %}
+                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span class="text-white"><strong>{{ challenge.name }}:</strong> Target {{ challenge.phase1_target if challenge.phase1_target is not none else '—' }}%{% if challenge.challenge_type == 'two_phase' %}, then {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}%{% elif challenge.challenge_type == 'three_phase' %}, then {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}% and {{ challenge.phase3_target if challenge.phase3_target is not none else '—' }}%{% endif %}; daily loss {{ challenge.phase1_daily_loss if challenge.challenge_type != 'instant' and challenge.phase1_daily_loss is not none else (challenge.instant_daily_loss if challenge.instant_daily_loss is not none else '—') }}%; overall loss {{ challenge.phase1_overall_loss if challenge.challenge_type != 'instant' and challenge.phase1_overall_loss is not none else (challenge.instant_overall_loss if challenge.instant_overall_loss is not none else '—') }}%; profit split {{ challenge.user_profit_share }}%.</span></li>
+                            {% endfor %}
                         </ul>
                     </div>
 
@@ -1217,14 +1265,9 @@
                             <h3 class="text-2xl font-bold text-white">Trading Guidelines</h3>
                         </div>
                         <ul class="space-y-4">
-                            <li class="flex items-start"><i class="fas fa-check text-blue-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Trading Styles:</strong> Discretionary, swing, intraday, and approved EAs welcome</span></li>
-                            <li class="flex items-start"><i class="fas fa-info-circle text-blue-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Strategy Consistency:</strong> Do not switch strategy mid-phase (e.g. manual to EA)</span></li>
-                            <li class="flex items-start"><i class="fas fa-info-circle text-blue-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Consistent Execution:</strong> Maintain disciplined volume across 3+ trading days</span></li>
-                            <li class="flex items-start"><i class="fas fa-check text-blue-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>News Trading:</strong> Permitted while adhering to daily loss limits</span></li>
+                            {% for challenge in challenges %}
+                            <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i><span class="text-white"><strong>{{ challenge.name }}:</strong> Target {{ challenge.phase1_target if challenge.phase1_target is not none else '—' }}%{% if challenge.challenge_type == 'two_phase' %}, then {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}%{% elif challenge.challenge_type == 'three_phase' %}, then {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}% and {{ challenge.phase3_target if challenge.phase3_target is not none else '—' }}%{% endif %}; daily loss {{ challenge.phase1_daily_loss if challenge.challenge_type != 'instant' and challenge.phase1_daily_loss is not none else (challenge.instant_daily_loss if challenge.instant_daily_loss is not none else '—') }}%; overall loss {{ challenge.phase1_overall_loss if challenge.challenge_type != 'instant' and challenge.phase1_overall_loss is not none else (challenge.instant_overall_loss if challenge.instant_overall_loss is not none else '—') }}%; profit split {{ challenge.user_profit_share }}%.</span></li>
+                            {% endfor %}
                         </ul>
                     </div>
 
@@ -1236,9 +1279,7 @@
                             <h3 class="text-2xl font-bold text-white">Profit Splits & Compliance</h3>
                         </div>
                         <ul class="space-y-4">
-                            <li class="flex items-start"><i
-                                    class="fas fa-percentage text-purple-400 mt-1 mr-3"></i><span
-                                    class="text-white"><strong>Profit Split:</strong> 80% on 1 Step & Pay After You Pass; up to 95% on 2 Step; up to 90% on 3 Step; up to 80% on Pay As You Go</span></li>
+                            {% for challenge in challenges %}<li class="flex items-start"><i class="fas fa-percentage text-purple-400 mt-1 mr-3"></i><span class="text-white"><strong>{{ challenge.name }}:</strong> {{ challenge.user_profit_share }}% profit split</span></li>{% endfor %}
                             <li class="flex items-start"><i
                                     class="fas fa-sync text-purple-400 mt-1 mr-3"></i><span
                                     class="text-white"><strong>Monthly Payouts:</strong> Processed in 1–5 business days via bank transfer or crypto</span>
@@ -1273,33 +1314,29 @@
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">What is Mega Funded?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            Mega Funded is a proprietary trading firm that provides skilled traders worldwide with simulated capital from $6,000 to $200,000 (and scaling up to $1,000,000) to trade financial markets. Traders who pass our evaluation earn up to a 95% profit split on simulated profits.
+                            Mega Funded is a proprietary trading firm that provides skilled traders worldwide with access to the active challenge accounts listed below. Traders who pass an evaluation can trade a simulated funded account.
                         </p>
                     </article>
 
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">What trading challenges do you offer?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            We offer five challenge models:
-                            <br><strong class="text-white">• 1 Step:</strong> One-phase evaluation (10% profit target) with an 80% profit split — the fastest path to funding.
-                            <br><strong class="text-white">• 2 Step:</strong> Two-phase evaluation (8% Phase 1, 5% Phase 2) with up to a 95% profit split — our most popular.
-                            <br><strong class="text-white">• 3 Step:</strong> Three-phase evaluation (6% per phase) with up to a 90% profit split — the lowest price.
-                            <br><strong class="text-white">• Pay As You Go:</strong> Pay Phase 1 now, Phase 2 only if you pass, with up to an 80% profit split.
-                            <br><strong class="text-white">• Pay After You Pass:</strong> 1% target in 7 days — start for just $7.20 and pay the activation fee only if you pass.
+                            We offer these active challenges:
+                            {% for challenge in challenges %}{% if not loop.first %}<br>{% endif %}<strong class="text-white">• {{ challenge.name }}:</strong> {% if challenge.phase1_target is not none %}{{ challenge.phase1_target }}%{% else %}{{ challenge.challenge_type|replace('_', ' ')|title }}{% endif %}{% if challenge.challenge_type == 'two_phase' %} / {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}%{% elif challenge.challenge_type == 'three_phase' %} / {{ challenge.phase2_target if challenge.phase2_target is not none else '—' }}% / {{ challenge.phase3_target if challenge.phase3_target is not none else '—' }}%{% endif %} target{% if challenge.challenge_type != 'instant' %}s{% endif %}, {{ challenge.user_profit_share }}% profit split.{% endfor %}<br>Prices range from {% if challenges %}${{ "%.2f"|format(min_price.price) }} to ${{ "%.2f"|format(max_price.price) }}{% else %}no active prices{% endif %}.
                         </p>
                     </article>
 
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">How much capital can I trade?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            Account sizes range from $6,000 to $200,000 across our challenge plans ($15,000 to $100,000 for Pay As You Go; $15,000 to $200,000 for Pay After You Pass). Successful traders can scale their accounts up to $1,000,000 through our scaling plan.
+                            Active challenges have account sizes of {% for challenge in challenges %}{% if not loop.first %}, {% endif %}${{ "{:,}".format(challenge.account_size) }}{% endfor %}.
                         </p>
                     </article>
 
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">What is the profit split?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            Funded traders receive an 80% profit split on 1 Step and Pay After You Pass, up to 95% on 2 Step, up to 90% on 3 Step, and up to 80% on Pay As You Go.
+                            {% for challenge in challenges %}{% if not loop.first %}; {% endif %}{{ challenge.name }}: {{ challenge.user_profit_share }}%{% endfor %}.
                         </p>
                     </article>
 
@@ -1313,7 +1350,7 @@
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">What payment methods do you accept?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            We accept international credit/debit cards (Visa, Mastercard) and major cryptocurrencies. All fees are denominated in USD.
+                            We accept cryptocurrency (USDT) and manual payments — bank transfer and mobile money. All fees are in USD. We do not accept credit or debit cards.
                         </p>
                     </article>
 
@@ -1327,7 +1364,7 @@
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">Are there any minimum or maximum trading day requirements?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            There is a minimum requirement of 3 trading days to ensure consistency. There are zero maximum time limits on 1 Step, 2 Step, 3 Step and Pay As You Go — you can take as much time as you need to reach your profit target. Pay After You Pass has a 7-day time limit.
+                            {% for challenge in challenges %}{% if not loop.first %}; {% endif %}{{ challenge.name }}: minimum {{ challenge.phase1_min_days if challenge.phase1_min_days is not none else "—" }} trading days, {% if challenge.no_expiry %}no time limit{% else %}{{ challenge.phase1_duration if challenge.phase1_duration is not none else "No limit" }} days{% endif %}{% endfor %}.
                         </p>
                     </article>
 
@@ -1348,7 +1385,7 @@
                     <article class="liquid-glass rounded-2xl p-6" data-aos="fade-up">
                         <h3 class="text-xl font-semibold text-white mb-3">Do I need to verify my identity (KYC)?</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            Yes. Before receiving access to a simulated funded account or receiving any payout, you must successfully complete identity verification (KYC) by submitting valid government-issued photo ID and proof of address.
+                            No. There is no identity verification (KYC) step to buy a challenge, trade the evaluation, or receive a funded account.
                         </p>
                     </article>
 
@@ -1481,211 +1518,22 @@
             });
         });
 
-        // =============================================
-        // CHALLENGE SELECTOR + SWITCHER
-        // Single in-memory data source. Switching tabs re-renders
-        // #challenge-cards only — no fetch, no reload, no network.
-        // Edit prices/rules only in TYPES.
-        // prices = [list price, discounted price]
-        // pay = [pay now, pay if you pass, total]
-        // =============================================
+        // Challenge card view switcher
         (function () {
-            const TYPES = {
-                step1: {
-                    name: '1 Step',
-                    badge: 'Single Phase',
-                    accent: '#22c55e',
-                    tagline: 'One phase. One target. Fastest path to funding.',
-                    variants: [
-                        {
-                            key: 'trailing', label: 'Trailing', display: '1 Step · Trailing',
-                            rows: [['Profit Target', '10%'], ['Daily Loss', '3%'], ['Max Loss', '6% (trailing)'], ['Min Trading Days', '3 days'], ['Profit Split', '80%'], ['Leverage', '1:40'], ['Time Limit', 'None']],
-                            prices: { '6K': [37, 33.30], '15K': [76, 68.40], '25K': [138, 124.20], '50K': [193, 173.70], '100K': [363, 326.70] }
-                        },
-                        {
-                            key: 'static', label: 'Static', display: '1 Step · Static',
-                            rows: [['Profit Target', '10%'], ['Daily Loss', '3%'], ['Max Loss', '5% (static)'], ['Min Trading Days', '3 days'], ['Profit Split', '80%'], ['Leverage', '1:20'], ['Time Limit', 'None']],
-                            prices: { '6K': [52, 46.80], '15K': [107, 96.30], '25K': [176, 158.40], '50K': [302, 271.80], '100K': [495, 445.50] }
-                        }
-                    ]
-                },
-                step2: {
-                    name: '2 Step',
-                    badge: 'Two-Phase',
-                    accent: '#3b82f6',
-                    tagline: 'Two phases. The most popular way to get funded.',
-                    variants: [
-                        {
-                            key: 'standard', label: 'Standard', display: '2 Step · Standard',
-                            rows: [['Profit Target', 'P1 8% · P2 5%'], ['Daily Loss', '5%'], ['Max Loss', '10% (static)'], ['Min Trading Days', '3 days'], ['Profit Split', 'Up to 95%'], ['Leverage', '1:100'], ['Time Limit', 'None']],
-                            prices: { '6K': [39, 35.10], '15K': [85, 76.50], '25K': [175, 157.50], '50K': [299, 269.10], '100K': [466, 419.40], '200K': [850, 765.00] }
-                        },
-                        {
-                            key: 'pro', label: 'Pro', display: '2 Step · Pro',
-                            rows: [['Profit Target', 'P1 8% · P2 5%'], ['Daily Loss', '3%'], ['Max Loss', '5% (static)'], ['Min Trading Days', '3 days'], ['Profit Split', 'Up to 95%'], ['Leverage', '1:100'], ['Time Limit', 'None']],
-                            prices: { '6K': [32, 28.80], '15K': [60, 54.00], '25K': [145, 130.50], '50K': [230, 207.00], '100K': [380, 342.00], '200K': [699, 629.10] }
-                        }
-                    ]
-                },
-                step3: {
-                    name: '3 Step',
-                    badge: 'Three-Phase',
-                    accent: '#f59e0b',
-                    tagline: 'Three phases. The lowest price to get funded.',
-                    variants: [
-                        {
-                            key: 'classic', label: 'Classic', display: '3 Step',
-                            rows: [['Profit Target', 'P1 6% · P2 6% · P3 6%'], ['Daily Loss', '3%'], ['Max Loss', '5% (static)'], ['Min Trading Days', '3 days'], ['Profit Split', 'Up to 90%'], ['Leverage', '1:100'], ['Time Limit', 'None']],
-                            prices: { '6K': [23, 20.70], '15K': [48, 43.20], '25K': [99, 89.10], '50K': [155, 139.50], '100K': [235, 211.50], '200K': [475, 427.50] }
-                        }
-                    ]
-                },
-                exclusive: {
-                    name: 'Exclusive',
-                    badge: 'Exclusive',
-                    accent: '#a855f7',
-                    tagline: 'Pay per phase — or start for just $7.20.',
-                    variants: [
-                        {
-                            key: 'payg', label: 'Pay As You Go', display: 'Pay As You Go',
-                            rows: [['Profit Target', 'P1 5% · P2 8%'], ['Daily Loss', '5%'], ['Max Loss', '10% (static)'], ['Min Trading Days', '3 days'], ['Profit Split', 'Up to 80%'], ['Leverage', '1:100'], ['Time Limit', 'None']],
-                            pay: { '15K': [40, 68, 108], '25K': [74, 100, 174], '50K': [111, 165, 276], '100K': [300, 180, 480] },
-                            payNowLabel: 'today',
-                            payLaterLabel: 'if you pass'
-                        },
-                        {
-                            key: 'payp', label: 'Pay After You Pass', display: 'Pay After You Pass',
-                            rows: [['Profit Target', '1%'], ['Daily Loss', '3%'], ['Max Loss', '6% (trailing)'], ['Min Trading Days', 'None'], ['Profit Split', '80%'], ['Leverage', '1:100'], ['Time Limit', '7 days']],
-                            pay: { '15K': [7.20, 90, 97.20], '25K': [7.20, 179, 186.20], '50K': [7.20, 312, 319.20], '100K': [7.20, 499, 506.20], '200K': [7.20, 999, 1006.20] },
-                            payNowLabel: 'entry fee',
-                            payLaterLabel: 'activation if you pass'
-                        }
-                    ]
-                }
-            };
-
-            const catalogue = [
-                { type: 'step1', variant: 0, filter: 'one_phase' },
-                { type: 'step2', variant: 0, filter: 'two_phase' },
-                { type: 'step3', variant: 0, filter: 'three_phase' },
-                { type: 'exclusive', variant: 0, filter: 'exclusive' },
-                { type: 'exclusive', variant: 1, filter: 'exclusive' }
-            ];
-
-            const cards = document.getElementById('challenge-cards');
             const btnPricing = document.getElementById('btn-pricing');
             const btnRules = document.getElementById('btn-rules');
-            const challengeUrl = "{{ url_for('user.challenges') if session.get('user_id') else url_for('auth.login') }}";
-
-            let currentView = 'pricing'; // 'pricing' | 'rules'
-
-            function fmtPrice(v) {
-                return Number.isInteger(v) ? String(v) : v.toFixed(2);
-            }
-
-            function variantDisplayName(typeKey, variant) {
-                return typeKey === 'exclusive' ? variant.display : (variant.display || variant.label);
-            }
-
-            function priceTableHTML(typeKey, variant) {
-                if (variant.prices) {
-                    const sizes = Object.keys(variant.prices);
-                    const rows = sizes.map(size => {
-                        const list = variant.prices[size][0];
-                        return `<tr><td>$${size}</td><td class="price">$${fmtPrice(list)}</td></tr>`;
-                    }).join('');
-                    return `
-                        <div class="mt-3">
-                            <span class="variant-label">${variant.label}</span>
-                            <table class="pricing-table">
-                                <thead><tr><th>Account</th><th class="text-right">Price</th></tr></thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>`;
-                }
-                if (variant.pay) {
-                    const sizes = Object.keys(variant.pay);
-                    const rows = sizes.map(size => {
-                        const now = variant.pay[size][0];
-                        const later = variant.pay[size][1];
-                        return `<tr><td>$${size}</td><td class="price">$${fmtPrice(now)} <span class="text-gray-500 font-normal">+ $${fmtPrice(later)}</span></td></tr>`;
-                    }).join('');
-                    return `
-                        <div class="mt-3">
-                            <span class="variant-label">${variant.label}</span>
-                            <table class="pricing-table">
-                                <thead><tr><th>Account</th><th class="text-right">Pay now / later</th></tr></thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>`;
-                }
-                return '';
-            }
-
-            function rulesHTML(variant) {
-                const rows = variant.rows.map(([k, v]) =>
-                    `<div class="spec-row"><span class="k">${k}</span><span class="v">${v}</span></div>`
-                ).join('');
-                let payNote = '';
-                if (variant.pay) {
-                    const sizes = Object.keys(variant.pay);
-                    const lines = sizes.map(size => {
-                        const now = variant.pay[size][0];
-                        const later = variant.pay[size][1];
-                        return `<div class="spec-row"><span class="k">$${size}</span><span class="v">$${fmtPrice(now)} ${variant.payNowLabel || ''} + $${fmtPrice(later)} ${variant.payLaterLabel || ''}</span></div>`;
-                    }).join('');
-                    payNote = `<div class="mt-3 pt-3 border-t border-white/10">${lines}</div>`;
-                }
-                return `<div class="mt-3">${rows}${payNote}</div>`;
-            }
-
-            function cardHTML(typeKey, variant) {
-                const type = TYPES[typeKey];
-                const cardName = typeKey === 'exclusive' ? variant.display : type.name;
-                const variants = (typeKey === 'exclusive') ? [variant] : type.variants;
-
-                const body = (currentView === 'pricing')
-                    ? variants.map(v => priceTableHTML(typeKey, v)).join('')
-                    : variants.map(v => (typeKey === 'exclusive')
-                        ? `<div class="mb-2"><span class="variant-label">${v.label}</span></div>${rulesHTML(v)}`
-                        : rulesHTML(v)).join('');
-
-                return `<article class="liquid-glass rounded-2xl p-6 flex flex-col swap-in">
-                    <h3 class="text-2xl font-bold text-white">${cardName}</h3>
-                    <p class="text-gray-400 mt-2">${type.tagline}</p>
-                    ${body}
-                    <a href="${challengeUrl}${challengeUrl.includes('?') ? '&' : '?'}filter=${catalogue.find(c => c.type === typeKey)?.filter || ''}" class="plan-cta mt-4">Explore ${cardName}</a>
-                </article>`;
-            }
-
-            function render() {
-                cards.innerHTML = catalogue.map(({ type, variant }) => {
-                    const v = TYPES[type].variants[variant];
-                    return cardHTML(type, v);
-                }).join('');
-            }
-
+            const cards = document.getElementById('challenge-cards');
             function setView(view) {
-                currentView = view;
-                if (view === 'pricing') {
-                    btnPricing.classList.add('active');
-                    btnPricing.setAttribute('aria-selected', 'true');
-                    btnRules.classList.remove('active');
-                    btnRules.setAttribute('aria-selected', 'false');
-                } else {
-                    btnRules.classList.add('active');
-                    btnRules.setAttribute('aria-selected', 'true');
-                    btnPricing.classList.remove('active');
-                    btnPricing.setAttribute('aria-selected', 'false');
-                }
-                render();
+                const pricing = view === 'pricing';
+                cards.querySelectorAll('.challenge-pricing-view').forEach(el => el.classList.toggle('hidden', !pricing));
+                cards.querySelectorAll('.challenge-rules-view').forEach(el => el.classList.toggle('hidden', pricing));
+                btnPricing.classList.toggle('active', pricing);
+                btnPricing.setAttribute('aria-selected', String(pricing));
+                btnRules.classList.toggle('active', !pricing);
+                btnRules.setAttribute('aria-selected', String(!pricing));
             }
-
             btnPricing.addEventListener('click', () => setView('pricing'));
             btnRules.addEventListener('click', () => setView('rules'));
-
-            // Initial render
-            render();
         })();
     </script>
 </body>
