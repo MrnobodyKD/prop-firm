@@ -1098,10 +1098,7 @@
                     </a>
                 </div>
 
-                <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="300">
-                    <div class="text-center liquid-glass p-5 rounded-2xl"><div class="text-2xl md:text-3xl font-bold text-white">{{ max_split if max_split is not none else '—' }}{% if max_split is not none %}%{% endif %}</div><div class="text-gray-400 text-sm">Maximum eligible profit split</div></div>
-                    <div class="text-center liquid-glass p-5 rounded-2xl"><div class="text-2xl md:text-3xl font-bold text-white">{% if max_account %}${{ "{:,}".format(max_account.account_size) }}{% else %}—{% endif %}</div><div class="text-gray-400 text-sm">Largest displayed challenge</div></div>
-                </div>
+                
             </div>
         </section>
 
