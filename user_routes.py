@@ -469,7 +469,7 @@ def buy_challenge(challenge_id):
         user=user,
         challenge=challenge,
         payment_methods=payment_methods,
-        nowpayments_enabled=bool(os.getenv('NOWPAYMENTS_API_KEY'))
+        nowpayments_enabled=bool(settings.nowpayments_enabled) and bool(os.getenv('NOWPAYMENTS_API_KEY'))
     )
 
 
@@ -593,6 +593,9 @@ def manual_payment(challenge_id, method_id):
 def crypto_payment_start():
     user = User.query.get_or_404(session['user_id'])
     challenge = ChallengeTemplate.query.get_or_404(request.form.get('challenge_id', type=int))
+    if not SiteSettings.get_settings().nowpayments_enabled or not os.getenv('NOWPAYMENTS_API_KEY'):
+        flash('Crypto payments are currently unavailable.', 'error')
+        return redirect(url_for('user.buy_challenge', challenge_id=challenge.id))
     if request.form.get('terms_acknowledgement') != 'on' or request.form.get('rule_acknowledgement') != 'on':
         flash('Accept the terms and challenge rules before continuing.', 'error')
         return redirect(url_for('user.buy_challenge', challenge_id=challenge.id))

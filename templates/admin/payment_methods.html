@@ -96,6 +96,26 @@
     <span class="text-sm text-gray-500 dark:text-gray-400">{{ methods|length }} total</span>
 </div>
 
+<div class="glass-card p-5 mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white break-words">NOWPayments</h3>
+                {% if nowpayments_enabled %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">● Active</span>
+                {% else %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">○ Inactive</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 shrink-0">
+            <form method="post" action="{{ url_for('admin.admin_nowpayments_toggle') }}" class="inline">
+                <button class="px-3.5 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition">{{ 'Deactivate' if nowpayments_enabled else 'Activate' }}</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% if methods %}
 <div class="flex flex-col gap-4">
     {% for method in methods %}

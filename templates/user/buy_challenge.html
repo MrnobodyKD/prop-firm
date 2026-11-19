@@ -652,7 +652,7 @@
             </div>
             <p class="method-desc">Pay with your favourite cryptocurrency. Fast, secure, and confirmed automatically.</p>
           </div>
-          {% elif (challenge.currency or 'USD')|upper != 'USD' %}
+          {% elif nowpayments_enabled and (challenge.currency or 'USD')|upper != 'USD' %}
           <div class="method-option unavailable">
             <div class="method-head">
               <div class="method-icon crypto">₿</div>
@@ -663,18 +663,6 @@
               <div class="method-radio"></div>
             </div>
             <p class="method-desc">Crypto checkout is currently available for USD-priced challenges only.</p>
-          </div>
-          {% else %}
-          <div class="method-option unavailable">
-            <div class="method-head">
-              <div class="method-icon crypto">₿</div>
-              <div class="method-body">
-                <div class="method-name">Crypto · NOWPayments</div>
-                <div class="method-meta">Temporarily unavailable</div>
-              </div>
-              <div class="method-radio"></div>
-            </div>
-            <p class="method-desc">Crypto checkout is temporarily unavailable while gateway configuration is pending.</p>
           </div>
           {% endif %}
 

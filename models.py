@@ -1671,6 +1671,7 @@ class SiteSettings(db.Model):
     __tablename__ = 'site_settings'
     id = db.Column(db.Integer, primary_key=True)
     marketplace_locked = db.Column(db.Boolean, default=False, nullable=False)
+    nowpayments_enabled = db.Column(db.Boolean, default=True, nullable=False)
     marketplace_lock_reason = db.Column(db.String(500), default='')
     marketplace_locked_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     marketplace_locked_at = db.Column(db.DateTime(timezone=True), nullable=True)

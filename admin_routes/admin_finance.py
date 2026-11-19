@@ -1,7 +1,7 @@
 from flask import current_app, render_template, request, redirect, url_for, flash, session, jsonify, abort, Response, send_file, send_from_directory
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, extract, and_, or_
-from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, PaymentMethod, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, RuleLog
+from models import db, User, ChallengeTemplate, ChallengePurchase, Payout, PayoutAuditLog, FAQ, SupportTicket, TicketMessage, Payment, PaymentMethod, SiteSettings, AdminLog, Notification, UserNotification, NotificationTemplate, Coupon, CouponUsage, CouponAssignment, ProgressionRequest, RulebookSection, RuleLog
 from . import admin_bp, admin_required
 from notification_service import create_notification, notify_all_users
 import secrets
@@ -111,9 +111,10 @@ def _save_method_form(method=None):
 @admin_required
 def admin_payment_methods():
     methods = PaymentMethod.query.order_by(PaymentMethod.sort_order, PaymentMethod.name).all()
+    settings = SiteSettings.get_settings()
     edit_id = request.args.get('edit', type=int)
     edit_method = PaymentMethod.query.get(edit_id) if edit_id else None
-    return render_template('admin/payment_methods.html', methods=methods, edit_method=edit_method)
+    return render_template('admin/payment_methods.html', methods=methods, edit_method=edit_method, nowpayments_enabled=settings.nowpayments_enabled)
 
 
 @admin_bp.route('/payment-methods/new', methods=['POST'])
@@ -139,6 +140,16 @@ def admin_payment_method_toggle(method_id):
     method.is_active = not method.is_active
     db.session.commit()
     flash('Payment method updated.', 'success')
+    return redirect(url_for('admin.admin_payment_methods'))
+
+
+@admin_bp.route('/payment-methods/nowpayments/toggle', methods=['POST'])
+@admin_required
+def admin_nowpayments_toggle():
+    settings = SiteSettings.get_settings()
+    settings.nowpayments_enabled = not settings.nowpayments_enabled
+    db.session.commit()
+    flash(f"NOWPayments {'activated' if settings.nowpayments_enabled else 'deactivated'}.", 'success')
     return redirect(url_for('admin.admin_payment_methods'))
 
 
