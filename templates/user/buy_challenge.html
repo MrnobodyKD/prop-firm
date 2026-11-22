@@ -151,6 +151,11 @@
     gap: .9rem;
     margin-top: 1rem;
   }
+  .checkout-grid > *, .phase-grid > *, .rules-grid > * { min-width: 0; }
+  .phase-card dl > div, .phase-card dt, .phase-card dd { min-width: 0; }
+  .phase-card dd { overflow-wrap: break-word; }
+  .phase-card .rules { overflow-wrap: break-word; }
+  .rule-row .label { min-width: 0; }
   .phase-card {
     border: 1px solid var(--border);
     border-radius: .85rem;
