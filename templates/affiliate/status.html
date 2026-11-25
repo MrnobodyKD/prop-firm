@@ -1,0 +1,10 @@
+{% extends "user/base.html" %}
+{% block title %}Affiliate Application - Mega Funded{% endblock %}
+{% block header_title %}Affiliate Application{% endblock %}
+{% block header_subtitle %}Your Mega Funded affiliate account{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-6" data-aos="fade-up"><div class="glass-card p-6 border dark:border-dark-border max-w-3xl">
+{% if application.status == 'pending' %}<h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Application Pending</h2><p class="text-sm text-gray-600 dark:text-gray-400">Your application is under review. We reply in 2-3 business days.</p>
+{% else %}<h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Application Rejected</h2><p class="text-sm text-gray-600 dark:text-gray-400 mb-5">{{ application.admin_notes or 'No reason was provided.' }}</p><form method="POST" action="{{ url_for('affiliate.reapply') }}"><button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold">Re-apply</button></form>{% endif %}
+</div></div>
+{% endblock %}

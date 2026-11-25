@@ -330,3 +330,4 @@ from . import admin_finance
 from . import admin_engagement
 from . import admin_email
 from . import moderators
+from . import admin_affiliate

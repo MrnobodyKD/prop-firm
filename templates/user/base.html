@@ -612,6 +612,10 @@
                 <i class="fas fa-ticket-alt"></i>
                 <span>My Coupons</span>
             </a>
+            <a href="/affiliate" class="nav-item {% if request.endpoint and request.endpoint.startswith('affiliate.') %}active{% endif %}">
+                <i class="fas fa-handshake"></i>
+                <span>Affiliate</span>
+            </a>
 
             <a href="/user/settings" class="nav-item {% if request.endpoint == 'user.settings' %}active{% endif %}">
                 <i class="fas fa-cog"></i>
@@ -712,6 +716,10 @@
             <a href="/user/my-coupons" class="nav-item {% if request.endpoint == 'user.user_coupons' %}active{% endif %}" onclick="toggleSidebar()">
                 <i class="fas fa-ticket-alt"></i>
                 <span>My Coupons</span>
+            </a>
+            <a href="/affiliate" class="nav-item {% if request.endpoint and request.endpoint.startswith('affiliate.') %}active{% endif %}" onclick="toggleSidebar()">
+                <i class="fas fa-handshake"></i>
+                <span>Affiliate</span>
             </a>
 
             <a href="/user/settings" class="nav-item {% if request.endpoint == 'user.settings' %}active{% endif %}" onclick="toggleSidebar()">

@@ -1561,6 +1561,114 @@ class CouponAssignment(db.Model):
     coupon = db.relationship('Coupon', backref=db.backref('assignments', lazy=True))
     user = db.relationship('User', backref=db.backref('coupon_assignments', lazy=True))
 
+class AffiliateApplication(db.Model):
+    __tablename__ = 'affiliate_applications'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    full_name = db.Column(db.String(150), nullable=False)
+    social_handle = db.Column(db.String(200), nullable=True)
+    phone = db.Column(db.String(20), nullable=False)
+    contact_email = db.Column(db.String(120), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending', index=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    user = db.relationship('User', foreign_keys=[user_id])
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by_id])
+
+    def __repr__(self):
+        return f'<AffiliateApplication user={self.user_id} status={self.status}>'
+
+class Affiliate(db.Model):
+    __tablename__ = 'affiliates'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False, index=True)
+    commission_percent = db.Column(db.Float, nullable=False, default=15.0)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    source = db.Column(db.String(20), default='applied')
+    application_id = db.Column(db.Integer, db.ForeignKey('affiliate_applications.id'), nullable=True)
+    payout_method = db.Column(db.String(30), nullable=True)
+    payout_details = db.Column(db.String(200), nullable=True)
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    approved_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    user = db.relationship('User', foreign_keys=[user_id])
+    application = db.relationship('AffiliateApplication', foreign_keys=[application_id])
+    approved_by = db.relationship('User', foreign_keys=[approved_by_id])
+    coupon_links = db.relationship('AffiliateCoupon', backref='affiliate', lazy=True, cascade='all, delete-orphan')
+    payouts = db.relationship('AffiliatePayout', backref='affiliate', lazy=True, cascade='all, delete-orphan')
+
+    def get_coupon_ids(self):
+        return [link.coupon_id for link in self.coupon_links]
+
+    def get_coupons(self):
+        return [link.coupon for link in self.coupon_links if link.coupon]
+
+    def get_current_cycle(self):
+        return AffiliatePayout.query.filter(AffiliatePayout.affiliate_id == self.id, AffiliatePayout.status.in_(['open', 'pending_request'])).order_by(AffiliatePayout.period_start.desc()).first()
+
+    def calculate_current_stats(self):
+        cycle = self.get_current_cycle()
+        if not cycle:
+            return {'sales_count': 0, 'total_sales': 0.0, 'total_commission': 0.0}
+        coupon_ids = self.get_coupon_ids()
+        if not coupon_ids:
+            return {'sales_count': 0, 'total_sales': 0.0, 'total_commission': 0.0}
+        result = db.session.query(db.func.count(CouponUsage.id).label('sales_count'), db.func.coalesce(db.func.sum(CouponUsage.original_price), 0).label('total_sales')).filter(CouponUsage.coupon_id.in_(coupon_ids), CouponUsage.used_at >= cycle.period_start).first()
+        total_sales = float(result.total_sales or 0.0)
+        return {'sales_count': int(result.sales_count or 0), 'total_sales': total_sales, 'total_commission': round(total_sales * (self.commission_percent / 100.0), 2)}
+
+    def get_unique_buyer_count(self):
+        coupon_ids = self.get_coupon_ids()
+        if not coupon_ids:
+            return 0
+        return db.session.query(db.func.count(db.func.distinct(CouponUsage.user_id))).filter(CouponUsage.coupon_id.in_(coupon_ids)).scalar() or 0
+
+    def __repr__(self):
+        return f'<Affiliate user={self.user_id} commission={self.commission_percent}%>'
+
+class AffiliateCoupon(db.Model):
+    __tablename__ = 'affiliate_coupons'
+    __table_args__ = (db.UniqueConstraint('affiliate_id', 'coupon_id', name='uq_affiliate_coupon'), db.UniqueConstraint('coupon_id', name='uq_coupon_single_affiliate'))
+    id = db.Column(db.Integer, primary_key=True)
+    affiliate_id = db.Column(db.Integer, db.ForeignKey('affiliates.id'), nullable=False, index=True)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupon.id'), nullable=False, index=True)
+    added_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    added_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    coupon = db.relationship('Coupon', foreign_keys=[coupon_id])
+    added_by = db.relationship('User', foreign_keys=[added_by_id])
+
+    def __repr__(self):
+        return f'<AffiliateCoupon affiliate={self.affiliate_id} coupon={self.coupon_id}>'
+
+class AffiliatePayout(db.Model):
+    __tablename__ = 'affiliate_payouts'
+    id = db.Column(db.Integer, primary_key=True)
+    affiliate_id = db.Column(db.Integer, db.ForeignKey('affiliates.id'), nullable=False, index=True)
+    period_start = db.Column(db.DateTime(timezone=True), nullable=False)
+    period_end = db.Column(db.DateTime(timezone=True), nullable=True)
+    total_sales = db.Column(db.Float, nullable=True)
+    total_commission = db.Column(db.Float, nullable=True)
+    status = db.Column(db.String(20), default='open', index=True)
+    requested_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    rejected_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    rejected_reason = db.Column(db.Text, nullable=True)
+    rejected_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    paid_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    paid_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    payment_reference = db.Column(db.String(200), nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    rejected_by = db.relationship('User', foreign_keys=[rejected_by_id])
+    paid_by = db.relationship('User', foreign_keys=[paid_by_id])
+
+    def __repr__(self):
+        return f'<AffiliatePayout affiliate={self.affiliate_id} status={self.status}>'
+
 class Wallet(db.Model):
     __tablename__ = 'wallet'
     id = db.Column(db.Integer, primary_key=True)

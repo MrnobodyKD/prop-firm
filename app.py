@@ -770,6 +770,7 @@ with app.app_context():
         ('auth', 'auth_bp'),
         ('admin_routes', 'admin_bp'),
         ('user_routes', 'user_bp'),
+        ('affiliate_routes', 'affiliate_bp'),
         ('blog', 'blog_bp'),
         ('admin_blog', 'admin_blog_bp'),
         ('mt5_receiver', 'receiver_bp'),
