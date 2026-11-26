@@ -141,6 +141,7 @@ class ChallengeTemplate(db.Model):
     phase1_daily_dd_type = db.Column(db.String(20), nullable=False, default='equity')
     phase1_overall_loss = db.Column(db.Float, nullable=True)
     phase1_overall_dd_type = db.Column(db.String(20), nullable=False, default='equity')
+    phase1_overall_dd_trailing = db.Column(db.Boolean, nullable=False, default=False)
     phase1_min_days = db.Column(db.Integer, nullable=True)
     phase1_duration = db.Column(db.Integer, nullable=True)
     phase1_leverage = db.Column(db.String(20), nullable=True)
@@ -152,6 +153,7 @@ class ChallengeTemplate(db.Model):
     phase2_daily_dd_type = db.Column(db.String(20), nullable=False, default='equity')
     phase2_overall_loss = db.Column(db.Float, nullable=True)
     phase2_overall_dd_type = db.Column(db.String(20), nullable=False, default='equity')
+    phase2_overall_dd_trailing = db.Column(db.Boolean, nullable=False, default=False)
     phase2_min_days = db.Column(db.Integer, nullable=True)
     phase2_duration = db.Column(db.Integer, nullable=True)
     phase2_leverage = db.Column(db.String(20), nullable=True)
@@ -163,6 +165,7 @@ class ChallengeTemplate(db.Model):
     phase3_daily_dd_type = db.Column(db.String(20), nullable=False, default='equity')
     phase3_overall_loss = db.Column(db.Float, nullable=True)
     phase3_overall_dd_type = db.Column(db.String(20), nullable=False, default='equity')
+    phase3_overall_dd_trailing = db.Column(db.Boolean, nullable=False, default=False)
     phase3_min_days = db.Column(db.Integer, nullable=True)
     phase3_duration = db.Column(db.Integer, nullable=True)
     phase3_leverage = db.Column(db.String(20), nullable=True)
@@ -173,6 +176,7 @@ class ChallengeTemplate(db.Model):
     instant_daily_dd_type = db.Column(db.String(20), nullable=False, default='equity')
     instant_overall_loss = db.Column(db.Float, nullable=True)
     instant_overall_dd_type = db.Column(db.String(20), nullable=False, default='equity')
+    instant_overall_dd_trailing = db.Column(db.Boolean, nullable=False, default=False)
     instant_min_days = db.Column(db.Integer, nullable=True)
     instant_leverage = db.Column(db.String(20), nullable=True)
     instant_rules = db.Column(db.Text, nullable=True)
@@ -280,6 +284,7 @@ class ChallengeTemplate(db.Model):
                 'daily_dd_type': self.instant_daily_dd_type or 'equity',
                 'overall_loss': self.instant_overall_loss or 0.0,
                 'overall_dd_type': self.instant_overall_dd_type or 'equity',
+                'overall_dd_trailing': self.instant_overall_dd_trailing,
                 'min_days': self.instant_min_days or 0,
                 'duration': None if self.no_expiry else 365,
                 'leverage': self.instant_leverage or '1:100',
@@ -307,6 +312,7 @@ class ChallengeTemplate(db.Model):
                 'daily_dd_type': self.phase2_daily_dd_type or 'equity',
                 'overall_loss': self.phase2_overall_loss or 0.0,
                 'overall_dd_type': self.phase2_overall_dd_type or 'equity',
+                'overall_dd_trailing': self.phase2_overall_dd_trailing,
                 'min_days': self.phase2_min_days or 0,
                 'duration': None if self.no_expiry else (self.phase2_duration or 30),
                 'leverage': self.phase2_leverage or '1:100',
@@ -334,6 +340,7 @@ class ChallengeTemplate(db.Model):
                 'daily_dd_type': self.phase3_daily_dd_type or 'equity',
                 'overall_loss': self.phase3_overall_loss or 0.0,
                 'overall_dd_type': self.phase3_overall_dd_type or 'equity',
+                'overall_dd_trailing': self.phase3_overall_dd_trailing,
                 'min_days': self.phase3_min_days or 0,
                 'duration': None if self.no_expiry else (self.phase3_duration or 30),
                 'leverage': self.phase3_leverage or '1:100',
@@ -360,17 +367,19 @@ class ChallengeTemplate(db.Model):
             'daily_dd_type': self.phase1_daily_dd_type or 'equity',
             'overall_loss': self.phase1_overall_loss or 0.0,
             'overall_dd_type': self.phase1_overall_dd_type or 'equity',
+            'overall_dd_trailing': self.phase1_overall_dd_trailing,
             'min_days': self.phase1_min_days or 0,
             'duration': None if self.no_expiry else (self.phase1_duration or 30),
             'leverage': self.phase1_leverage or '1:100',
         }
 
     @staticmethod
-    def drawdown_type_label(value):
-        return 'Static Balance Based' if value == 'static' else 'Equity Based'
+    def drawdown_type_label(value, trailing=False):
+        mode = 'balance based' if value == 'static' else 'equity based'
+        return f"{'Trailing' if trailing else 'Static'} ({mode})"
 
-    def get_drawdown_type_label(self, value):
-        return self.drawdown_type_label(value)
+    def get_drawdown_type_label(self, value, trailing=False):
+        return self.drawdown_type_label(value, trailing)
 
     def rule_snapshot(self):
         return {

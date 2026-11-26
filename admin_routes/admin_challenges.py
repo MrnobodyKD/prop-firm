@@ -445,6 +445,7 @@ def admin_save_challenge():
         challenge.phase1_daily_dd_type = 'equity'
         challenge.phase1_overall_loss = None
         challenge.phase1_overall_dd_type = 'equity'
+        challenge.phase1_overall_dd_trailing = 'phase1_overall_dd_trailing' in request.form
         challenge.phase1_min_days = None
         challenge.phase1_duration = None
         challenge.phase1_leverage = None
@@ -455,6 +456,7 @@ def admin_save_challenge():
         challenge.phase2_daily_dd_type = 'equity'
         challenge.phase2_overall_loss = None
         challenge.phase2_overall_dd_type = 'equity'
+        challenge.phase2_overall_dd_trailing = 'phase2_overall_dd_trailing' in request.form
         challenge.phase2_min_days = None
         challenge.phase2_duration = None
         challenge.phase2_leverage = None
@@ -465,6 +467,7 @@ def admin_save_challenge():
         challenge.phase3_daily_dd_type = 'equity'
         challenge.phase3_overall_loss = None
         challenge.phase3_overall_dd_type = 'equity'
+        challenge.phase3_overall_dd_trailing = 'phase3_overall_dd_trailing' in request.form
         challenge.phase3_min_days = None
         challenge.phase3_duration = None
         challenge.phase3_leverage = None
@@ -474,6 +477,7 @@ def admin_save_challenge():
         challenge.instant_daily_dd_type = 'equity'
         challenge.instant_overall_loss = None
         challenge.instant_overall_dd_type = 'equity'
+        challenge.instant_overall_dd_trailing = 'instant_overall_dd_trailing' in request.form
         challenge.instant_min_days = None
         challenge.instant_leverage = None
         challenge.instant_rules = None

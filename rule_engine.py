@@ -122,7 +122,9 @@ def _parse_leverage(val):
         return 0
 
 def _dd_label(value):
-    return 'Static Balance Based' if value == 'static' else 'Equity Based'
+    model, trailing = value if isinstance(value, tuple) else (value, False)
+    mode = 'balance based' if model == 'static' else 'equity based'
+    return f"{'Trailing' if trailing else 'Static'} ({mode})"
 
 def _daily_drawdown_values(challenge, model):
     if model == 'static':
@@ -136,10 +138,24 @@ def _daily_drawdown_values(challenge, model):
     pct = max(0.0, (start - lowest) / start * 100) if start > 0 and lowest > 0 else 0.0
     return pct, start, lowest, current
 
-def _overall_drawdown_values(challenge, model, account_size):
+def _overall_drawdown_pct(challenge, rules, account_size=None):
+    model = rules.get('overall_dd_type', 'equity')
+    template = getattr(challenge, 'challenge_template', None)
+    phase = getattr(challenge, 'current_phase', 1) or 1
+    phase = 0 if getattr(template, 'challenge_type', None) == 'instant' else phase
+    prefix = 'instant' if phase == 0 else f'phase{min(max(int(phase), 1), 3)}'
+    trailing = bool(rules.get('overall_dd_trailing', getattr(template, f'{prefix}_overall_dd_trailing', False)))
+    account_size = account_size if account_size is not None else (_safe_float(template.account_size) if template else _safe_float(challenge.starting_balance))
     current = _safe_float(challenge.current_balance if model == 'static' else challenge.current_equity)
-    pct = max(0.0, (account_size - current) / account_size * 100) if account_size > 0 else 0.0
-    return pct, account_size, current, current
+    reference = (_safe_float(getattr(challenge, 'highest_equity', 0)) or _safe_float(getattr(challenge, 'peak_equity', 0)) or account_size) if trailing else account_size
+    pct = max(0.0, (reference - current) / reference * 100) if reference > 0 else 0.0
+    return pct, reference, current
+
+def _overall_drawdown_values(challenge, model, account_size, rules=None):
+    rules = dict(rules or {})
+    rules['overall_dd_type'] = model
+    pct, reference, current = _overall_drawdown_pct(challenge, rules, account_size)
+    return pct, reference, current, current
 
 def ensure_utc(dt):
     if not dt:
@@ -597,7 +613,8 @@ def check_equity_violations(challenge, data, rules):
 
     # CHECK OVERALL DRAWDOWN
     if overall_limit > 0 and account_size > 0:
-        overall_dd_pct, start_value, lowest_value, current_value = _overall_drawdown_values(challenge, overall_model, account_size)
+        overall_dd_pct, start_value, lowest_value, current_value = _overall_drawdown_values(challenge, overall_model, account_size, rules)
+        overall_label = _dd_label((overall_model, rules.get('overall_dd_trailing', False)))
 
         if overall_dd_pct >= overall_limit:
             existing = ViolationEvidence.query.filter_by(
@@ -610,7 +627,7 @@ def check_equity_violations(challenge, data, rules):
                 value_name = 'Balance' if overall_model == 'static' else 'Equity'
                 reason = (
                     f"Overall Drawdown Breached!\n"
-                    f"Drawdown Model = {_dd_label(overall_model)}\n"
+                    f"Drawdown Model = {overall_label}\n"
                     f"Overall Limit = {overall_limit}%\n"
                     f"Actual Drawdown = {overall_dd_pct:.2f}%\n"
                     f"Account Size: ${account_size:.2f}\n"
@@ -624,18 +641,18 @@ def check_equity_violations(challenge, data, rules):
                     violation_type='overall_drawdown', rule_name='Overall Drawdown',
                     rule_limit=overall_limit, actual_value=round(overall_dd_pct, 4),
                     reason=reason, severity='hard_breach',
-                    drawdown_model=_dd_label(overall_model),
+                    drawdown_model=overall_label,
                     day_start_value=start_value, lowest_value=lowest_value, current_value=current_value
                 )
 
-                challenge.violation_reason = f"Overall drawdown breached ({_dd_label(overall_model)}): {overall_dd_pct:.2f}% >= {overall_limit}%"
+                challenge.violation_reason = f"Overall drawdown breached ({overall_label}): {overall_dd_pct:.2f}% >= {overall_limit}%"
                 challenge.status = ChallengeState.UNDER_REVIEW
                 challenge.monitoring_status = ChallengeState.UNDER_REVIEW
                 challenge.review_required = True
                 challenge.violation_reviewed = False
 
                 log_rule(challenge.id, "overall_drawdown", Severity.VIOLATION,
-                         f"Overall DD: {overall_dd_pct:.2f}% >= {overall_limit}% ({_dd_label(overall_model)})",
+                         f"Overall DD: {overall_dd_pct:.2f}% >= {overall_limit}% ({overall_label})",
                          overall_dd_pct, overall_limit)
 
                 notify_user(challenge.user_id, "Account Under Compliance Review",
@@ -833,6 +850,7 @@ def get_active_rules(challenge):
             'phase_name': 'Phase 1', 'profit_target': 8.0,
             'daily_loss': 5.0, 'daily_dd_type': 'equity',
             'overall_loss': 10.0, 'overall_dd_type': 'equity',
+            'overall_dd_trailing': False,
             'min_days': 5, 'duration': 30, 'leverage': None, 'weekend': True,
             'sl_mandatory_enabled': False, 'sl_grace_period_minutes': 3,
             'max_risk_per_trade_percent': 1.5,
@@ -881,6 +899,7 @@ def get_active_rules(challenge):
             'daily_dd_type': getattr(t, 'phase2_daily_dd_type', 'equity') or 'equity',
             'overall_loss': _safe_float(t.phase2_overall_loss),
             'overall_dd_type': getattr(t, 'phase2_overall_dd_type', 'equity') or 'equity',
+            'overall_dd_trailing': getattr(t, 'phase2_overall_dd_trailing', False),
             'min_days': _safe_int(t.phase2_min_days),
             'duration': None if base['no_expiry'] else _safe_int(t.phase2_duration),
             'leverage': t.phase2_leverage,
@@ -895,6 +914,7 @@ def get_active_rules(challenge):
             'daily_dd_type': getattr(t, 'phase3_daily_dd_type', 'equity') or 'equity',
             'overall_loss': _safe_float(t.phase3_overall_loss),
             'overall_dd_type': getattr(t, 'phase3_overall_dd_type', 'equity') or 'equity',
+            'overall_dd_trailing': getattr(t, 'phase3_overall_dd_trailing', False),
             'min_days': _safe_int(t.phase3_min_days),
             'duration': None if base['no_expiry'] else _safe_int(t.phase3_duration),
             'leverage': t.phase3_leverage,
@@ -908,6 +928,7 @@ def get_active_rules(challenge):
             'daily_dd_type': getattr(t, 'instant_daily_dd_type', 'equity') or 'equity',
             'overall_loss': _safe_float(t.instant_overall_loss),
             'overall_dd_type': getattr(t, 'instant_overall_dd_type', 'equity') or 'equity',
+            'overall_dd_trailing': getattr(t, 'instant_overall_dd_trailing', False),
             'min_days': 0, 'duration': None if base['no_expiry'] else 365,
             'leverage': t.instant_leverage,
             'weekend': getattr(t, 'weekend_trading', True),
@@ -921,6 +942,7 @@ def get_active_rules(challenge):
             'daily_dd_type': getattr(t, 'phase1_daily_dd_type', 'equity') or 'equity',
             'overall_loss': _safe_float(t.phase1_overall_loss),
             'overall_dd_type': getattr(t, 'phase1_overall_dd_type', 'equity') or 'equity',
+            'overall_dd_trailing': getattr(t, 'phase1_overall_dd_trailing', False),
             'min_days': _safe_int(t.phase1_min_days),
             'duration': None if base['no_expiry'] else _safe_int(t.phase1_duration),
             'leverage': t.phase1_leverage,
@@ -1048,12 +1070,7 @@ def update_metrics(challenge, data):
 
     rules = get_active_rules(challenge)
     overall_model = rules.get('overall_dd_type', 'equity')
-    overall_value = cur_balance if overall_model == 'static' else cur_equity
-    if overall_value >= account_size:
-        challenge.overall_drawdown = 0.0
-    else:
-        cash_lost = account_size - overall_value
-        challenge.overall_drawdown = (cash_lost / account_size) * 100 if account_size > 0 else 0.0
+    challenge.overall_drawdown = _overall_drawdown_pct(challenge, rules, account_size)[0]
 
     daily_model = rules.get('daily_dd_type', 'equity')
     if daily_model == 'static':
