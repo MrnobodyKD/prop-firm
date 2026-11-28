@@ -146,8 +146,12 @@ def _overall_drawdown_pct(challenge, rules, account_size=None):
     prefix = 'instant' if phase == 0 else f'phase{min(max(int(phase), 1), 3)}'
     trailing = bool(rules.get('overall_dd_trailing', getattr(template, f'{prefix}_overall_dd_trailing', False)))
     account_size = account_size if account_size is not None else (_safe_float(template.account_size) if template else _safe_float(challenge.starting_balance))
-    current = _safe_float(challenge.current_balance if model == 'static' else challenge.current_equity)
-    reference = (_safe_float(getattr(challenge, 'highest_equity', 0)) or _safe_float(getattr(challenge, 'peak_equity', 0)) or account_size) if trailing else account_size
+    if model == 'static':
+        current = _safe_float(challenge.current_balance)
+        reference = account_size
+    else:
+        current = _safe_float(challenge.current_equity)
+        reference = (_safe_float(getattr(challenge, 'highest_equity', 0)) or _safe_float(getattr(challenge, 'peak_equity', 0)) or account_size) if trailing else account_size
     pct = max(0.0, (reference - current) / reference * 100) if reference > 0 else 0.0
     return pct, reference, current
 
@@ -614,7 +618,7 @@ def check_equity_violations(challenge, data, rules):
     # CHECK OVERALL DRAWDOWN
     if overall_limit > 0 and account_size > 0:
         overall_dd_pct, start_value, lowest_value, current_value = _overall_drawdown_values(challenge, overall_model, account_size, rules)
-        overall_label = _dd_label((overall_model, rules.get('overall_dd_trailing', False)))
+        overall_label = _dd_label((overall_model, start_value != account_size and overall_model != 'static'))
 
         if overall_dd_pct >= overall_limit:
             existing = ViolationEvidence.query.filter_by(

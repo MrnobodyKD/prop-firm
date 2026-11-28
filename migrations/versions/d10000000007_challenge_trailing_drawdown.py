@@ -17,11 +17,10 @@ def upgrade():
     for column in ('phase1_overall_dd_trailing', 'phase2_overall_dd_trailing',
                    'phase3_overall_dd_trailing', 'instant_overall_dd_trailing'):
         op.add_column('challenge_template', sa.Column(column, sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.execute("""UPDATE challenge_template SET
-        phase1_overall_dd_trailing = CASE WHEN name ILIKE '%1 Step Trailing%' OR name ILIKE '%Pay After You Pass%' THEN TRUE ELSE FALSE END,
-        phase2_overall_dd_trailing = CASE WHEN name ILIKE '%1 Step Trailing%' OR name ILIKE '%Pay After You Pass%' THEN TRUE ELSE FALSE END,
-        phase3_overall_dd_trailing = CASE WHEN name ILIKE '%1 Step Trailing%' OR name ILIKE '%Pay After You Pass%' THEN TRUE ELSE FALSE END,
-        instant_overall_dd_trailing = CASE WHEN name ILIKE '%1 Step Trailing%' OR name ILIKE '%Pay After You Pass%' THEN TRUE ELSE FALSE END""")
+    op.execute("UPDATE challenge_template SET phase1_overall_dd_trailing = TRUE WHERE phase1_overall_dd_type = 'equity'")
+    op.execute("UPDATE challenge_template SET phase2_overall_dd_trailing = TRUE WHERE phase2_overall_dd_type = 'equity'")
+    op.execute("UPDATE challenge_template SET phase3_overall_dd_trailing = TRUE WHERE phase3_overall_dd_type = 'equity'")
+    op.execute("UPDATE challenge_template SET instant_overall_dd_trailing = TRUE WHERE instant_overall_dd_type = 'equity'")
 
 
 def downgrade():
